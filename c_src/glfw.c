@@ -11,8 +11,19 @@
 #include <erl_nif.h>
 #include <GLFW/glfw3.h>
 
+static ErlNifResourceType* glfw_monitor_resource_type = NULL;
+
+static void glfw_monitor_resource_dtor(ErlNifEnv* env, void* obj) {
+}
+
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
+    glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
+    if (glfw_monitor_resource_type == NULL) {
+        fprintf(stderr, "failed to open 'GLFW monitor' resource type\n");
+        return -1;
+    }
+
     return 0;
 }
 
