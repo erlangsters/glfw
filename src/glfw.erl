@@ -16,6 +16,10 @@
 
 -export_type([error_type/0]).
 
+-export_type([monitor/0]).
+
+-export_type([monitor_event/0]).
+
 -export([init_hint/2]).
 -export([init/0]).
 -export([terminate/0]).
@@ -27,6 +31,21 @@
 -export([platform/0]).
 -export([platform_supported/1]).
 
+-export([monitors/0]).
+-export([primary_monitor/0]).
+-export([monitor_position/1]).
+-export([monitor_work_area/1]).
+-export([monitor_physical_size/1]).
+-export([monitor_content_scale/1]).
+-export([monitor_name/1]).
+-export([monitor_handler/1]).
+-export([monitor_set_handler/2]).
+-export([monitor_video_modes/1]).
+-export([monitor_video_mode/1]).
+-export([monitor_set_gamma/2]).
+-export([monitor_gamma_ramp/1]).
+-export([monitor_set_gamma_ramp/2]).
+
 -nifs([init_hint/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -37,6 +56,21 @@
 -nifs([set_error_handler/1]).
 -nifs([platform/0]).
 -nifs([platform_supported/1]).
+
+-nifs([monitors/0]).
+-nifs([primary_monitor/0]).
+-nifs([monitor_position/1]).
+-nifs([monitor_work_area/1]).
+-nifs([monitor_physical_size/1]).
+-nifs([monitor_content_scale/1]).
+-nifs([monitor_name/1]).
+-nifs([monitor_handler/1]).
+-nifs([monitor_set_handler/2]).
+-nifs([monitor_video_modes/1]).
+-nifs([monitor_video_mode/1]).
+-nifs([monitor_set_gamma/2]).
+-nifs([monitor_gamma_ramp/1]).
+-nifs([monitor_set_gamma_ramp/2]).
 
 -on_load(init_nif/0).
 
@@ -94,6 +128,12 @@
     platform_unavailable
 .
 
+-type monitor() :: reference().
+
+-type monitor_event() :: connected | disconnected.
+
+-include("glfw.hrl").
+
 init_nif() ->
     ok = erlang:load_nif("./priv/glfw", 0).
 
@@ -105,7 +145,7 @@ init_hint(_Hint, _Value) ->
 init() ->
     erlang:nif_error(nif_library_not_loaded).
 
--spec terminate() -> ok().
+-spec terminate() -> ok.
 terminate() ->
     erlang:nif_error(nif_library_not_loaded).
 
@@ -136,4 +176,62 @@ platform() ->
 
 -spec platform_supported(platform()) -> boolean().
 platform_supported(_Platform) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitors() -> [monitor()].
+monitors() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec primary_monitor() -> monitor().
+primary_monitor() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_position(monitor()) -> {X :: integer(), Y :: integer()}.
+monitor_position(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_work_area(monitor()) ->
+    {X :: integer(), Y :: integer(), Width :: integer(), Height :: integer()}.
+monitor_work_area(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_physical_size(monitor()) ->
+    {Width :: integer(), Height :: integer()}.
+monitor_physical_size(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_content_scale(monitor()) -> {X :: float(), Y :: float()}.
+monitor_content_scale(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_name(monitor()) -> string().
+monitor_name(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_handler(monitor()) -> undefined | pid().
+monitor_handler(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_set_handler(monitor(), pid()) -> ok | not_ok.
+monitor_set_handler(_Monitor, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_video_modes(monitor()) -> [#glfw_video_mode{}].
+monitor_video_modes(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_video_mode(monitor()) -> #glfw_video_mode{}.
+monitor_video_mode(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_set_gamma(monitor(), float()) -> ok | not_ok.
+monitor_set_gamma(_Monitor, _Gamma) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_gamma_ramp(monitor()) -> #glfw_gamma_ramp{}.
+monitor_gamma_ramp(_Monitor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec monitor_set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok | not_ok.
+monitor_set_gamma_ramp(_Monitor, _Ramp) ->
     erlang:nif_error(nif_library_not_loaded).

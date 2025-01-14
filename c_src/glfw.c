@@ -70,6 +70,76 @@ static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_N
     return enif_make_int(env, 42);
 }
 
+static ERL_NIF_TERM nif_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_work_area(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_physical_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
+static ERL_NIF_TERM nif_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init},
@@ -80,7 +150,22 @@ static ErlNifFunc nif_functions[] = {
     {"error_handler", 0, nif_error_handler},
     {"set_error_handler", 1, nif_set_error_handler},
     {"platform", 0, nif_platform},
-    {"platform_supported", 1, nif_platform_supported}
+    {"platform_supported", 1, nif_platform_supported},
+
+    {"monitors", 0, nif_monitors},
+    {"primary_monitor", 0, nif_primary_monitor},
+    {"monitor_position", 1, nif_monitor_position},
+    {"monitor_work_area", 1, nif_monitor_work_area},
+    {"monitor_physical_size", 1, nif_monitor_physical_size},
+    {"monitor_content_scale", 1, nif_monitor_content_scale},
+    {"monitor_name", 1, nif_monitor_name},
+    {"monitor_handler", 1, nif_monitor_handler},
+    {"monitor_set_handler", 2, nif_monitor_set_handler},
+    {"monitor_video_modes", 1, nif_monitor_video_modes},
+    {"monitor_video_mode", 1, nif_monitor_video_mode},
+    {"monitor_set_gamma", 2, nif_monitor_set_gamma},
+    {"monitor_gamma_ramp", 1, nif_monitor_gamma_ramp},
+    {"monitor_set_gamma_ramp", 2, nif_monitor_set_gamma_ramp}
 };
 
 ERL_NIF_INIT(
