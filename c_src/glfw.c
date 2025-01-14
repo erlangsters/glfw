@@ -185,14 +185,57 @@ static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_N
     return enif_make_int(env, 42);
 }
 
+static ERL_NIF_TERM glfw_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int count;
+    GLFWmonitor** monitors = glfwGetMonitors(&count);
+    if (!monitors) {
+        return enif_make_list(env, 0);
+    }
+
+    ERL_NIF_TERM list = enif_make_list(env, 0);
+
+    for (int i = count - 1; i >= 0; i--) {
+        void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
+        *((GLFWmonitor**)monitor_resource) = monitors[i];
+
+        ERL_NIF_TERM monitor_term = enif_make_resource(env, monitor_resource);
+        enif_release_resource(monitor_resource);
+
+        list = enif_make_list_cell(env, monitor_term, list);
+    }
+
+    return list;
+}
+
 static ERL_NIF_TERM nif_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitors, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (!monitor) {
+        return enif_make_atom(env, "no_monitor");
+    }
+
+    void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
+    *((GLFWmonitor**)monitor_resource) = monitor;
+
+    ERL_NIF_TERM monitor_ref = enif_make_resource(env, monitor_resource);
+    enif_release_resource(monitor_resource);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_atom(env, "ok"),
+        monitor_ref
+    );
 }
 
 static ERL_NIF_TERM nif_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_primary_monitor, env, argc, argv);
 }
 
 static ERL_NIF_TERM nif_monitor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])

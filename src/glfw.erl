@@ -182,7 +182,7 @@ platform_supported(_Platform) ->
 monitors() ->
     erlang:nif_error(nif_library_not_loaded).
 
--spec primary_monitor() -> monitor().
+-spec primary_monitor() -> {ok, monitor()} | no_monitor.
 primary_monitor() ->
     erlang:nif_error(nif_library_not_loaded).
 
