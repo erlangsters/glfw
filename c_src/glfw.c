@@ -328,10 +328,22 @@ static ERL_NIF_TERM nif_monitor_content_scale(ErlNifEnv* env, int argc, const ER
     return execute_command(glfw_monitor_content_scale, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* name = glfwGetMonitorName(*monitor);
+    return enif_make_string(env, name, ERL_NIF_LATIN1);
+}
+
 static ERL_NIF_TERM nif_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_name, env, argc, argv);
 }
+
 
 static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {

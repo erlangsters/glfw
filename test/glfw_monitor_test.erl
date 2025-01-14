@@ -23,21 +23,29 @@ glfw_monitor_test() ->
     ?assert(erlang:is_reference(Monitor)),
 
     {X1, Y1} = glfw:monitor_position(Monitor),
+    io:format(user, "monitor position (x: ~p, y)~p~n", [X1, Y1]),
     ?assert(erlang:is_integer(X1)),
     ?assert(erlang:is_integer(Y1)),
 
     {X2, Y2, Width2, Height2} = glfw:monitor_work_area(Monitor),
+    io:format(user, "monitor work area (x: ~p, y: ~p, width: ~p, height: ~p)~n", [X2, Y2, Width2, Height2]),
     ?assert(erlang:is_integer(X2)),
     ?assert(erlang:is_integer(Y2)),
     ?assert(erlang:is_integer(Width2)),
     ?assert(erlang:is_integer(Height2)),
 
     {Width3, Height3} = glfw:monitor_physical_size(Monitor),
+    io:format(user, "monitor physical size (width: ~p, height: ~p)~n", [Width3, Height3]),
     ?assert(erlang:is_integer(Width3)),
     ?assert(erlang:is_integer(Height3)),
 
     {X4, Y4} = glfw:monitor_content_scale(Monitor),
+    io:format(user, "monitor content scale (x: ~p, y: ~p)~n", [X4, Y4]),
     ?assert(erlang:is_float(X4)),
     ?assert(erlang:is_float(Y4)),
+
+    Name = glfw:monitor_name(Monitor),
+    io:format(user, "monitor name: ~p~n", [Name]),
+    ?assert(erlang:is_list(Name)),
 
     ok.
