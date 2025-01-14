@@ -11,6 +11,12 @@
 -include_lib("eunit/include/eunit.hrl").
 
 glfw_test() ->
-    42 = glfw:foobar(),
+    {Major, Minor, Revision} = glfw:version(),
+    ?assert(erlang:is_integer(Major)),
+    ?assert(erlang:is_integer(Minor)),
+    ?assert(erlang:is_integer(Revision)),
+
+    Version = glfw:version_string(),
+    ?assert(erlang:is_list(Version)),
 
     ok.

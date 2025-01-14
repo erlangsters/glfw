@@ -123,12 +123,24 @@ static ERL_NIF_TERM nif_terminate(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
 static ERL_NIF_TERM nif_version(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    int major, minor, rev;
+    glfwGetVersion(&major, &minor, &rev);
+
+    return enif_make_tuple3(env,
+        enif_make_int(env, major),
+        enif_make_int(env, minor),
+        enif_make_int(env, rev)
+    );
 }
 
 static ERL_NIF_TERM nif_version_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    const char* version = glfwGetVersionString();
+    return enif_make_string(env, version, ERL_NIF_LATIN1);
 }
 
 static ERL_NIF_TERM nif_last_error(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
