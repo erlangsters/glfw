@@ -441,14 +441,122 @@ static ERL_NIF_TERM nif_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NI
     return execute_command(glfw_monitor_set_gamma, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    const GLFWgammaramp* ramp = glfwGetGammaRamp(*monitor);
+    if (ramp == NULL) {
+        return enif_make_atom(env, "undefined");
+    }
+
+    ERL_NIF_TERM red_list = enif_make_list(env, 0);
+    ERL_NIF_TERM green_list = enif_make_list(env, 0);
+    ERL_NIF_TERM blue_list = enif_make_list(env, 0);
+
+    for (unsigned int i = ramp->size; i > 0; i--) {
+        red_list = enif_make_list_cell(env,
+            enif_make_uint(env, ramp->red[i-1]), red_list);
+        green_list = enif_make_list_cell(env,
+            enif_make_uint(env, ramp->green[i-1]), green_list);
+        blue_list = enif_make_list_cell(env,
+            enif_make_uint(env, ramp->blue[i-1]), blue_list);
+    }
+
+    return enif_make_tuple4(env,
+        enif_make_atom(env, "glfw_gamma_ramp"),
+        red_list,
+        green_list,
+        blue_list
+    );
+}
+
 static ERL_NIF_TERM nif_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_gamma_ramp, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    // XXX: Review implementation.
+
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    const ERL_NIF_TERM* terms;
+    int arity;
+    if (!enif_get_tuple(env, argv[1], &arity, &terms) || arity != 4) {
+        return enif_make_badarg(env);
+    }
+
+    unsigned int length;
+    if (!enif_get_list_length(env, terms[1], &length)) {
+        return enif_make_badarg(env);
+    }
+
+    unsigned short* red = malloc(length * sizeof(unsigned short));
+    unsigned short* green = malloc(length * sizeof(unsigned short));
+    unsigned short* blue = malloc(length * sizeof(unsigned short));
+
+    ERL_NIF_TERM list, head, tail;
+    unsigned int val;
+
+    list = terms[1];
+    for (unsigned int i = 0; i < length && enif_get_list_cell(env, list, &head, &tail); i++) {
+        if (!enif_get_uint(env, head, &val)) {
+            goto error;
+        }
+        red[i] = (unsigned short)val;
+        list = tail;
+    }
+
+    list = terms[2];
+    for (unsigned int i = 0; i < length && enif_get_list_cell(env, list, &head, &tail); i++) {
+        if (!enif_get_uint(env, head, &val)) {
+            goto error;
+        }
+        green[i] = (unsigned short)val;
+        list = tail;
+    }
+
+    list = terms[3];
+    for (unsigned int i = 0; i < length && enif_get_list_cell(env, list, &head, &tail); i++) {
+        if (!enif_get_uint(env, head, &val)) {
+            goto error;
+        }
+        blue[i] = (unsigned short)val;
+        list = tail;
+    }
+
+    GLFWgammaramp ramp = {
+        .red = red,
+        .green = green,
+        .blue = blue,
+        .size = length
+    };
+
+    glfwSetGammaRamp(*monitor, &ramp);
+
+    free(red);
+    free(green);
+    free(blue);
+    return enif_make_atom(env, "ok");
+
+error:
+    free(red);
+    free(green);
+    free(blue);
+    return enif_make_badarg(env);
 }
 
 static ERL_NIF_TERM nif_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_set_gamma_ramp, env, argc, argv);
 }
 
 static ErlNifFunc nif_functions[] = {

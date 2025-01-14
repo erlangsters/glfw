@@ -228,7 +228,7 @@ monitor_video_mode(_Monitor) ->
 monitor_set_gamma(_Monitor, _Gamma) ->
     erlang:nif_error(nif_library_not_loaded).
 
--spec monitor_gamma_ramp(monitor()) -> #glfw_gamma_ramp{}.
+-spec monitor_gamma_ramp(monitor()) -> undefined | #glfw_gamma_ramp{}.
 monitor_gamma_ramp(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
