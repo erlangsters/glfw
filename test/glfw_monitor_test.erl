@@ -9,6 +9,7 @@
 %%
 -module(glfw_monitor_test).
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("glfw/include/glfw.hrl").
 
 glfw_monitor_test() ->
     [] = glfw:monitors(),
@@ -48,4 +49,19 @@ glfw_monitor_test() ->
     io:format(user, "monitor name: ~p~n", [Name]),
     ?assert(erlang:is_list(Name)),
 
+    % XXX: Video mode stuff.
+    [] = glfw:monitor_video_modes(Monitor),
+    VideoMode = glfw:monitor_video_mode(Monitor),
+    print_video_mode(VideoMode),
+
     ok.
+
+print_video_mode(#glfw_video_mode{
+    width = Width,
+    height = Height,
+    red_bits = RedBits,
+    green_bits = GreenBits,
+    blue_bits = BlueBits,
+    refresh_rate = RefreshRate
+}) ->
+    io:format(user, "video mode (width: ~p, height: ~p, red bits: ~p, green bits: ~p, blue bits: ~p, refresh rate: ~p)~n", [Width, Height, RedBits, GreenBits, BlueBits, RefreshRate]).

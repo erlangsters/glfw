@@ -216,11 +216,11 @@ monitor_handler(_Monitor) ->
 monitor_set_handler(_Monitor, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
--spec monitor_video_modes(monitor()) -> [#glfw_video_mode{}].
+-spec monitor_video_modes(monitor()) -> undefined | [#glfw_video_mode{}].
 monitor_video_modes(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
--spec monitor_video_mode(monitor()) -> #glfw_video_mode{}.
+-spec monitor_video_mode(monitor()) -> undefined | #glfw_video_mode{}.
 monitor_video_mode(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 

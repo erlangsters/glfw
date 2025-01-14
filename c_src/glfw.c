@@ -355,14 +355,69 @@ static ERL_NIF_TERM nif_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_
     return enif_make_int(env, 42);
 }
 
+static ERL_NIF_TERM glfw_monitor_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    int count;
+    const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+    if (!modes) {
+        return enif_make_atom(env, "undefined");
+    }
+
+    ERL_NIF_TERM list = enif_make_list(env, 0);
+    for (int i = count - 1; i >= 0; i--) {
+        ERL_NIF_TERM mode = enif_make_tuple7(
+            env,
+            enif_make_atom(env, "glfw_video_mode"),
+            enif_make_int(env, modes[i].width),
+            enif_make_int(env, modes[i].height),
+            enif_make_int(env, modes[i].redBits),
+            enif_make_int(env, modes[i].greenBits),
+            enif_make_int(env, modes[i].blueBits),
+            enif_make_int(env, modes[i].refreshRate)
+        );
+
+        list = enif_make_list_cell(env, mode, list);
+    }
+
+    return list;
+}
+
 static ERL_NIF_TERM nif_monitor_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_video_modes, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    if (!mode) {
+        return enif_make_atom(env, "undefined");
+    }
+
+    return enif_make_tuple7(env,
+        enif_make_atom(env, "glfw_video_mode"),
+        enif_make_int(env, mode->width),
+        enif_make_int(env, mode->height),
+        enif_make_int(env, mode->redBits),
+        enif_make_int(env, mode->greenBits),
+        enif_make_int(env, mode->blueBits),
+        enif_make_int(env, mode->refreshRate)
+    );
 }
 
 static ERL_NIF_TERM nif_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_video_mode, env, argc, argv);
 }
 
 static ERL_NIF_TERM nif_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
