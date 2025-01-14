@@ -9,6 +9,7 @@
 //
 #include <string.h>
 #include <erl_nif.h>
+#include <GLFW/glfw3.h>
 
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
