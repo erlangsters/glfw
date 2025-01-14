@@ -420,9 +420,25 @@ static ERL_NIF_TERM nif_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_N
     return execute_command(glfw_monitor_video_mode, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    double gamma;
+    if (!enif_get_double(env, argv[1], &gamma)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetGamma(*monitor, gamma);
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM nif_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_set_gamma, env, argc, argv);
 }
 
 static ERL_NIF_TERM nif_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])

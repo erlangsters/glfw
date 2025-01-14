@@ -54,6 +54,8 @@ glfw_monitor_test() ->
     VideoMode = glfw:monitor_video_mode(Monitor),
     print_video_mode(VideoMode),
 
+    ok = glfw:monitor_set_gamma(Monitor, 2.2),
+
     ok.
 
 print_video_mode(#glfw_video_mode{
