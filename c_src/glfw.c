@@ -238,24 +238,94 @@ static ERL_NIF_TERM nif_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_
     return execute_command(glfw_primary_monitor, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_monitor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    int x, y;
+    glfwGetMonitorPos(*monitor, &x, &y);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_int(env, x),
+        enif_make_int(env, y)
+    );
+}
+
 static ERL_NIF_TERM nif_monitor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_position, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_monitor_work_area(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    int x, y, width, height;
+    glfwGetMonitorWorkarea(*monitor, &x, &y, &width, &height);
+
+    return enif_make_tuple4(
+        env,
+        enif_make_int(env, x),
+        enif_make_int(env, y),
+        enif_make_int(env, width),
+        enif_make_int(env, height)
+    );
 }
 
 static ERL_NIF_TERM nif_monitor_work_area(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_work_area, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_monitor_physical_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    int width, height;
+    glfwGetMonitorPhysicalSize(*monitor, &width, &height);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_int(env, width),
+        enif_make_int(env, height)
+    );
 }
 
 static ERL_NIF_TERM nif_monitor_physical_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_physical_size, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_monitor_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWmonitor** monitor;
+    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+        return enif_make_badarg(env);
+    }
+
+    float x_scale, y_scale;
+    glfwGetMonitorContentScale(*monitor, &x_scale, &y_scale);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_double(env, x_scale),
+        enif_make_double(env, y_scale)
+    );
 }
 
 static ERL_NIF_TERM nif_monitor_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_content_scale, env, argc, argv);
 }
 
 static ERL_NIF_TERM nif_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
