@@ -111,14 +111,31 @@ static ERL_NIF_TERM nif_init_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     return enif_make_int(env, 42);
 }
 
+static ERL_NIF_TERM glfw_init_command(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int result = glfwInit();
+    if (result == GLFW_TRUE) {
+        return enif_make_atom(env, "true");
+    }
+    else {
+        return enif_make_atom(env, "false");
+    }
+}
+
 static ERL_NIF_TERM nif_init_(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_init_command, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_terminate_command(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    glfwTerminate();
+    return enif_make_atom(env, "ok");
 }
 
 static ERL_NIF_TERM nif_terminate(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_terminate_command, env, argc, argv);
 }
 
 static ERL_NIF_TERM nif_version(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
