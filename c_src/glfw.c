@@ -25,7 +25,7 @@ static ERL_NIF_TERM nif_init_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     return enif_make_int(env, 42);
 }
 
-static ERL_NIF_TERM nif_init(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_init_(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     return enif_make_int(env, 42);
 }
@@ -142,7 +142,7 @@ static ERL_NIF_TERM nif_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const E
 
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
-    {"init", 0, nif_init},
+    {"init", 0, nif_init_},
     {"terminate", 0, nif_terminate},
     {"version", 0, nif_version},
     {"version_string", 0, nif_version_string},
