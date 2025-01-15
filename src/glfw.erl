@@ -17,6 +17,7 @@
 -export_type([error_type/0]).
 
 -export_type([monitor/0]).
+-export_type([window/0]).
 
 -export_type([monitor_event/0]).
 
@@ -46,6 +47,9 @@
 -export([monitor_gamma_ramp/1]).
 -export([monitor_set_gamma_ramp/2]).
 
+-export([create_window/3]).
+-export([destroy_window/1]).
+
 -nifs([init_hint/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -71,6 +75,9 @@
 -nifs([monitor_set_gamma/2]).
 -nifs([monitor_gamma_ramp/1]).
 -nifs([monitor_set_gamma_ramp/2]).
+
+-nifs([create_window/3]).
+-nifs([destroy_window/1]).
 
 -on_load(init_nif/0).
 
@@ -129,6 +136,7 @@
 .
 
 -type monitor() :: reference().
+-type window() :: reference().
 
 -type monitor_event() :: connected | disconnected.
 
@@ -234,4 +242,13 @@ monitor_gamma_ramp(_Monitor) ->
 
 -spec monitor_set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok | not_ok.
 monitor_set_gamma_ramp(_Monitor, _Ramp) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec create_window(integer(), integer(), string()) ->
+    {ok, window()} | no_window.
+create_window(_Width, _Height, _Title) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec destroy_window(window()) -> ok.
+destroy_window(_Window) ->
     erlang:nif_error(nif_library_not_loaded).

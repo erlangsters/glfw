@@ -26,6 +26,8 @@ static ERL_NIF_TERM command_result;
 static int command_finished = 0;
 
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
+static ErlNifResourceType* glfw_window_resource_type = NULL;
+
 
 // The function of the thread that executes "NIF commands". It just waits for a
 // command to be ready, executes it and signals that the command is done (while
@@ -84,11 +86,19 @@ ERL_NIF_TERM execute_command(
 static void glfw_monitor_resource_dtor(ErlNifEnv* env, void* obj) {
 }
 
+static void glfw_window_resource_dtor(ErlNifEnv* env, void* obj) {
+}
+
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
         fprintf(stderr, "failed to open 'GLFW monitor' resource type\n");
+        return -1;
+    }
+    glfw_window_resource_type = enif_open_resource_type(env, NULL, "glfw_window", glfw_window_resource_dtor, ERL_NIF_RT_CREATE, NULL);
+    if (glfw_window_resource_type == NULL) {
+        fprintf(stderr, "failed to open 'GLFW window' resource type\n");
         return -1;
     }
 
@@ -559,6 +569,67 @@ static ERL_NIF_TERM nif_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const E
     return execute_command(glfw_monitor_set_gamma_ramp, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    if (argc != 3) {
+        return enif_make_badarg(env);
+    }
+
+    int width, height;
+    char title[256];
+
+    if (!enif_get_int(env, argv[0], &width)) {
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_int(env, argv[1], &height)) {
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_string(env, argv[2], title, sizeof(title), ERL_NIF_LATIN1)) {
+        return enif_make_badarg(env);
+    }
+
+    // XXX: This will be removed after window hints are implemented.
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+    GLFWwindow* window = glfwCreateWindow(width, height, title, NULL, NULL);
+    if (!window) {
+        return enif_make_atom(env, "no_window");
+    }
+
+    void* window_resource = enif_alloc_resource(glfw_window_resource_type, sizeof(GLFWwindow*));
+    *((GLFWwindow**)window_resource) = window;
+
+    ERL_NIF_TERM window_ref = enif_make_resource(env, window_resource);
+    enif_release_resource(window_resource);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_atom(env, "ok"),
+        window_ref
+    );
+}
+
+static ERL_NIF_TERM nif_create_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_create_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwDestroyWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_destroy_window, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -584,7 +655,10 @@ static ErlNifFunc nif_functions[] = {
     {"monitor_video_mode", 1, nif_monitor_video_mode},
     {"monitor_set_gamma", 2, nif_monitor_set_gamma},
     {"monitor_gamma_ramp", 1, nif_monitor_gamma_ramp},
-    {"monitor_set_gamma_ramp", 2, nif_monitor_set_gamma_ramp}
+    {"monitor_set_gamma_ramp", 2, nif_monitor_set_gamma_ramp},
+
+    {"create_window", 3, nif_create_window},
+    {"destroy_window", 1, nif_destroy_window}
 };
 
 ERL_NIF_INIT(
