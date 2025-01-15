@@ -17,6 +17,12 @@ glfw_window_test() ->
 
     {ok, Window} = glfw:create_window(800, 600, "Hello, World!"),
 
+    false = glfw:window_should_close(Window),
+    ok = glfw:set_window_should_close(Window, true),
+    true = glfw:window_should_close(Window),
+    ok = glfw:set_window_should_close(Window, false),
+
+
     timer:sleep(100),
 
     ok = glfw:destroy_window(Window),

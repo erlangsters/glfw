@@ -630,6 +630,46 @@ static ERL_NIF_TERM nif_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_T
     return execute_command(glfw_destroy_window, env, argc, argv);
 }
 
+static ERL_NIF_TERM nif_window_should_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int result = glfwWindowShouldClose(*window);
+    if (result == GLFW_TRUE) {
+        return enif_make_atom(env, "true");
+    }
+    else {
+        return enif_make_atom(env, "false");
+    }
+}
+
+static ERL_NIF_TERM nif_set_window_should_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int value;
+    if (enif_is_identical(argv[1], enif_make_atom(env, "true"))) {
+        value = GLFW_TRUE;
+    } else if (enif_is_identical(argv[1], enif_make_atom(env, "false"))) {
+        value = GLFW_FALSE;
+    } else {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowShouldClose(*window, value);
+    return enif_make_atom(env, "ok");
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -658,7 +698,9 @@ static ErlNifFunc nif_functions[] = {
     {"monitor_set_gamma_ramp", 2, nif_monitor_set_gamma_ramp},
 
     {"create_window", 3, nif_create_window},
-    {"destroy_window", 1, nif_destroy_window}
+    {"destroy_window", 1, nif_destroy_window},
+    {"window_should_close", 1, nif_window_should_close},
+    {"set_window_should_close", 2, nif_set_window_should_close}
 };
 
 ERL_NIF_INIT(
