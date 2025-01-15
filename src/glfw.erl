@@ -21,6 +21,9 @@
 
 -export_type([monitor_event/0]).
 
+-export_type([size_limits/0]).
+-export_type([aspect_ratio/0]).
+
 -export([init_hint/2]).
 -export([init/0]).
 -export([terminate/0]).
@@ -58,6 +61,8 @@
 -export([set_window_position/2]).
 -export([window_size/1]).
 -export([set_window_size/2]).
+-export([set_window_size_limits/3]).
+-export([set_window_aspect_ratio/2]).
 
 -nifs([init_hint/2]).
 -nifs([init/0]).
@@ -96,8 +101,12 @@
 -nifs([set_window_position/2]).
 -nifs([window_size/1]).
 -nifs([set_window_size/2]).
+-nifs([set_window_size_limits_raw/5]).
+-nifs([set_window_aspect_ratio_raw/3]).
 
 -on_load(init_nif/0).
+
+-define(GLFW_DONT_CARE, -1).
 
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
@@ -157,6 +166,15 @@
 -type window() :: reference().
 
 -type monitor_event() :: connected | disconnected.
+
+-type size_limits() :: {
+    Width :: integer() | dont_care,
+    Height :: integer() | dont_care
+} | dont_care.
+-type aspect_ratio() :: {
+    Numerator :: integer() | dont_care,
+    Denominator :: integer() | dont_care
+} | dont_care.
 
 -include("glfw.hrl").
 
@@ -306,3 +324,34 @@ window_size(_Window) ->
 -spec set_window_size(window(), {Width :: integer(), Height :: integer()}) -> ok.
 set_window_size(_Window, _Size) ->
     erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_size_limits(window(), size_limits(), size_limits()) -> ok.
+set_window_size_limits(Window, MinSize, MaxSize) ->
+    {MinWidth, MinHeight} = unpack_dont_care_vector2(MinSize),
+    {MaxWidth, MaxHeight} = unpack_dont_care_vector2(MaxSize),
+    set_window_size_limits_raw(Window, MinWidth, MinHeight, MaxWidth, MaxHeight).
+
+set_window_size_limits_raw(_Window, _MinWidth, _MinHeight, _MaxWidth, _MaxHeight) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_aspect_ratio(window(), aspect_ratio()) -> ok.
+set_window_aspect_ratio(Window, Ratio) ->
+    {Numerator, Denominator} = unpack_dont_care_vector2(Ratio),
+    set_window_aspect_ratio_raw(Window, Numerator, Denominator).
+
+set_window_aspect_ratio_raw(_Window, _Numerator, _Denominator) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+unpack_dont_care_vector2(Vector2) ->
+    case Vector2 of
+        dont_care ->
+            {?GLFW_DONT_CARE, ?GLFW_DONT_CARE};
+        {dont_care, dont_care} ->
+            {?GLFW_DONT_CARE, ?GLFW_DONT_CARE};
+        {dont_care, Y} ->
+            {?GLFW_DONT_CARE, Y};
+        {X, dont_care} ->
+            {X, ?GLFW_DONT_CARE};
+        {X, Y} ->
+            {X, Y}
+    end.

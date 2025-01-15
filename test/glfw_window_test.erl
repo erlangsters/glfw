@@ -38,7 +38,20 @@ glfw_window_test() ->
     ok = glfw:set_window_size(Window, {1024, 768}),
     % XXX: Check if the size was actually updated.
 
-    timer:sleep(100),
+    ok = glfw:set_window_size_limits(Window, {640, 480}, {1920, 1080}),
+    ok = glfw:set_window_size_limits(Window, {dont_care, 480}, {1920, 1080}),
+    ok = glfw:set_window_size_limits(Window, {640, dont_care}, {1920, 1080}),
+    ok = glfw:set_window_size_limits(Window, {dont_care, dont_care}, {1920, 1080}),
+    ok = glfw:set_window_size_limits(Window, dont_care, {1920, 1080}),
+    ok = glfw:set_window_size_limits(Window, {640, 480}, {dont_care, 1080}),
+    ok = glfw:set_window_size_limits(Window, {640, 480}, {1920, dont_care}),
+    ok = glfw:set_window_size_limits(Window, {640, 480}, {dont_care, dont_care}),
+    ok = glfw:set_window_size_limits(Window, {640, 480}, dont_care),
+
+    ok = glfw:set_window_aspect_ratio(Window, {16, 9}),
+    ok = glfw:set_window_aspect_ratio(Window, {dont_care, 9}),
+    ok = glfw:set_window_aspect_ratio(Window, {16, dont_care}),
+    ok = glfw:set_window_aspect_ratio(Window, {dont_care, dont_care}),
 
     ok = glfw:destroy_window(Window),
 

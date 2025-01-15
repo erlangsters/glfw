@@ -810,6 +810,51 @@ static ERL_NIF_TERM nif_set_window_size(ErlNifEnv* env, int argc, const ERL_NIF_
     return execute_command(glfw_set_window_size, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_set_window_size_limits(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int minwidth, minheight, maxwidth, maxheight;
+    if (!enif_get_int(env, argv[1], &minwidth) ||
+        !enif_get_int(env, argv[2], &minheight) ||
+        !enif_get_int(env, argv[3], &maxwidth) ||
+        !enif_get_int(env, argv[4], &maxheight)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowSizeLimits(*window, minwidth, minheight, maxwidth, maxheight);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_window_size_limits(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_size_limits, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_window_aspect_ratio(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int numer, denom;
+    if (!enif_get_int(env, argv[1], &numer) || !enif_get_int(env, argv[2], &denom)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowAspectRatio(*window, numer, denom);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_window_aspect_ratio(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_aspect_ratio, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -847,7 +892,9 @@ static ErlNifFunc nif_functions[] = {
     {"window_position", 1, nif_window_position},
     {"set_window_position", 2, nif_set_window_position},
     {"window_size", 1, nif_window_size},
-    {"set_window_size", 2, nif_set_window_size}
+    {"set_window_size", 2, nif_set_window_size},
+    {"set_window_size_limits_raw", 5, nif_set_window_size_limits},
+    {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio}
 };
 
 ERL_NIF_INIT(
