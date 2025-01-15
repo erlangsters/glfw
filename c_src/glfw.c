@@ -116,9 +116,25 @@ static int nif_module_unload(ErlNifEnv* caller_env, void** priv_data)
     return 0;
 }
 
+static ERL_NIF_TERM glfw_init_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int hint;
+    int value;
+
+    if (!enif_get_int(env, argv[0], &hint)) {
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_int(env, argv[1], &value)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwInitHint(hint, value);
+    return enif_make_atom(env, "ok");
+}
+
 static ERL_NIF_TERM nif_init_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_init_hint, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_init_command(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1090,7 +1106,7 @@ static ERL_NIF_TERM nif_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF
 
 
 static ErlNifFunc nif_functions[] = {
-    {"init_hint", 2, nif_init_hint},
+    {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
     {"terminate", 0, nif_terminate},
     {"version", 0, nif_version},

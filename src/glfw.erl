@@ -78,7 +78,7 @@
 -export([poll_events/0]).
 -export([post_empty_event/0]).
 
--nifs([init_hint/2]).
+-nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
 -nifs([version/0]).
@@ -134,12 +134,34 @@
 
 -on_load(init_nif/0).
 
--define(GLFW_PLATFORM_WIN32, 16#00060001).
--define(GLFW_PLATFORM_COCOA, 16#00060002).
--define(GLFW_PLATFORM_WAYLAND, 16#00060003).
--define(GLFW_PLATFORM_X11, 16#00060004).
--define(GLFW_PLATFORM_NULL, 16#00060005).
+-define(GLFW_JOYSTICK_HAT_BUTTONS,   16#00050001).
+-define(GLFW_ANGLE_PLATFORM_TYPE,    16#00050002).
+-define(GLFW_PLATFORM,               16#00050003).
+-define(GLFW_COCOA_CHDIR_RESOURCES,  16#00051001).
+-define(GLFW_COCOA_MENUBAR,          16#00051002).
+-define(GLFW_X11_XCB_VULKAN_SURFACE, 16#00052001).
+-define(GLFW_WAYLAND_LIBDECOR,       16#00053001).
 
+-define(GLFW_ANGLE_PLATFORM_TYPE_NONE,     16#00037001).
+-define(GLFW_ANGLE_PLATFORM_TYPE_OPENGL,   16#00037002).
+-define(GLFW_ANGLE_PLATFORM_TYPE_OPENGLES, 16#00037003).
+-define(GLFW_ANGLE_PLATFORM_TYPE_D3D9,     16#00037004).
+-define(GLFW_ANGLE_PLATFORM_TYPE_D3D11,    16#00037005).
+-define(GLFW_ANGLE_PLATFORM_TYPE_VULKAN,   16#00037007).
+-define(GLFW_ANGLE_PLATFORM_TYPE_METAL,    16#00037008).
+
+-define(GLFW_WAYLAND_PREFER_LIBDECOR,  16#00038001).
+-define(GLFW_WAYLAND_DISABLE_LIBDECOR, 16#00038002).
+
+-define(GLFW_ANY_PLATFORM,     16#00060000).
+-define(GLFW_PLATFORM_WIN32,   16#00060001).
+-define(GLFW_PLATFORM_COCOA,   16#00060002).
+-define(GLFW_PLATFORM_WAYLAND, 16#00060003).
+-define(GLFW_PLATFORM_X11,     16#00060004).
+-define(GLFW_PLATFORM_NULL,    16#00060005).
+
+-define(GLFW_FALSE, 0).
+-define(GLFW_TRUE, 1).
 -define(GLFW_DONT_CARE, -1).
 
 -type platform() :: win32 | cocoa | wayland | x11 | null.
@@ -216,7 +238,79 @@ init_nif() ->
     ok = erlang:load_nif("./priv/glfw", 0).
 
 -spec init_hint(init_hint_type(), init_hint_value()) -> ok.
-init_hint(_Hint, _Value) ->
+init_hint(Hint, Value) ->
+    {HintRaw, ValueRaw} = case Hint of
+        platform ->
+            ValueRaw_ = case
+                Value of
+                    any ->
+                        ?GLFW_ANY_PLATFORM;
+                    win32 ->
+                        ?GLFW_PLATFORM_WIN32;
+                    cocoa ->
+                        ?GLFW_PLATFORM_COCOA;
+                    wayland ->
+                        ?GLFW_PLATFORM_WAYLAND;
+                    x11 ->
+                        ?GLFW_PLATFORM_X11;
+                    null ->
+                        ?GLFW_PLATFORM_NULL
+            end,
+            {?GLFW_PLATFORM, ValueRaw_};
+        joystick_hat_buttons ->
+            ValueRaw_ = case Value of
+                true ->
+                    ?GLFW_TRUE;
+                false ->
+                    ?GLFW_FALSE
+            end,
+            {?GLFW_JOYSTICK_HAT_BUTTONS, ValueRaw_};
+        angle_platform_type ->
+            ValueRaw_ = case Value of
+                angle_platform_type_none ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_NONE;
+                angle_platform_type_opengl ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_OPENGL;
+                angle_platform_type_opengles ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_OPENGLES;
+                angle_platform_type_d3d9 ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_D3D9;
+                angle_platform_type_d3d11 ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_D3D11;
+                angle_platform_type_vulkan ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_VULKAN;
+                angle_platform_type_metal ->
+                    ?GLFW_ANGLE_PLATFORM_TYPE_METAL
+            end,
+            {?GLFW_ANGLE_PLATFORM_TYPE, ValueRaw_};
+        cocoa_chdir_resources ->
+            ValueRaw_ = case Value of
+                true ->
+                    ?GLFW_TRUE;
+                false ->
+                    ?GLFW_FALSE
+            end,
+            {?GLFW_COCOA_CHDIR_RESOURCES, ValueRaw_};
+        cocoa_menubar ->
+            ValueRaw_ = case Value of
+                true ->
+                    ?GLFW_TRUE;
+                false ->
+                    ?GLFW_FALSE
+            end,
+            {?GLFW_COCOA_MENUBAR, ValueRaw_};
+        wayland_libdecor ->
+            ValueRaw_ = case Value of
+                wayland_prefer_libdecor ->
+                    ?GLFW_WAYLAND_PREFER_LIBDECOR;
+                wayland_disable_libdecor ->
+                    ?GLFW_WAYLAND_DISABLE_LIBDECOR
+            end,
+            {?GLFW_WAYLAND_LIBDECOR, ValueRaw_}
+    end,
+    init_hint_raw(HintRaw, ValueRaw).
+
+init_hint_raw(_Hint, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -spec init() -> boolean().

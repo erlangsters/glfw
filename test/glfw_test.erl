@@ -26,7 +26,40 @@ glfw_test() ->
     false = glfw:platform_supported(null),
 
     error = glfw:platform(),
+
+    ok = test_init_hint(),
+
     glfw:init(),
     {ok, x11} = glfw:platform(),
+
+    ok.
+
+test_init_hint() ->
+    ok = glfw:init_hint(platform, any),
+    ok = glfw:init_hint(platform, win32),
+    ok = glfw:init_hint(platform, cocoa),
+    ok = glfw:init_hint(platform, wayland),
+    ok = glfw:init_hint(platform, x11),
+    ok = glfw:init_hint(platform, null),
+
+    ok = glfw:init_hint(joystick_hat_buttons, false),
+    ok = glfw:init_hint(joystick_hat_buttons, true),
+
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_none),
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_opengl),
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_opengles),
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_d3d9),
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_d3d11),
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_vulkan),
+    ok = glfw:init_hint(angle_platform_type, angle_platform_type_metal),
+
+    ok = glfw:init_hint(cocoa_chdir_resources, false),
+    ok = glfw:init_hint(cocoa_chdir_resources, true),
+
+    ok = glfw:init_hint(cocoa_menubar, false),
+    ok = glfw:init_hint(cocoa_menubar, true),
+
+    ok = glfw:init_hint(wayland_libdecor, wayland_prefer_libdecor),
+    ok = glfw:init_hint(wayland_libdecor, wayland_disable_libdecor),
 
     ok.
