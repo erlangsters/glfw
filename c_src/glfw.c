@@ -670,6 +670,43 @@ static ERL_NIF_TERM nif_set_window_should_close(ErlNifEnv* env, int argc, const 
     return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM glfw_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* title = glfwGetWindowTitle(*window);
+    return enif_make_string(env, title, ERL_NIF_LATIN1);
+}
+
+static ERL_NIF_TERM nif_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_title, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    char title[256];
+    if (!enif_get_string(env, argv[1], title, sizeof(title), ERL_NIF_LATIN1)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowTitle(*window, title);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_title, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -700,7 +737,9 @@ static ErlNifFunc nif_functions[] = {
     {"create_window", 3, nif_create_window},
     {"destroy_window", 1, nif_destroy_window},
     {"window_should_close", 1, nif_window_should_close},
-    {"set_window_should_close", 2, nif_set_window_should_close}
+    {"set_window_should_close", 2, nif_set_window_should_close},
+    {"window_title", 1, nif_window_title},
+    {"set_window_title", 2, nif_set_window_title}
 };
 
 ERL_NIF_INIT(

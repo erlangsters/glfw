@@ -22,6 +22,9 @@ glfw_window_test() ->
     true = glfw:window_should_close(Window),
     ok = glfw:set_window_should_close(Window, false),
 
+    "Hello, World!" = glfw:window_title(Window),
+    ok = glfw:set_window_title(Window, "Goodbye, World!"),
+    "Goodbye, World!" = glfw:window_title(Window),
 
     timer:sleep(100),
 

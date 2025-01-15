@@ -51,6 +51,8 @@
 -export([destroy_window/1]).
 -export([window_should_close/1]).
 -export([set_window_should_close/2]).
+-export([window_title/1]).
+-export([set_window_title/2]).
 
 -nifs([init_hint/2]).
 -nifs([init/0]).
@@ -82,6 +84,8 @@
 -nifs([destroy_window/1]).
 -nifs([window_should_close/1]).
 -nifs([set_window_should_close/2]).
+-nifs([window_title/1]).
+-nifs([set_window_title/2]).
 
 -on_load(init_nif/0).
 
@@ -263,4 +267,12 @@ window_should_close(_Window) ->
 
 -spec set_window_should_close(window(), boolean()) -> ok.
 set_window_should_close(_Window, _Value) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_title(window()) -> string().
+window_title(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_title(window(), string()) -> ok.
+set_window_title(_Window, _Title) ->
     erlang:nif_error(nif_library_not_loaded).
