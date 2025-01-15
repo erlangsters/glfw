@@ -59,6 +59,12 @@ glfw_window_test() ->
     {XScale, YScale} = glfw:window_content_scale(Window),
     io:format(user, "window content scale (x: ~p, y: ~p)~n", [XScale, YScale]),
 
+    Opacity = glfw:window_opacity(Window),
+    io:format(user, "window opacity: ~p~n", [Opacity]),
+
+    ok = glfw:set_window_opacity(Window, 0.5),
+    % XXX: Check if the opacity was actually updated.
+
     ok = glfw:destroy_window(Window),
 
     ok.

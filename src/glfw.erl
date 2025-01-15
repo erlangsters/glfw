@@ -65,7 +65,8 @@
 -export([set_window_aspect_ratio/2]).
 -export([window_frame_size/1]).
 -export([window_content_scale/1]).
-
+-export([window_opacity/1]).
+-export([set_window_opacity/2]).
 
 -nifs([init_hint/2]).
 -nifs([init/0]).
@@ -108,6 +109,8 @@
 -nifs([set_window_aspect_ratio_raw/3]).
 -nifs([window_frame_size/1]).
 -nifs([window_content_scale/1]).
+-nifs([window_opacity/1]).
+-nifs([set_window_opacity/2]).
 
 -on_load(init_nif/0).
 
@@ -354,6 +357,14 @@ window_frame_size(_Window) ->
 
 -spec window_content_scale(window()) -> {X :: float(), Y :: float()}.
 window_content_scale(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_opacity(window()) -> float().
+window_opacity(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_opacity(window(), float()) -> ok.
+set_window_opacity(_Window, _Opacity) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

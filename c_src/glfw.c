@@ -901,6 +901,43 @@ static ERL_NIF_TERM nif_window_content_scale(ErlNifEnv* env, int argc, const ERL
     return execute_command(glfw_window_content_scale, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    float opacity = glfwGetWindowOpacity(*window);
+    return enif_make_double(env, opacity);
+}
+
+static ERL_NIF_TERM nif_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_opacity, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    double opacity;
+    if (!enif_get_double(env, argv[1], &opacity)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowOpacity(*window, opacity);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_opacity, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -942,7 +979,9 @@ static ErlNifFunc nif_functions[] = {
     {"set_window_size_limits_raw", 5, nif_set_window_size_limits},
     {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio},
     {"window_frame_size", 1, nif_window_frame_size},
-    {"window_content_scale", 1, nif_window_content_scale}
+    {"window_content_scale", 1, nif_window_content_scale},
+    {"window_opacity", 1, nif_window_opacity},
+    {"set_window_opacity", 2, nif_set_window_opacity}
 };
 
 ERL_NIF_INIT(
