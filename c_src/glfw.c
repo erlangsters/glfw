@@ -855,6 +855,52 @@ static ERL_NIF_TERM nif_set_window_aspect_ratio(ErlNifEnv* env, int argc, const 
     return execute_command(glfw_set_window_aspect_ratio, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_window_frame_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int left, top, right, bottom;
+    glfwGetWindowFrameSize(*window, &left, &top, &right, &bottom);
+
+    return enif_make_tuple4(
+        env,
+        enif_make_int(env, left),
+        enif_make_int(env, top),
+        enif_make_int(env, right),
+        enif_make_int(env, bottom)
+    );
+}
+
+static ERL_NIF_TERM nif_window_frame_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_frame_size, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_window_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    float x_scale, y_scale;
+    glfwGetWindowContentScale(*window, &x_scale, &y_scale);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_double(env, x_scale),
+        enif_make_double(env, y_scale)
+    );
+}
+
+static ERL_NIF_TERM nif_window_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_content_scale, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -894,7 +940,9 @@ static ErlNifFunc nif_functions[] = {
     {"window_size", 1, nif_window_size},
     {"set_window_size", 2, nif_set_window_size},
     {"set_window_size_limits_raw", 5, nif_set_window_size_limits},
-    {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio}
+    {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio},
+    {"window_frame_size", 1, nif_window_frame_size},
+    {"window_content_scale", 1, nif_window_content_scale}
 };
 
 ERL_NIF_INIT(

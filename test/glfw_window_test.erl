@@ -53,6 +53,12 @@ glfw_window_test() ->
     ok = glfw:set_window_aspect_ratio(Window, {16, dont_care}),
     ok = glfw:set_window_aspect_ratio(Window, {dont_care, dont_care}),
 
+    {Left, Top, Right, Bottom} = glfw:window_frame_size(Window),
+    io:format(user, "window frame size (left: ~p, top: ~p, right: ~p, bottom: ~p)~n", [Left, Top, Right, Bottom]),
+
+    {XScale, YScale} = glfw:window_content_scale(Window),
+    io:format(user, "window content scale (x: ~p, y: ~p)~n", [XScale, YScale]),
+
     ok = glfw:destroy_window(Window),
 
     ok.

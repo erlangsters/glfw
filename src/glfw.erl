@@ -63,6 +63,9 @@
 -export([set_window_size/2]).
 -export([set_window_size_limits/3]).
 -export([set_window_aspect_ratio/2]).
+-export([window_frame_size/1]).
+-export([window_content_scale/1]).
+
 
 -nifs([init_hint/2]).
 -nifs([init/0]).
@@ -103,6 +106,8 @@
 -nifs([set_window_size/2]).
 -nifs([set_window_size_limits_raw/5]).
 -nifs([set_window_aspect_ratio_raw/3]).
+-nifs([window_frame_size/1]).
+-nifs([window_content_scale/1]).
 
 -on_load(init_nif/0).
 
@@ -340,6 +345,15 @@ set_window_aspect_ratio(Window, Ratio) ->
     set_window_aspect_ratio_raw(Window, Numerator, Denominator).
 
 set_window_aspect_ratio_raw(_Window, _Numerator, _Denominator) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_frame_size(window()) ->
+    {Left :: integer(), Top :: integer(), Right :: integer(), Bottom :: integer()}.
+window_frame_size(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_content_scale(window()) -> {X :: float(), Y :: float()}.
+window_content_scale(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->
