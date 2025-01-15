@@ -56,6 +56,8 @@
 -export([set_window_icon/2]).
 -export([window_position/1]).
 -export([set_window_position/2]).
+-export([window_size/1]).
+-export([set_window_size/2]).
 
 -nifs([init_hint/2]).
 -nifs([init/0]).
@@ -92,6 +94,8 @@
 -nifs([set_window_icon/2]).
 -nifs([window_position/1]).
 -nifs([set_window_position/2]).
+-nifs([window_size/1]).
+-nifs([set_window_size/2]).
 
 -on_load(init_nif/0).
 
@@ -293,4 +297,12 @@ window_position(_Window) ->
 
 -spec set_window_position(window(), {X :: integer(), Y :: integer()}) -> ok.
 set_window_position(_Window, _Position) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_size(window()) -> {Width :: integer(), Height :: integer()}.
+window_size(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_size(window(), {Width :: integer(), Height :: integer()}) -> ok.
+set_window_size(_Window, _Size) ->
     erlang:nif_error(nif_library_not_loaded).

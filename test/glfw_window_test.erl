@@ -31,8 +31,12 @@ glfw_window_test() ->
     {X, Y} = glfw:window_position(Window),
     io:format(user, "window position (x: ~p, y: ~p)~n", [X, Y]),
     ok = glfw:set_window_position(Window, {100, 100}),
-
     % XXX: Check if the position was actually updated.
+
+    {Width, Height} = glfw:window_size(Window),
+    io:format(user, "window size (width: ~p, height: ~p)~n", [Width, Height]),
+    ok = glfw:set_window_size(Window, {1024, 768}),
+    % XXX: Check if the size was actually updated.
 
     timer:sleep(100),
 
