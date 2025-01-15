@@ -187,12 +187,28 @@ static ERL_NIF_TERM nif_set_error_handler(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM nif_platform(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    int platform = glfwGetPlatform();
+    return enif_make_int(env, platform);
 }
 
 static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    int platform;
+    if (!enif_get_int(env, argv[0], &platform)) {
+        return enif_make_badarg(env);
+    }
+
+    int supported = glfwPlatformSupported(platform);
+    if (supported == GLFW_TRUE) {
+        return enif_make_atom(env, "true");
+    }
+    else {
+        return enif_make_atom(env, "false");
+    }
 }
 
 static ERL_NIF_TERM glfw_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1082,8 +1098,8 @@ static ErlNifFunc nif_functions[] = {
     {"last_error", 0, nif_last_error},
     {"error_handler", 0, nif_error_handler},
     {"set_error_handler", 1, nif_set_error_handler},
-    {"platform", 0, nif_platform},
-    {"platform_supported", 1, nif_platform_supported},
+    {"platform_raw", 0, nif_platform},
+    {"platform_supported_raw", 1, nif_platform_supported},
 
     {"monitors", 0, nif_monitors},
     {"primary_monitor", 0, nif_primary_monitor},

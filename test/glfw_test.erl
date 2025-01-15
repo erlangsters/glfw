@@ -19,4 +19,14 @@ glfw_test() ->
     Version = glfw:version_string(),
     ?assert(erlang:is_list(Version)),
 
+    false = glfw:platform_supported(win32),
+    false = glfw:platform_supported(cocoa),
+    false = glfw:platform_supported(wayland),
+    true = glfw:platform_supported(x11),
+    false = glfw:platform_supported(null),
+
+    error = glfw:platform(),
+    glfw:init(),
+    {ok, x11} = glfw:platform(),
+
     ok.

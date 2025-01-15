@@ -86,8 +86,8 @@
 -nifs([last_error/0]).
 -nifs([error_handler/0]).
 -nifs([set_error_handler/1]).
--nifs([platform/0]).
--nifs([platform_supported/1]).
+-nifs([platform_raw/0]).
+-nifs([platform_supported_raw/1]).
 
 -nifs([monitors/0]).
 -nifs([primary_monitor/0]).
@@ -133,6 +133,12 @@
 -nifs([post_empty_event/0]).
 
 -on_load(init_nif/0).
+
+-define(GLFW_PLATFORM_WIN32, 16#00060001).
+-define(GLFW_PLATFORM_COCOA, 16#00060002).
+-define(GLFW_PLATFORM_WAYLAND, 16#00060003).
+-define(GLFW_PLATFORM_X11, 16#00060004).
+-define(GLFW_PLATFORM_NULL, 16#00060005).
 
 -define(GLFW_DONT_CARE, -1).
 
@@ -242,12 +248,44 @@ error_handler() ->
 set_error_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
--spec platform() -> platform().
+-spec platform() -> {ok, platform()} | error.
 platform() ->
+    Value = platform_raw(),
+    case Value of
+        0 ->
+            error;
+        ?GLFW_PLATFORM_WIN32 ->
+            {ok, win32};
+        ?GLFW_PLATFORM_COCOA ->
+            {ok, cocoa};
+        ?GLFW_PLATFORM_WAYLAND ->
+            {ok, wayland};
+        ?GLFW_PLATFORM_X11 ->
+            {ok, x11};
+        ?GLFW_PLATFORM_NULL ->
+            {ok, null}
+    end.
+
+platform_raw() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -spec platform_supported(platform()) -> boolean().
-platform_supported(_Platform) ->
+platform_supported(Platform) ->
+    Value = case Platform of
+        win32 ->
+            ?GLFW_PLATFORM_WIN32;
+        cocoa ->
+            ?GLFW_PLATFORM_COCOA;
+        wayland ->
+            ?GLFW_PLATFORM_WAYLAND;
+        x11 ->
+            ?GLFW_PLATFORM_X11;
+        null ->
+            ?GLFW_PLATFORM_NULL
+    end,
+    platform_supported_raw(Value).
+
+platform_supported_raw(_Platform) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -spec monitors() -> [monitor()].
