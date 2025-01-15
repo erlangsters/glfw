@@ -26,6 +26,8 @@ glfw_window_test() ->
     ok = glfw:set_window_title(Window, "Goodbye, World!"),
     "Goodbye, World!" = glfw:window_title(Window),
 
+    ok = glfw:set_window_icon(Window, "icon.png"),
+
     timer:sleep(100),
 
     ok = glfw:destroy_window(Window),

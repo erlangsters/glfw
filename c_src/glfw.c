@@ -707,6 +707,11 @@ static ERL_NIF_TERM nif_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_set_window_title, env, argc, argv);
 }
 
+static ERL_NIF_TERM nif_set_window_icon(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, 42);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -739,7 +744,8 @@ static ErlNifFunc nif_functions[] = {
     {"window_should_close", 1, nif_window_should_close},
     {"set_window_should_close", 2, nif_set_window_should_close},
     {"window_title", 1, nif_window_title},
-    {"set_window_title", 2, nif_set_window_title}
+    {"set_window_title", 2, nif_set_window_title},
+    {"set_window_icon", 2, nif_set_window_icon}
 };
 
 ERL_NIF_INIT(
