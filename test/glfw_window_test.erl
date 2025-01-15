@@ -28,6 +28,12 @@ glfw_window_test() ->
 
     ok = glfw:set_window_icon(Window, "icon.png"),
 
+    {X, Y} = glfw:window_position(Window),
+    io:format(user, "window position (x: ~p, y: ~p)~n", [X, Y]),
+    ok = glfw:set_window_position(Window, {100, 100}),
+
+    % XXX: Check if the position was actually updated.
+
     timer:sleep(100),
 
     ok = glfw:destroy_window(Window),

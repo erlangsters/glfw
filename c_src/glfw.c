@@ -712,6 +712,55 @@ static ERL_NIF_TERM nif_set_window_icon(ErlNifEnv* env, int argc, const ERL_NIF_
     return enif_make_int(env, 42);
 }
 
+static ERL_NIF_TERM glfw_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int x, y;
+    glfwGetWindowPos(*window, &x, &y);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_int(env, x),
+        enif_make_int(env, y)
+    );
+}
+
+static ERL_NIF_TERM nif_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_position, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    const ERL_NIF_TERM* xy;
+    int arity;
+    if (!enif_get_tuple(env, argv[1], &arity, &xy) || arity != 2) {
+        return enif_make_badarg(env);
+    }
+
+    int x, y;
+    if (!enif_get_int(env, xy[0], &x) || !enif_get_int(env, xy[1], &y)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowPos(*window, x, y);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_position, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -745,7 +794,9 @@ static ErlNifFunc nif_functions[] = {
     {"set_window_should_close", 2, nif_set_window_should_close},
     {"window_title", 1, nif_window_title},
     {"set_window_title", 2, nif_set_window_title},
-    {"set_window_icon", 2, nif_set_window_icon}
+    {"set_window_icon", 2, nif_set_window_icon},
+    {"window_position", 1, nif_window_position},
+    {"set_window_position", 2, nif_set_window_position}
 };
 
 ERL_NIF_INIT(
