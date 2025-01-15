@@ -67,6 +67,13 @@
 -export([window_content_scale/1]).
 -export([window_opacity/1]).
 -export([set_window_opacity/2]).
+-export([iconify_window/1]).
+-export([restore_window/1]).
+-export([maximize_window/1]).
+-export([show_window/1]).
+-export([hide_window/1]).
+-export([focus_window/1]).
+-export([request_window_attention/1]).
 
 -nifs([init_hint/2]).
 -nifs([init/0]).
@@ -111,6 +118,13 @@
 -nifs([window_content_scale/1]).
 -nifs([window_opacity/1]).
 -nifs([set_window_opacity/2]).
+-nifs([iconify_window/1]).
+-nifs([restore_window/1]).
+-nifs([maximize_window/1]).
+-nifs([show_window/1]).
+-nifs([hide_window/1]).
+-nifs([focus_window/1]).
+-nifs([request_window_attention/1]).
 
 -on_load(init_nif/0).
 
@@ -365,6 +379,34 @@ window_opacity(_Window) ->
 
 -spec set_window_opacity(window(), float()) -> ok.
 set_window_opacity(_Window, _Opacity) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec iconify_window(window()) -> ok.
+iconify_window(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec restore_window(window()) -> ok.
+restore_window(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec maximize_window(window()) -> ok.
+maximize_window(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec show_window(window()) -> ok.
+show_window(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec hide_window(window()) -> ok.
+hide_window(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec focus_window(window()) -> ok.
+focus_window(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec request_window_attention(window()) -> ok.
+request_window_attention(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

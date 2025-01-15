@@ -938,6 +938,118 @@ static ERL_NIF_TERM nif_set_window_opacity(ErlNifEnv* env, int argc, const ERL_N
     return execute_command(glfw_set_window_opacity, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_iconify_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwIconifyWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_iconify_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_iconify_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_restore_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwRestoreWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_restore_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_restore_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_maximize_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwMaximizeWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_maximize_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_maximize_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_show_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwShowWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_show_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_show_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_hide_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwHideWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_hide_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_hide_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_focus_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwFocusWindow(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_focus_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_focus_window, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_request_window_attention(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwRequestWindowAttention(*window);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_request_window_attention(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_request_window_attention, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -981,7 +1093,14 @@ static ErlNifFunc nif_functions[] = {
     {"window_frame_size", 1, nif_window_frame_size},
     {"window_content_scale", 1, nif_window_content_scale},
     {"window_opacity", 1, nif_window_opacity},
-    {"set_window_opacity", 2, nif_set_window_opacity}
+    {"set_window_opacity", 2, nif_set_window_opacity},
+    {"iconify_window", 1, nif_iconify_window},
+    {"restore_window", 1, nif_restore_window},
+    {"maximize_window", 1, nif_maximize_window},
+    {"show_window", 1, nif_show_window},
+    {"hide_window", 1, nif_hide_window},
+    {"focus_window", 1, nif_focus_window},
+    {"request_window_attention", 1, nif_request_window_attention}
 };
 
 ERL_NIF_INIT(

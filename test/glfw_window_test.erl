@@ -65,6 +65,14 @@ glfw_window_test() ->
     ok = glfw:set_window_opacity(Window, 0.5),
     % XXX: Check if the opacity was actually updated.
 
+    ok = glfw:iconify_window(Window),
+    ok = glfw:restore_window(Window),
+    ok = glfw:maximize_window(Window),
+    ok = glfw:show_window(Window),
+    ok = glfw:hide_window(Window),
+    ok = glfw:focus_window(Window),
+    ok = glfw:request_window_attention(Window),
+
     ok = glfw:destroy_window(Window),
 
     ok.
