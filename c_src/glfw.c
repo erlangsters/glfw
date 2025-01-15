@@ -1050,6 +1050,29 @@ static ERL_NIF_TERM nif_request_window_attention(ErlNifEnv* env, int argc, const
     return execute_command(glfw_request_window_attention, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_poll_events(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    glfwPollEvents();
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_poll_events(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_poll_events, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    glfwPostEmptyEvent();
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_post_empty_event, env, argc, argv);
+}
+
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -1100,7 +1123,10 @@ static ErlNifFunc nif_functions[] = {
     {"show_window", 1, nif_show_window},
     {"hide_window", 1, nif_hide_window},
     {"focus_window", 1, nif_focus_window},
-    {"request_window_attention", 1, nif_request_window_attention}
+    {"request_window_attention", 1, nif_request_window_attention},
+
+    {"poll_events", 0, nif_poll_events},
+    {"post_empty_event", 0, nif_post_empty_event}
 };
 
 ERL_NIF_INIT(

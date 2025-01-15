@@ -75,6 +75,9 @@
 -export([focus_window/1]).
 -export([request_window_attention/1]).
 
+-export([poll_events/0]).
+-export([post_empty_event/0]).
+
 -nifs([init_hint/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -125,6 +128,9 @@
 -nifs([hide_window/1]).
 -nifs([focus_window/1]).
 -nifs([request_window_attention/1]).
+
+-nifs([poll_events/0]).
+-nifs([post_empty_event/0]).
 
 -on_load(init_nif/0).
 
@@ -407,6 +413,14 @@ focus_window(_Window) ->
 
 -spec request_window_attention(window()) -> ok.
 request_window_attention(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec poll_events() -> ok.
+poll_events() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec post_empty_event() -> ok.
+post_empty_event() ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

@@ -73,6 +73,9 @@ glfw_window_test() ->
     ok = glfw:focus_window(Window),
     ok = glfw:request_window_attention(Window),
 
+    ok = glfw:poll_events(),
+    ok = glfw:post_empty_event(),
+
     ok = glfw:destroy_window(Window),
 
     ok.
