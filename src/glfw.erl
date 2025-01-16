@@ -18,11 +18,14 @@
 
 -export_type([monitor/0]).
 -export_type([window/0]).
+-export_type([cursor/0]).
 
 -export_type([monitor_event/0]).
 
 -export_type([size_limits/0]).
 -export_type([aspect_ratio/0]).
+
+-export_type([cursor_shape/0]).
 
 -export([init_hint/2]).
 -export([init/0]).
@@ -78,6 +81,11 @@
 -export([poll_events/0]).
 -export([post_empty_event/0]).
 
+-export([create_cursor/2]).
+-export([create_standard_cursor/1]).
+-export([destroy_cursor/1]).
+-export([set_cursor/2]).
+
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -132,6 +140,11 @@
 -nifs([poll_events/0]).
 -nifs([post_empty_event/0]).
 
+-nifs([create_cursor_raw/5]).
+-nifs([create_standard_cursor_raw/1]).
+-nifs([destroy_cursor/1]).
+-nifs([set_cursor/2]).
+
 -on_load(init_nif/0).
 
 -define(GLFW_JOYSTICK_HAT_BUTTONS,   16#00050001).
@@ -163,6 +176,17 @@
 -define(GLFW_FALSE, 0).
 -define(GLFW_TRUE, 1).
 -define(GLFW_DONT_CARE, -1).
+
+-define(GLFW_ARROW_CURSOR,         16#00036001).
+-define(GLFW_IBEAM_CURSOR,         16#00036002).
+-define(GLFW_CROSSHAIR_CURSOR,     16#00036003).
+-define(GLFW_POINTING_HAND_CURSOR, 16#00036004).
+-define(GLFW_RESIZE_EW_CURSOR,     16#00036005).
+-define(GLFW_RESIZE_NS_CURSOR,     16#00036006).
+-define(GLFW_RESIZE_NWSE_CURSOR,   16#00036007).
+-define(GLFW_RESIZE_NESW_CURSOR,   16#00036008).
+-define(GLFW_RESIZE_ALL_CURSOR,    16#00036009).
+-define(GLFW_NOT_ALLOWED_CURSOR,   16#0003600A).
 
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
@@ -220,6 +244,7 @@
 
 -type monitor() :: reference().
 -type window() :: reference().
+-type cursor() :: reference().
 
 -type monitor_event() :: connected | disconnected.
 
@@ -231,6 +256,19 @@
     Numerator :: integer() | dont_care,
     Denominator :: integer() | dont_care
 } | dont_care.
+
+-type cursor_shape() ::
+    arrow |
+    ibeam |
+    crosshair |
+    pointing_hand |
+    resize_ew |
+    resize_ns |
+    resize_nwse |
+    resize_nesw |
+    resize_all |
+    not_allowed
+.
 
 -include("glfw.hrl").
 
@@ -553,6 +591,58 @@ poll_events() ->
 
 -spec post_empty_event() -> ok.
 post_empty_event() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec create_cursor(#glfw_image{}, {integer(), integer()}) ->
+    {ok, cursor()} | error.
+create_cursor(Image, Hotspot) ->
+    #glfw_image{
+        width = Width,
+        height = Height,
+        pixels = Pixels
+    } = Image,
+    {X, Y} = Hotspot,
+    create_cursor_raw(Width, Height, Pixels, X, Y).
+
+create_cursor_raw(_Width, _Height, _Pixels, _HotspotX, _HotspotY) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec create_standard_cursor(cursor_shape()) -> {ok, cursor()} | error.
+create_standard_cursor(Shape) ->
+    ShapeRaw = case
+        Shape of
+            arrow ->
+                ?GLFW_ARROW_CURSOR;
+            ibeam ->
+                ?GLFW_IBEAM_CURSOR;
+            crosshair ->
+                ?GLFW_CROSSHAIR_CURSOR;
+            pointing_hand ->
+                ?GLFW_POINTING_HAND_CURSOR;
+            resize_ew ->
+                ?GLFW_RESIZE_EW_CURSOR;
+            resize_ns ->
+                ?GLFW_RESIZE_NS_CURSOR;
+            resize_nwse ->
+                ?GLFW_RESIZE_NWSE_CURSOR;
+            resize_nesw ->
+                ?GLFW_RESIZE_NESW_CURSOR;
+            resize_all ->
+                ?GLFW_RESIZE_ALL_CURSOR;
+            not_allowed ->
+                ?GLFW_NOT_ALLOWED_CURSOR
+    end,
+    create_standard_cursor_raw(ShapeRaw).
+
+create_standard_cursor_raw(_Shape) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec destroy_cursor(cursor()) -> ok.
+destroy_cursor(_Cursor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_cursor(window(), default | cursor()) -> ok.
+set_cursor(_Window, _Cursor) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

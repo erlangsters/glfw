@@ -27,7 +27,7 @@ static int command_finished = 0;
 
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
 static ErlNifResourceType* glfw_window_resource_type = NULL;
-
+static ErlNifResourceType* glfw_cursor_resource_type = NULL;
 
 // The function of the thread that executes "NIF commands". It just waits for a
 // command to be ready, executes it and signals that the command is done (while
@@ -89,6 +89,9 @@ static void glfw_monitor_resource_dtor(ErlNifEnv* env, void* obj) {
 static void glfw_window_resource_dtor(ErlNifEnv* env, void* obj) {
 }
 
+static void glfw_cursor_resource_dtor(ErlNifEnv* env, void* obj) {
+}
+
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
@@ -99,6 +102,11 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     glfw_window_resource_type = enif_open_resource_type(env, NULL, "glfw_window", glfw_window_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_window_resource_type == NULL) {
         fprintf(stderr, "failed to open 'GLFW window' resource type\n");
+        return -1;
+    }
+    glfw_cursor_resource_type = enif_open_resource_type(env, NULL, "glfw_cursor", glfw_cursor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
+    if (glfw_cursor_resource_type == NULL) {
+        fprintf(stderr, "failed to open 'GLFW cursor' resource type\n");
         return -1;
     }
 
@@ -1104,6 +1112,126 @@ static ERL_NIF_TERM nif_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_post_empty_event, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_create_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int width, height, xhot, yhot;
+    ErlNifBinary pix_bin;
+    GLFWimage image;
+
+    if (!enif_get_int(env, argv[0], &width) ||
+        !enif_get_int(env, argv[1], &height) ||
+        !enif_inspect_binary(env, argv[2], &pix_bin) ||
+        !enif_get_int(env, argv[3], &xhot) ||
+        !enif_get_int(env, argv[4], &yhot)) {
+        return enif_make_badarg(env);
+    }
+
+    image.width = width;
+    image.height = height;
+    image.pixels = (unsigned char*) pix_bin.data;
+
+    GLFWcursor* cursor = glfwCreateCursor(&image, xhot, yhot);
+    if (!cursor) {
+        return enif_make_atom(env, "error");
+    }
+
+    void* cursor_resource = enif_alloc_resource(glfw_cursor_resource_type, sizeof(GLFWcursor*));
+    *((GLFWcursor**)cursor_resource) = cursor;
+
+    ERL_NIF_TERM cursor_ref = enif_make_resource(env, cursor_resource);
+    enif_release_resource(cursor_resource);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_atom(env, "ok"),
+        cursor_ref
+    );
+}
+
+static ERL_NIF_TERM nif_create_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_create_cursor, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_create_standard_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int shape;
+    if (!enif_get_int(env, argv[0], &shape)) {
+        return enif_make_badarg(env);
+    }
+
+    GLFWcursor* cursor = glfwCreateStandardCursor(shape);
+    if (!cursor) {
+        return enif_make_atom(env, "error");
+    }
+
+    void* cursor_resource = enif_alloc_resource(glfw_cursor_resource_type, sizeof(GLFWcursor*));
+    *((GLFWcursor**)cursor_resource) = cursor;
+
+    ERL_NIF_TERM cursor_ref = enif_make_resource(env, cursor_resource);
+    enif_release_resource(cursor_resource);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_atom(env, "ok"),
+        cursor_ref
+    );
+}
+
+static ERL_NIF_TERM nif_create_standard_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_create_standard_cursor, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_destroy_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWcursor** cursor;
+    if (!enif_get_resource(env, argv[0], glfw_cursor_resource_type, (void**) &cursor)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwDestroyCursor(*cursor);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_destroy_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_destroy_cursor, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    GLFWcursor* cursor_value = NULL;
+    char atom_buf[32];
+
+    if (enif_is_atom(env, argv[1])) {
+        if (enif_get_atom(env, argv[1], atom_buf, sizeof(atom_buf), ERL_NIF_LATIN1) &&
+            strcmp(atom_buf, "default") == 0) {
+            cursor_value = NULL;
+        } else {
+            return enif_make_badarg(env);
+        }
+    } else {
+        GLFWcursor** cursor;
+        if (!enif_get_resource(env, argv[1], glfw_cursor_resource_type, (void**) &cursor)) {
+            return enif_make_badarg(env);
+        }
+        cursor_value = *cursor;
+    }
+
+    glfwSetCursor(*window, cursor_value);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_cursor, env, argc, argv);
+}
 
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
@@ -1158,7 +1286,12 @@ static ErlNifFunc nif_functions[] = {
     {"request_window_attention", 1, nif_request_window_attention},
 
     {"poll_events", 0, nif_poll_events},
-    {"post_empty_event", 0, nif_post_empty_event}
+    {"post_empty_event", 0, nif_post_empty_event},
+
+    {"create_cursor_raw", 5, nif_create_cursor},
+    {"create_standard_cursor_raw", 1, nif_create_standard_cursor},
+    {"destroy_cursor", 1, nif_destroy_cursor},
+    {"set_cursor", 2, nif_set_cursor}
 };
 
 ERL_NIF_INIT(
