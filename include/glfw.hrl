@@ -22,3 +22,9 @@
     green :: [integer()],
     blue :: [integer()]
 }).
+
+-record(glfw_image, {
+    width :: integer(),
+    height :: integer(),
+    pixels :: binary()
+}).
