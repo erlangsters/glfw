@@ -85,6 +85,23 @@
 -export([focus_window/1]).
 -export([request_window_attention/1]).
 
+-export([window_position_handler/1]).
+-export([set_window_position_handler/2]).
+-export([window_size_handler/1]).
+-export([set_window_size_handler/2]).
+-export([window_close_handler/1]).
+-export([set_window_close_handler/2]).
+-export([window_refresh_handler/1]).
+-export([set_window_refresh_handler/2]).
+-export([window_focus_handler/1]).
+-export([set_window_focus_handler/2]).
+-export([window_iconify_handler/1]).
+-export([set_window_iconify_handler/2]).
+-export([window_maximize_handler/1]).
+-export([set_window_maximize_handler/2]).
+-export([window_content_scale_handler/1]).
+-export([set_window_content_scale_handler/2]).
+
 -export([poll_events/0]).
 -export([post_empty_event/0]).
 
@@ -154,6 +171,23 @@
 -nifs([hide_window/1]).
 -nifs([focus_window/1]).
 -nifs([request_window_attention/1]).
+
+-nifs([window_position_handler/1]).
+-nifs([set_window_position_handler/2]).
+-nifs([window_size_handler/1]).
+-nifs([set_window_size_handler/2]).
+-nifs([window_close_handler/1]).
+-nifs([set_window_close_handler/2]).
+-nifs([window_refresh_handler/1]).
+-nifs([set_window_refresh_handler/2]).
+-nifs([window_focus_handler/1]).
+-nifs([set_window_focus_handler/2]).
+-nifs([window_iconify_handler/1]).
+-nifs([set_window_iconify_handler/2]).
+-nifs([window_maximize_handler/1]).
+-nifs([set_window_maximize_handler/2]).
+-nifs([window_content_scale_handler/1]).
+-nifs([set_window_content_scale_handler/2]).
 
 -nifs([poll_events/0]).
 -nifs([post_empty_event/0]).
@@ -860,6 +894,70 @@ focus_window(_Window) ->
 
 -spec request_window_attention(window()) -> ok.
 request_window_attention(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_position_handler(window()) -> undefined | pid().
+window_position_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_position_handler(window(), undefined | pid()) -> ok.
+set_window_position_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_size_handler(window()) -> undefined | pid().
+window_size_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_size_handler(window(), undefined | pid()) -> ok.
+set_window_size_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_close_handler(window()) -> undefined | pid().
+window_close_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_close_handler(window(), undefined | pid()) -> ok.
+set_window_close_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_refresh_handler(window()) -> undefined | pid().
+window_refresh_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_refresh_handler(window(), undefined | pid()) -> ok.
+set_window_refresh_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_focus_handler(window()) -> undefined | pid().
+window_focus_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_focus_handler(window(), undefined | pid()) -> ok.
+set_window_focus_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_iconify_handler(window()) -> undefined | pid().
+window_iconify_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_iconify_handler(window(), undefined | pid()) -> ok.
+set_window_iconify_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_maximize_handler(window()) -> undefined | pid().
+window_maximize_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_maximize_handler(window(), undefined | pid()) -> ok.
+set_window_maximize_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec window_content_scale_handler(window()) -> undefined | pid().
+window_content_scale_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_window_content_scale_handler(window(), undefined | pid()) -> ok.
+set_window_content_scale_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -spec poll_events() -> ok.

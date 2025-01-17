@@ -73,6 +73,39 @@ glfw_window_test() ->
     ok = glfw:focus_window(Window),
     ok = glfw:request_window_attention(Window),
 
+    Self = self(),
+    undefined = glfw:window_position_handler(Window),
+    ok = glfw:set_window_position_handler(Window, Self),
+    Self = glfw:window_position_handler(Window),
+
+    undefined = glfw:window_size_handler(Window),
+    ok = glfw:set_window_size_handler(Window, Self),
+    Self = glfw:window_size_handler(Window),
+
+    undefined = glfw:window_close_handler(Window),
+    ok = glfw:set_window_close_handler(Window, Self),
+    Self = glfw:window_close_handler(Window),
+
+    undefined = glfw:window_refresh_handler(Window),
+    ok = glfw:set_window_refresh_handler(Window, Self),
+    Self = glfw:window_refresh_handler(Window),
+
+    undefined = glfw:window_focus_handler(Window),
+    ok = glfw:set_window_focus_handler(Window, Self),
+    Self = glfw:window_focus_handler(Window),
+
+    undefined = glfw:window_iconify_handler(Window),
+    ok = glfw:set_window_iconify_handler(Window, Self),
+    Self = glfw:window_iconify_handler(Window),
+
+    undefined = glfw:window_maximize_handler(Window),
+    ok = glfw:set_window_maximize_handler(Window, Self),
+    Self = glfw:window_maximize_handler(Window),
+
+    undefined = glfw:window_content_scale_handler(Window),
+    ok = glfw:set_window_content_scale_handler(Window, Self),
+    Self = glfw:window_content_scale_handler(Window),
+
     ok = glfw:poll_events(),
     ok = glfw:post_empty_event(),
 

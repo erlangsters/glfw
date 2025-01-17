@@ -28,3 +28,41 @@
     height :: integer(),
     pixels :: binary()
 }).
+
+-record(glfw_window_position, {
+    window :: glfw:window(),
+    position :: {X :: integer(), Y :: integer()}
+}).
+
+-record(glfw_window_size, {
+    window :: glfw:window(),
+    size :: {Width :: integer(), Height :: integer()}
+}).
+
+-record(glfw_window_close, {
+    window :: glfw:window()
+}).
+
+-record(glfw_window_refresh, {
+    window :: glfw:window()
+}).
+
+-record(glfw_window_focus, {
+    window :: glfw:window(),
+    focused :: boolean()
+}).
+
+-record(glfw_window_iconify, {
+    window :: glfw:window(),
+    iconified :: boolean()
+}).
+
+-record(glfw_window_maximize, {
+    window :: glfw:window(),
+    maximized :: boolean()
+}).
+
+-record(glfw_window_content_scale, {
+    window :: glfw:window(),
+    scale :: {X :: float(), Y :: float()}
+}).
