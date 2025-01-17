@@ -1048,3 +1048,18 @@ to_raw_key(Key) ->
         key_right_super -> ?GLFW_KEY_RIGHT_SUPER;
         key_menu -> ?GLFW_KEY_MENU
     end.
+
+to_raw_mouse_button(MouseButton) ->
+    case MouseButton of
+        mouse_button_1 -> ?GLFW_MOUSE_BUTTON_1;
+        mouse_button_2 -> ?GLFW_MOUSE_BUTTON_2;
+        mouse_button_3 -> ?GLFW_MOUSE_BUTTON_3;
+        mouse_button_4 -> ?GLFW_MOUSE_BUTTON_4;
+        mouse_button_5 -> ?GLFW_MOUSE_BUTTON_5;
+        mouse_button_6 -> ?GLFW_MOUSE_BUTTON_6;
+        mouse_button_7 -> ?GLFW_MOUSE_BUTTON_7;
+        mouse_button_8 -> ?GLFW_MOUSE_BUTTON_8;
+        mouse_button_left -> ?GLFW_MOUSE_BUTTON_LEFT;
+        mouse_button_right -> ?GLFW_MOUSE_BUTTON_RIGHT;
+        mouse_button_middle -> ?GLFW_MOUSE_BUTTON_MIDDLE
+    end.
