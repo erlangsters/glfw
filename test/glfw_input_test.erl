@@ -26,8 +26,10 @@ glfw_input_test() ->
 
     {CurX, CurY} = glfw:cursor_position(Window),
     io:format(user, "cursor position: ~p~n", [{CurX, CurY}]),
-
     ok = glfw:set_cursor_position(Window, {CurY, CurX}),
+
+    IsPresent = glfw:joystick_present(joystick_1),
+    ?assert(erlang:is_boolean(IsPresent)),
 
     ok.
 

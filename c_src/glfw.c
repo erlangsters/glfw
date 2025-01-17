@@ -1407,6 +1407,27 @@ static ERL_NIF_TERM nif_set_cursor_position(ErlNifEnv* env, int argc, const ERL_
     return execute_command(glfw_set_cursor_position, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int joy;
+    if (!enif_get_int(env, argv[0], &joy)) {
+        return enif_make_badarg(env);
+    }
+
+    int result = glfwJoystickPresent(joy);
+    if (result == GLFW_TRUE) {
+        return enif_make_atom(env, "true");
+    }
+    else {
+        return enif_make_atom(env, "false");
+    }
+}
+
+static ERL_NIF_TERM nif_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_joystick_present, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -1475,7 +1496,9 @@ static ErlNifFunc nif_functions[] = {
     {"mouse_button_raw", 2, nif_mouse_button},
 
     {"cursor_position", 1, nif_cursor_position},
-    {"set_cursor_position_raw", 3, nif_set_cursor_position}
+    {"set_cursor_position_raw", 3, nif_set_cursor_position},
+
+    {"joystick_present_raw", 1, nif_joystick_present}
 };
 
 ERL_NIF_INIT(

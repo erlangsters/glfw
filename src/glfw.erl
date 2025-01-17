@@ -32,6 +32,8 @@
 
 -export_type([mouse_button/0]).
 
+-export_type([joystick/0]).
+
 -export([init_hint/2]).
 -export([init/0]).
 -export([terminate/0]).
@@ -99,6 +101,8 @@
 
 -export([cursor_position/1]).
 -export([set_cursor_position/2]).
+
+-export([joystick_present/1]).
 
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
@@ -168,6 +172,8 @@
 
 -nifs([cursor_position/1]).
 -nifs([set_cursor_position_raw/3]).
+
+-nifs([joystick_present_raw/1]).
 
 -on_load(init_nif/0).
 
@@ -345,6 +351,23 @@
 -define(GLFW_MOUSE_BUTTON_RIGHT,  ?GLFW_MOUSE_BUTTON_2).
 -define(GLFW_MOUSE_BUTTON_MIDDLE, ?GLFW_MOUSE_BUTTON_3).
 
+-define(GLFW_JOYSTICK_1,  0).
+-define(GLFW_JOYSTICK_2,  1).
+-define(GLFW_JOYSTICK_3,  2).
+-define(GLFW_JOYSTICK_4,  3).
+-define(GLFW_JOYSTICK_5,  4).
+-define(GLFW_JOYSTICK_6,  5).
+-define(GLFW_JOYSTICK_7,  6).
+-define(GLFW_JOYSTICK_8,  7).
+-define(GLFW_JOYSTICK_9,  8).
+-define(GLFW_JOYSTICK_10, 9).
+-define(GLFW_JOYSTICK_11, 10).
+-define(GLFW_JOYSTICK_12, 11).
+-define(GLFW_JOYSTICK_13, 12).
+-define(GLFW_JOYSTICK_14, 13).
+-define(GLFW_JOYSTICK_15, 14).
+-define(GLFW_JOYSTICK_16, 15).
+
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -type joystick_hat_buttons_hint_value() :: boolean().
@@ -503,6 +526,25 @@
     mouse_button_left |
     mouse_button_right |
     mouse_button_middle
+.
+
+-type joystick() ::
+    joystick_1 |
+    joystick_2 |
+    joystick_3 |
+    joystick_4 |
+    joystick_5 |
+    joystick_6 |
+    joystick_7 |
+    joystick_8 |
+    joystick_9 |
+    joystick_10 |
+    joystick_11 |
+    joystick_12 |
+    joystick_13 |
+    joystick_14 |
+    joystick_15 |
+    joystick_16
 .
 
 -include("glfw.hrl").
@@ -939,6 +981,14 @@ set_cursor_position(Window, Position) ->
 set_cursor_position_raw(_Window, _X, _Y) ->
     erlang:nif_error(nif_library_not_loaded).
 
+-spec joystick_present(joystick()) -> boolean().
+joystick_present(Joystick) ->
+    JoystickRaw = to_raw_joystick(Joystick),
+    joystick_present_raw(JoystickRaw).
+
+joystick_present_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
 unpack_dont_care_vector2(Vector2) ->
     case Vector2 of
         dont_care ->
@@ -1090,4 +1140,24 @@ to_raw_mouse_button(MouseButton) ->
         mouse_button_left -> ?GLFW_MOUSE_BUTTON_LEFT;
         mouse_button_right -> ?GLFW_MOUSE_BUTTON_RIGHT;
         mouse_button_middle -> ?GLFW_MOUSE_BUTTON_MIDDLE
+    end.
+
+to_raw_joystick(Joystick) ->
+    case Joystick of
+        joystick_1 -> ?GLFW_JOYSTICK_1;
+        joystick_2 -> ?GLFW_JOYSTICK_2;
+        joystick_3 -> ?GLFW_JOYSTICK_3;
+        joystick_4 -> ?GLFW_JOYSTICK_4;
+        joystick_5 -> ?GLFW_JOYSTICK_5;
+        joystick_6 -> ?GLFW_JOYSTICK_6;
+        joystick_7 -> ?GLFW_JOYSTICK_7;
+        joystick_8 -> ?GLFW_JOYSTICK_8;
+        joystick_9 -> ?GLFW_JOYSTICK_9;
+        joystick_10 -> ?GLFW_JOYSTICK_10;
+        joystick_11 -> ?GLFW_JOYSTICK_11;
+        joystick_12 -> ?GLFW_JOYSTICK_12;
+        joystick_13 -> ?GLFW_JOYSTICK_13;
+        joystick_14 -> ?GLFW_JOYSTICK_14;
+        joystick_15 -> ?GLFW_JOYSTICK_15;
+        joystick_16 -> ?GLFW_JOYSTICK_16
     end.
