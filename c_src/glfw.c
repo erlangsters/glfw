@@ -1233,6 +1233,22 @@ static ERL_NIF_TERM nif_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     return execute_command(glfw_set_cursor, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_raw_mouse_motion_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int result = glfwRawMouseMotionSupported();
+    if (result == GLFW_TRUE) {
+        return enif_make_atom(env, "true");
+    }
+    else {
+        return enif_make_atom(env, "false");
+    }
+}
+
+static ERL_NIF_TERM nif_raw_mouse_motion_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_raw_mouse_motion_supported, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -1291,7 +1307,9 @@ static ErlNifFunc nif_functions[] = {
     {"create_cursor_raw", 5, nif_create_cursor},
     {"create_standard_cursor_raw", 1, nif_create_standard_cursor},
     {"destroy_cursor", 1, nif_destroy_cursor},
-    {"set_cursor", 2, nif_set_cursor}
+    {"set_cursor", 2, nif_set_cursor},
+
+    {"raw_mouse_motion_supported", 0, nif_raw_mouse_motion_supported}
 };
 
 ERL_NIF_INIT(

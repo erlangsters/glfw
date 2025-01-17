@@ -86,6 +86,8 @@
 -export([destroy_cursor/1]).
 -export([set_cursor/2]).
 
+-export([raw_mouse_motion_supported/0]).
+
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -144,6 +146,8 @@
 -nifs([create_standard_cursor_raw/1]).
 -nifs([destroy_cursor/1]).
 -nifs([set_cursor/2]).
+
+-nifs([raw_mouse_motion_supported/0]).
 
 -on_load(init_nif/0).
 
@@ -643,6 +647,10 @@ destroy_cursor(_Cursor) ->
 
 -spec set_cursor(window(), default | cursor()) -> ok.
 set_cursor(_Window, _Cursor) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec raw_mouse_motion_supported() -> boolean().
+raw_mouse_motion_supported() ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->
