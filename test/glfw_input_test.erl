@@ -18,6 +18,9 @@ glfw_input_test() ->
 
     ok = test_keys(),
 
+    {ok, Window} = glfw:create_window(640, 480, "Hello world!"),
+    release = glfw:key(Window, key_a),
+
     ok.
 
 test_keys() ->
