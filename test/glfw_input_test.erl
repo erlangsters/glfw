@@ -12,13 +12,15 @@
 
 glfw_input_test() ->
     true = glfw:init(),
+    {ok, Window} = glfw:create_window(640, 480, "Hello world!"),
+
+    ok = test_input_mode(Window),
 
     IsSupported = glfw:raw_mouse_motion_supported(),
     ?assert(erlang:is_boolean(IsSupported)),
 
     ok = test_keys(),
 
-    {ok, Window} = glfw:create_window(640, 480, "Hello world!"),
     KeyState = glfw:key(Window, key_a),
     ?assert(lists:member(KeyState, [press, release])),
     MouseButtonState = glfw:mouse_button(Window, mouse_button_1),
@@ -30,6 +32,38 @@ glfw_input_test() ->
 
     IsPresent = glfw:joystick_present(joystick_1),
     ?assert(erlang:is_boolean(IsPresent)),
+
+    ok = glfw:destroy_window(Window),
+
+    ok.
+
+test_input_mode(Window) ->
+    Value1 = glfw:input_mode(Window, cursor),
+    ?assert(lists:member(Value1, [normal, hidden, disabled, captured])),
+    ok = glfw:set_input_mode(Window, cursor, normal),
+    ok = glfw:set_input_mode(Window, cursor, hidden),
+    ok = glfw:set_input_mode(Window, cursor, disabled),
+    ok = glfw:set_input_mode(Window, cursor, captured),
+
+    Value2 = glfw:input_mode(Window, sticky_keys),
+    ?assert(erlang:is_boolean(Value2)),
+    ok = glfw:set_input_mode(Window, sticky_keys, true),
+    ok = glfw:set_input_mode(Window, sticky_keys, false),
+
+    Value3 = glfw:input_mode(Window, sticky_mouse_buttons),
+    ?assert(erlang:is_boolean(Value3)),
+    ok = glfw:set_input_mode(Window, sticky_mouse_buttons, true),
+    ok = glfw:set_input_mode(Window, sticky_mouse_buttons, false),
+
+    Value4 = glfw:input_mode(Window, lock_key_mods),
+    ?assert(erlang:is_boolean(Value4)),
+    ok = glfw:set_input_mode(Window, lock_key_mods, true),
+    ok = glfw:set_input_mode(Window, lock_key_mods, false),
+
+    Value5 = glfw:input_mode(Window, raw_mouse_motion),
+    ?assert(erlang:is_boolean(Value5)),
+    ok = glfw:set_input_mode(Window, raw_mouse_motion, true),
+    ok = glfw:set_input_mode(Window, raw_mouse_motion, false),
 
     ok.
 

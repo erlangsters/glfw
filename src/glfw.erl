@@ -25,11 +25,13 @@
 -export_type([size_limits/0]).
 -export_type([aspect_ratio/0]).
 
+-export_type([input_mode/0]).
+-export_type([input_mode_value/0]).
+
 -export_type([cursor_shape/0]).
 
 -export_type([key/0]).
 -export_type([scancode/0]).
-
 
 -export_type([mouse_button/0]).
 
@@ -108,6 +110,9 @@
 
 -export([poll_events/0]).
 -export([post_empty_event/0]).
+
+-export([input_mode/2]).
+-export([set_input_mode/3]).
 
 -export([create_cursor/2]).
 -export([create_standard_cursor/1]).
@@ -196,6 +201,9 @@
 -nifs([poll_events/0]).
 -nifs([post_empty_event/0]).
 
+-nifs([input_mode_raw/2]).
+-nifs([set_input_mode_raw/3]).
+
 -nifs([create_cursor_raw/5]).
 -nifs([create_standard_cursor_raw/1]).
 -nifs([destroy_cursor/1]).
@@ -244,6 +252,17 @@
 -define(GLFW_FALSE, 0).
 -define(GLFW_TRUE, 1).
 -define(GLFW_DONT_CARE, -1).
+
+-define(GLFW_CURSOR,               16#00033001).
+-define(GLFW_STICKY_KEYS,          16#00033002).
+-define(GLFW_STICKY_MOUSE_BUTTONS, 16#00033003).
+-define(GLFW_LOCK_KEY_MODS,        16#00033004).
+-define(GLFW_RAW_MOUSE_MOTION,     16#00033005).
+
+-define(GLFW_CURSOR_NORMAL,   16#00034001).
+-define(GLFW_CURSOR_HIDDEN,   16#00034002).
+-define(GLFW_CURSOR_DISABLED, 16#00034003).
+-define(GLFW_CURSOR_CAPTURED, 16#00034004).
 
 -define(GLFW_ARROW_CURSOR,         16#00036001).
 -define(GLFW_IBEAM_CURSOR,         16#00036002).
@@ -518,6 +537,28 @@
     Numerator :: integer() | dont_care,
     Denominator :: integer() | dont_care
 } | dont_care.
+
+-type input_mode() ::
+    cursor |
+    sticky_keys |
+    sticky_mouse_buttons |
+    lock_key_mods |
+    raw_mouse_motion
+.
+
+-type cursor_mode() :: normal | hidden | disabled | captured.
+-type sticky_keys() :: boolean().
+-type sticky_mouse_buttons() :: boolean().
+-type lock_key_mods() :: boolean().
+-type raw_mouse_motion() :: boolean().
+
+-type input_mode_value() ::
+    cursor_mode() |
+    sticky_keys() |
+    sticky_mouse_buttons() |
+    lock_key_mods() |
+    raw_mouse_motion()
+.
 
 -type cursor_shape() ::
     arrow |
@@ -1033,6 +1074,70 @@ poll_events() ->
 
 -spec post_empty_event() -> ok.
 post_empty_event() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec input_mode(window(), input_mode()) -> ok.
+input_mode(Window, Mode) ->
+    ModeRaw = case Mode of
+        cursor ->
+            ?GLFW_CURSOR;
+        sticky_keys ->
+            ?GLFW_STICKY_KEYS;
+        sticky_mouse_buttons ->
+            ?GLFW_STICKY_MOUSE_BUTTONS;
+        lock_key_mods ->
+            ?GLFW_LOCK_KEY_MODS;
+        raw_mouse_motion ->
+            ?GLFW_RAW_MOUSE_MOTION
+    end,
+    ValueRaw = input_mode_raw(Window, ModeRaw),
+    case Mode of
+        cursor ->
+            case ValueRaw of
+                ?GLFW_CURSOR_NORMAL ->
+                    normal;
+                ?GLFW_CURSOR_HIDDEN ->
+                    hidden;
+                ?GLFW_CURSOR_DISABLED ->
+                    disabled;
+                ?GLFW_CURSOR_CAPTURED ->
+                    captured
+            end;
+        _ ->
+            case ValueRaw of
+                ?GLFW_FALSE ->
+                    false;
+                ?GLFW_TRUE ->
+                    true
+            end
+    end.
+
+input_mode_raw(_Window, _Mode) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_input_mode(window(), input_mode(), input_mode_value()) -> ok.
+set_input_mode(Window, cursor, Value) ->
+    ValueRaw = case Value of
+        normal ->
+            ?GLFW_CURSOR_NORMAL;
+        hidden ->
+            ?GLFW_CURSOR_HIDDEN;
+        disabled ->
+            ?GLFW_CURSOR_DISABLED;
+        captured ->
+            ?GLFW_CURSOR_CAPTURED
+    end,
+    set_input_mode_raw(Window, ?GLFW_CURSOR, ValueRaw);
+set_input_mode(Window, sticky_keys, Value) ->
+    set_input_mode_raw(Window, ?GLFW_STICKY_KEYS, to_raw_bool(Value));
+set_input_mode(Window, sticky_mouse_buttons, Value) ->
+    set_input_mode_raw(Window, ?GLFW_STICKY_MOUSE_BUTTONS, to_raw_bool(Value));
+set_input_mode(Window, lock_key_mods, Value) ->
+    set_input_mode_raw(Window, ?GLFW_LOCK_KEY_MODS, to_raw_bool(Value));
+set_input_mode(Window, raw_mouse_motion, Value) ->
+    set_input_mode_raw(Window, ?GLFW_RAW_MOUSE_MOTION, to_raw_bool(Value)).
+
+set_input_mode_raw(_Window, _Mode, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -spec create_cursor(#glfw_image{}, {integer(), integer()}) ->

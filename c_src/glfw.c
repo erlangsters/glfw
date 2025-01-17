@@ -1545,6 +1545,55 @@ static ERL_NIF_TERM nif_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_post_empty_event, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int mode;
+    if (!enif_get_int(env, argv[1], &mode)) {
+        return enif_make_badarg(env);
+    }
+
+    int value = glfwGetInputMode(window, mode);
+    return enif_make_int(env, value);
+}
+
+static ERL_NIF_TERM nif_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_input_mode, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int mode;
+    if (!enif_get_int(env, argv[1], &mode)) {
+        return enif_make_badarg(env);
+    }
+
+    int value;
+    if (!enif_get_int(env, argv[2], &value)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetInputMode(window, mode, value);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_input_mode, env, argc, argv);
+}
+
 static ERL_NIF_TERM glfw_create_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int width, height, xhot, yhot;
@@ -1935,6 +1984,9 @@ static ErlNifFunc nif_functions[] = {
 
     {"poll_events", 0, nif_poll_events},
     {"post_empty_event", 0, nif_post_empty_event},
+
+    {"input_mode_raw", 2, nif_input_mode},
+    {"set_input_mode_raw", 3, nif_set_input_mode},
 
     {"create_cursor_raw", 5, nif_create_cursor},
     {"create_standard_cursor_raw", 1, nif_create_standard_cursor},
