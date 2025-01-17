@@ -97,6 +97,9 @@
 -export([key/2]).
 -export([mouse_button/2]).
 
+-export([cursor_position/1]).
+-export([set_cursor_position/2]).
+
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -162,6 +165,9 @@
 -nifs([key_scancode_raw/1]).
 -nifs([key_raw/2]).
 -nifs([mouse_button_raw/2]).
+
+-nifs([cursor_position/1]).
+-nifs([set_cursor_position_raw/3]).
 
 -on_load(init_nif/0).
 
@@ -919,6 +925,18 @@ mouse_button(Window, Button) ->
     mouse_button_raw(Window, ButtonRaw).
 
 mouse_button_raw(_Window, _Button) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec cursor_position(window()) -> {X :: float(), Y :: float()}.
+cursor_position(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec set_cursor_position(window(), {X :: float(), Y :: float()}) -> ok.
+set_cursor_position(Window, Position) ->
+    {X, Y} = Position,
+    set_cursor_position_raw(Window, X, Y).
+
+set_cursor_position_raw(_Window, _X, _Y) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

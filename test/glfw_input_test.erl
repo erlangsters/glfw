@@ -24,6 +24,11 @@ glfw_input_test() ->
     MouseButtonState = glfw:mouse_button(Window, mouse_button_1),
     ?assert(lists:member(MouseButtonState, [press, release])),
 
+    {CurX, CurY} = glfw:cursor_position(Window),
+    io:format(user, "cursor position: ~p~n", [{CurX, CurY}]),
+
+    ok = glfw:set_cursor_position(Window, {CurY, CurX}),
+
     ok.
 
 test_keys() ->

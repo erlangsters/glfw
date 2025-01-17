@@ -1364,6 +1364,49 @@ static ERL_NIF_TERM nif_mouse_button(ErlNifEnv* env, int argc, const ERL_NIF_TER
     return execute_command(glfw_mouse_button, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    double xpos, ypos;
+    glfwGetCursorPos(*window, &xpos, &ypos);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_double(env, xpos),
+        enif_make_double(env, ypos)
+    );
+}
+
+static ERL_NIF_TERM nif_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_cursor_position, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    double xpos, ypos;
+
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_double(env, argv[1], &xpos) || !enif_get_double(env, argv[2], &ypos)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetCursorPos(*window, xpos, ypos);
+    return enif_make_atom(env, "ok");
+}
+
+static ERL_NIF_TERM nif_set_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_cursor_position, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -1429,7 +1472,10 @@ static ErlNifFunc nif_functions[] = {
     {"key_name_scancode", 1, nif_key_name_scancode},
     {"key_scancode_raw", 1, nif_key_scancode},
     {"key_raw", 2, nif_key},
-    {"mouse_button_raw", 2, nif_mouse_button}
+    {"mouse_button_raw", 2, nif_mouse_button},
+
+    {"cursor_position", 1, nif_cursor_position},
+    {"set_cursor_position_raw", 3, nif_set_cursor_position}
 };
 
 ERL_NIF_INIT(
