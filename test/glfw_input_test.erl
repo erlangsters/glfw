@@ -19,7 +19,10 @@ glfw_input_test() ->
     ok = test_keys(),
 
     {ok, Window} = glfw:create_window(640, 480, "Hello world!"),
-    release = glfw:key(Window, key_a),
+    KeyState = glfw:key(Window, key_a),
+    ?assert(lists:member(KeyState, [press, release])),
+    MouseButtonState = glfw:mouse_button(Window, mouse_button_1),
+    ?assert(lists:member(MouseButtonState, [press, release])),
 
     ok.
 

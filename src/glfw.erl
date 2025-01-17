@@ -95,6 +95,7 @@
 -export([key_name/1]).
 -export([key_scancode/1]).
 -export([key/2]).
+-export([mouse_button/2]).
 
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
@@ -160,6 +161,7 @@
 -nifs([key_name_scancode/1]).
 -nifs([key_scancode_raw/1]).
 -nifs([key_raw/2]).
+-nifs([mouse_button_raw/2]).
 
 -on_load(init_nif/0).
 
@@ -909,6 +911,14 @@ key(Window, Key) ->
     key_raw(Window, KeyRaw).
 
 key_raw(_Window, _Key) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec mouse_button(window(), mouse_button()) -> press | release.
+mouse_button(Window, Button) ->
+    ButtonRaw = to_raw_mouse_button(Button),
+    mouse_button_raw(Window, ButtonRaw).
+
+mouse_button_raw(_Window, _Button) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

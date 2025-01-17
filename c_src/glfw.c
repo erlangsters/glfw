@@ -1335,6 +1335,35 @@ static ERL_NIF_TERM nif_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     return execute_command(glfw_key, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_mouse_button(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWwindow** window;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+        return enif_make_badarg(env);
+    }
+
+    int button;
+    if (!enif_get_int(env, argv[1], &button)) {
+        return enif_make_badarg(env);
+    }
+
+    int action;
+    action = glfwGetMouseButton(*window, button);
+    if (action == GLFW_PRESS) {
+        return enif_make_atom(env, "press");
+    }
+    else if (action == GLFW_RELEASE) {
+        return enif_make_atom(env, "release");
+    }
+
+    return -1;
+}
+
+static ERL_NIF_TERM nif_mouse_button(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_mouse_button, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -1399,7 +1428,8 @@ static ErlNifFunc nif_functions[] = {
     {"key_name_key", 1, nif_key_name_key},
     {"key_name_scancode", 1, nif_key_name_scancode},
     {"key_scancode_raw", 1, nif_key_scancode},
-    {"key_raw", 2, nif_key}
+    {"key_raw", 2, nif_key},
+    {"mouse_button_raw", 2, nif_mouse_button}
 };
 
 ERL_NIF_INIT(
