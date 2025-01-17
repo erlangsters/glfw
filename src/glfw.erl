@@ -377,6 +377,13 @@
 -define(GLFW_KEY_RIGHT_SUPER, 347).
 -define(GLFW_KEY_MENU, 348).
 
+-define(GLFW_MOD_SHIFT, 16#0001).
+-define(GLFW_MOD_CONTROL, 16#0002).
+-define(GLFW_MOD_ALT, 16#0004).
+-define(GLFW_MOD_SUPER, 16#0008).
+-define(GLFW_MOD_CAPS_LOCK, 16#0010).
+-define(GLFW_MOD_NUM_LOCK, 16#0020).
+
 -define(GLFW_MOUSE_BUTTON_1, 0).
 -define(GLFW_MOUSE_BUTTON_2, 1).
 -define(GLFW_MOUSE_BUTTON_3, 2).
@@ -685,13 +692,7 @@ init_hint(Hint, Value) ->
             end,
             {?GLFW_PLATFORM, ValueRaw_};
         joystick_hat_buttons ->
-            ValueRaw_ = case Value of
-                true ->
-                    ?GLFW_TRUE;
-                false ->
-                    ?GLFW_FALSE
-            end,
-            {?GLFW_JOYSTICK_HAT_BUTTONS, ValueRaw_};
+            {?GLFW_JOYSTICK_HAT_BUTTONS, to_raw_bool(Value)};
         angle_platform_type ->
             ValueRaw_ = case Value of
                 angle_platform_type_none ->
@@ -711,21 +712,9 @@ init_hint(Hint, Value) ->
             end,
             {?GLFW_ANGLE_PLATFORM_TYPE, ValueRaw_};
         cocoa_chdir_resources ->
-            ValueRaw_ = case Value of
-                true ->
-                    ?GLFW_TRUE;
-                false ->
-                    ?GLFW_FALSE
-            end,
-            {?GLFW_COCOA_CHDIR_RESOURCES, ValueRaw_};
+            {?GLFW_COCOA_CHDIR_RESOURCES, to_raw_bool(Value)};
         cocoa_menubar ->
-            ValueRaw_ = case Value of
-                true ->
-                    ?GLFW_TRUE;
-                false ->
-                    ?GLFW_FALSE
-            end,
-            {?GLFW_COCOA_MENUBAR, ValueRaw_};
+            {?GLFW_COCOA_MENUBAR, to_raw_bool(Value)};
         wayland_libdecor ->
             ValueRaw_ = case Value of
                 wayland_prefer_libdecor ->
@@ -1177,6 +1166,14 @@ unpack_dont_care_vector2(Vector2) ->
             {X, ?GLFW_DONT_CARE};
         {X, Y} ->
             {X, Y}
+    end.
+
+to_raw_bool(Value) ->
+    case Value of
+        true ->
+            ?GLFW_TRUE;
+        false ->
+            ?GLFW_FALSE
     end.
 
 to_raw_key(Key) ->
