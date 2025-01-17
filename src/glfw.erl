@@ -30,9 +30,11 @@
 -export_type([key/0]).
 -export_type([scancode/0]).
 
+
 -export_type([mouse_button/0]).
 
 -export_type([joystick/0]).
+-export_type([joystick_hat/0]).
 
 -export([init_hint/2]).
 -export([init/0]).
@@ -402,6 +404,16 @@
 -define(GLFW_JOYSTICK_15, 14).
 -define(GLFW_JOYSTICK_16, 15).
 
+-define(GLFW_HAT_CENTERED, 0).
+-define(GLFW_HAT_UP, 1).
+-define(GLFW_HAT_RIGHT, 2).
+-define(GLFW_HAT_DOWN, 4).
+-define(GLFW_HAT_LEFT, 8).
+-define(GLFW_HAT_RIGHT_UP, (?GLFW_HAT_RIGHT bor ?GLFW_HAT_UP)).
+-define(GLFW_HAT_RIGHT_DOWN, (?GLFW_HAT_RIGHT bor ?GLFW_HAT_DOWN)).
+-define(GLFW_HAT_LEFT_UP, (?GLFW_HAT_LEFT bor ?GLFW_HAT_UP)).
+-define(GLFW_HAT_LEFT_DOWN, (?GLFW_HAT_LEFT bor ?GLFW_HAT_DOWN)).
+
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -type joystick_hat_buttons_hint_value() :: boolean().
@@ -579,6 +591,17 @@
     joystick_14 |
     joystick_15 |
     joystick_16
+.
+-type joystick_hat() ::
+    hat_centered |
+    hat_up |
+    hat_right |
+    hat_down |
+    hat_left |
+    hat_right_up |
+    hat_right_down |
+    hat_left_up |
+    hat_left_down
 .
 
 -include("glfw.hrl").
