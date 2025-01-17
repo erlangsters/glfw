@@ -30,6 +30,8 @@
 -export_type([key/0]).
 -export_type([scancode/0]).
 
+-export_type([mouse_button/0]).
+
 -export([init_hint/2]).
 -export([init/0]).
 -export([terminate/0]).
@@ -323,6 +325,18 @@
 -define(GLFW_KEY_RIGHT_SUPER, 347).
 -define(GLFW_KEY_MENU, 348).
 
+-define(GLFW_MOUSE_BUTTON_1, 0).
+-define(GLFW_MOUSE_BUTTON_2, 1).
+-define(GLFW_MOUSE_BUTTON_3, 2).
+-define(GLFW_MOUSE_BUTTON_4, 3).
+-define(GLFW_MOUSE_BUTTON_5, 4).
+-define(GLFW_MOUSE_BUTTON_6, 5).
+-define(GLFW_MOUSE_BUTTON_7, 6).
+-define(GLFW_MOUSE_BUTTON_8, 7).
+-define(GLFW_MOUSE_BUTTON_LEFT,   ?GLFW_MOUSE_BUTTON_1).
+-define(GLFW_MOUSE_BUTTON_RIGHT,  ?GLFW_MOUSE_BUTTON_2).
+-define(GLFW_MOUSE_BUTTON_MIDDLE, ?GLFW_MOUSE_BUTTON_3).
+
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -type joystick_hat_buttons_hint_value() :: boolean().
@@ -468,6 +482,20 @@
     key_menu
 .
 -type scancode() :: integer().
+
+-type mouse_button() ::
+    mouse_button_1 |
+    mouse_button_2 |
+    mouse_button_3 |
+    mouse_button_4 |
+    mouse_button_5 |
+    mouse_button_6 |
+    mouse_button_7 |
+    mouse_button_8 |
+    mouse_button_left |
+    mouse_button_right |
+    mouse_button_middle
+.
 
 -include("glfw.hrl").
 
