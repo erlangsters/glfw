@@ -90,6 +90,8 @@
 -export([set_cursor/2]).
 
 -export([raw_mouse_motion_supported/0]).
+-export([key_name/1]).
+-export([key_scancode/1]).
 
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
@@ -151,6 +153,9 @@
 -nifs([set_cursor/2]).
 
 -nifs([raw_mouse_motion_supported/0]).
+-nifs([key_name_key/1]).
+-nifs([key_name_scancode/1]).
+-nifs([key_scancode_raw/1]).
 
 -on_load(init_nif/0).
 
@@ -839,6 +844,33 @@ set_cursor(_Window, _Cursor) ->
 
 -spec raw_mouse_motion_supported() -> boolean().
 raw_mouse_motion_supported() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec key_name({key, key()} | {scancode, scancode()}) -> undefined | string().
+key_name({key, Key}) ->
+    KeyRaw = to_raw_key(Key),
+    key_name_key(KeyRaw);
+key_name({scancode, Scancode}) ->
+    key_name_scancode(Scancode).
+
+key_name_key(_Key) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+key_name_scancode(_Scancode) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-spec key_scancode(key()) -> undefined | scancode().
+key_scancode(Key) ->
+    KeyRaw = to_raw_key(Key),
+    ScanscodeRaw = key_scancode_raw(KeyRaw),
+    case ScanscodeRaw of
+        -1 ->
+            undefined;
+        _ ->
+            ScanscodeRaw
+    end.
+
+key_scancode_raw(_Key) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->

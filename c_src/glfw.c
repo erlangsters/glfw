@@ -1249,6 +1249,63 @@ static ERL_NIF_TERM nif_raw_mouse_motion_supported(ErlNifEnv* env, int argc, con
     return execute_command(glfw_raw_mouse_motion_supported, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_key_name_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    // The input is a key code that is not GLFW_KEY_UNKNOWN.
+    int key;
+    if (!enif_get_int(env, argv[0], &key)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* name = glfwGetKeyName(key, 0);
+    if (name == NULL) {
+        return enif_make_atom(env, "undefined");
+    }
+
+    return enif_make_string(env, name, ERL_NIF_LATIN1);
+}
+
+static ERL_NIF_TERM nif_key_name_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_key_name_key, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_key_name_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int scancode;
+    if (!enif_get_int(env, argv[0], &scancode)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* name = glfwGetKeyName(GLFW_KEY_UNKNOWN, scancode);
+    if (name == NULL) {
+        return enif_make_atom(env, "undefined");
+    }
+
+    return enif_make_string(env, name, ERL_NIF_LATIN1);
+}
+
+static ERL_NIF_TERM nif_key_name_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_key_name_scancode, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_key_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int key;
+    if (!enif_get_int(env, argv[0], &key)) {
+        return enif_make_badarg(env);
+    }
+
+    int scancode = glfwGetKeyScancode(key);
+    return enif_make_int(env, scancode);
+}
+
+static ERL_NIF_TERM nif_key_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_key_scancode, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -1309,7 +1366,10 @@ static ErlNifFunc nif_functions[] = {
     {"destroy_cursor", 1, nif_destroy_cursor},
     {"set_cursor", 2, nif_set_cursor},
 
-    {"raw_mouse_motion_supported", 0, nif_raw_mouse_motion_supported}
+    {"raw_mouse_motion_supported", 0, nif_raw_mouse_motion_supported},
+    {"key_name_key", 1, nif_key_name_key},
+    {"key_name_scancode", 1, nif_key_name_scancode},
+    {"key_scancode_raw", 1, nif_key_scancode}
 };
 
 ERL_NIF_INIT(
