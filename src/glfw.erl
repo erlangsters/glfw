@@ -27,6 +27,9 @@
 
 -export_type([cursor_shape/0]).
 
+-export_type([key/0]).
+-export_type([scancode/0]).
+
 -export([init_hint/2]).
 -export([init/0]).
 -export([terminate/0]).
@@ -192,6 +195,127 @@
 -define(GLFW_RESIZE_ALL_CURSOR,    16#00036009).
 -define(GLFW_NOT_ALLOWED_CURSOR,   16#0003600A).
 
+-define(GLFW_KEY_SPACE, 32).
+-define(GLFW_KEY_APOSTROPHE, 39).
+-define(GLFW_KEY_COMMA, 44).
+-define(GLFW_KEY_MINUS, 45).
+-define(GLFW_KEY_PERIOD, 46).
+-define(GLFW_KEY_SLASH, 47).
+-define(GLFW_KEY_0, 48).
+-define(GLFW_KEY_1, 49).
+-define(GLFW_KEY_2, 50).
+-define(GLFW_KEY_3, 51).
+-define(GLFW_KEY_4, 52).
+-define(GLFW_KEY_5, 53).
+-define(GLFW_KEY_6, 54).
+-define(GLFW_KEY_7, 55).
+-define(GLFW_KEY_8, 56).
+-define(GLFW_KEY_9, 57).
+-define(GLFW_KEY_SEMICOLON, 59).
+-define(GLFW_KEY_EQUAL, 61).
+-define(GLFW_KEY_A, 65).
+-define(GLFW_KEY_B, 66).
+-define(GLFW_KEY_C, 67).
+-define(GLFW_KEY_D, 68).
+-define(GLFW_KEY_E, 69).
+-define(GLFW_KEY_F, 70).
+-define(GLFW_KEY_G, 71).
+-define(GLFW_KEY_H, 72).
+-define(GLFW_KEY_I, 73).
+-define(GLFW_KEY_J, 74).
+-define(GLFW_KEY_K, 75).
+-define(GLFW_KEY_L, 76).
+-define(GLFW_KEY_M, 77).
+-define(GLFW_KEY_N, 78).
+-define(GLFW_KEY_O, 79).
+-define(GLFW_KEY_P, 80).
+-define(GLFW_KEY_Q, 81).
+-define(GLFW_KEY_R, 82).
+-define(GLFW_KEY_S, 83).
+-define(GLFW_KEY_T, 84).
+-define(GLFW_KEY_U, 85).
+-define(GLFW_KEY_V, 86).
+-define(GLFW_KEY_W, 87).
+-define(GLFW_KEY_X, 88).
+-define(GLFW_KEY_Y, 89).
+-define(GLFW_KEY_Z, 90).
+-define(GLFW_KEY_LEFT_BRACKET, 91).
+-define(GLFW_KEY_BACKSLASH, 92).
+-define(GLFW_KEY_RIGHT_BRACKET, 93).
+-define(GLFW_KEY_GRAVE_ACCENT, 96).
+-define(GLFW_KEY_WORLD_1, 161).
+-define(GLFW_KEY_WORLD_2, 162).
+-define(GLFW_KEY_ESCAPE, 256).
+-define(GLFW_KEY_ENTER, 257).
+-define(GLFW_KEY_TAB, 258).
+-define(GLFW_KEY_BACKSPACE, 259).
+-define(GLFW_KEY_INSERT, 260).
+-define(GLFW_KEY_DELETE, 261).
+-define(GLFW_KEY_RIGHT, 262).
+-define(GLFW_KEY_LEFT, 263).
+-define(GLFW_KEY_DOWN, 264).
+-define(GLFW_KEY_UP, 265).
+-define(GLFW_KEY_PAGE_UP, 266).
+-define(GLFW_KEY_PAGE_DOWN, 267).
+-define(GLFW_KEY_HOME, 268).
+-define(GLFW_KEY_END, 269).
+-define(GLFW_KEY_CAPS_LOCK, 280).
+-define(GLFW_KEY_SCROLL_LOCK, 281).
+-define(GLFW_KEY_NUM_LOCK, 282).
+-define(GLFW_KEY_PRINT_SCREEN, 283).
+-define(GLFW_KEY_PAUSE, 284).
+-define(GLFW_KEY_F1, 290).
+-define(GLFW_KEY_F2, 291).
+-define(GLFW_KEY_F3, 292).
+-define(GLFW_KEY_F4, 293).
+-define(GLFW_KEY_F5, 294).
+-define(GLFW_KEY_F6, 295).
+-define(GLFW_KEY_F7, 296).
+-define(GLFW_KEY_F8, 297).
+-define(GLFW_KEY_F9, 298).
+-define(GLFW_KEY_F10, 299).
+-define(GLFW_KEY_F11, 300).
+-define(GLFW_KEY_F12, 301).
+-define(GLFW_KEY_F13, 302).
+-define(GLFW_KEY_F14, 303).
+-define(GLFW_KEY_F15, 304).
+-define(GLFW_KEY_F16, 305).
+-define(GLFW_KEY_F17, 306).
+-define(GLFW_KEY_F18, 307).
+-define(GLFW_KEY_F19, 308).
+-define(GLFW_KEY_F20, 309).
+-define(GLFW_KEY_F21, 310).
+-define(GLFW_KEY_F22, 311).
+-define(GLFW_KEY_F23, 312).
+-define(GLFW_KEY_F24, 313).
+-define(GLFW_KEY_F25, 314).
+-define(GLFW_KEY_KP_0, 320).
+-define(GLFW_KEY_KP_1, 321).
+-define(GLFW_KEY_KP_2, 322).
+-define(GLFW_KEY_KP_3, 323).
+-define(GLFW_KEY_KP_4, 324).
+-define(GLFW_KEY_KP_5, 325).
+-define(GLFW_KEY_KP_6, 326).
+-define(GLFW_KEY_KP_7, 327).
+-define(GLFW_KEY_KP_8, 328).
+-define(GLFW_KEY_KP_9, 329).
+-define(GLFW_KEY_KP_DECIMAL, 330).
+-define(GLFW_KEY_KP_DIVIDE, 331).
+-define(GLFW_KEY_KP_MULTIPLY, 332).
+-define(GLFW_KEY_KP_SUBTRACT, 333).
+-define(GLFW_KEY_KP_ADD, 334).
+-define(GLFW_KEY_KP_ENTER, 335).
+-define(GLFW_KEY_KP_EQUAL, 336).
+-define(GLFW_KEY_LEFT_SHIFT, 340).
+-define(GLFW_KEY_LEFT_CONTROL, 341).
+-define(GLFW_KEY_LEFT_ALT, 342).
+-define(GLFW_KEY_LEFT_SUPER, 343).
+-define(GLFW_KEY_RIGHT_SHIFT, 344).
+-define(GLFW_KEY_RIGHT_CONTROL, 345).
+-define(GLFW_KEY_RIGHT_ALT, 346).
+-define(GLFW_KEY_RIGHT_SUPER, 347).
+-define(GLFW_KEY_MENU, 348).
+
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -type joystick_hat_buttons_hint_value() :: boolean().
@@ -273,6 +397,70 @@
     resize_all |
     not_allowed
 .
+
+-type key() ::
+    key_space |
+    key_apostrophe |
+    key_comma |
+    key_minus |
+    key_period |
+    key_slash |
+    key_0 | key_1 | key_2 | key_3 | key_4 | key_5 | key_6 | key_7 | key_8 |
+    key_9 |
+    key_semicolon |
+    key_equal |
+    key_a | key_b | key_c | key_d | key_e | key_f | key_g | key_h | key_i |
+    key_j | key_k | key_l | key_m | key_n | key_o | key_p | key_q | key_r |
+    key_s | key_t | key_u | key_v | key_w | key_x | key_y | key_z |
+    key_left_bracket |
+    key_backslash |
+    key_right_bracket |
+    key_grave_accent |
+    key_world_1 |
+    key_world_2 |
+    key_escape |
+    key_enter |
+    key_tab |
+    key_backspace |
+    key_insert |
+    key_delete |
+    key_right |
+    key_left |
+    key_down |
+    key_up |
+    key_page_up |
+    key_page_down |
+    key_home |
+    key_end |
+    key_caps_lock |
+    key_scroll_lock |
+    key_num_lock |
+    key_print_screen |
+    key_pause |
+    key_f1 | key_f2 | key_f3 | key_f4 | key_f5 | key_f6 | key_f7 | key_f8 |
+    key_f9 | key_f10 | key_f11 | key_f12 | key_f13 | key_f14 | key_f15 |
+    key_f16 | key_f17 | key_f18 | key_f19 | key_f20 | key_f21 | key_f22 |
+    key_f23 | key_f24 | key_f25 |
+    key_kp_0 | key_kp_1 | key_kp_2 | key_kp_3 | key_kp_4 | key_kp_5 | key_kp_6 |
+    key_kp_7 | key_kp_8 | key_kp_9 |
+    key_kp_decimal |
+    key_kp_divide |
+    key_kp_multiply |
+    key_kp_subtract |
+    key_kp_add |
+    key_kp_enter |
+    key_kp_equal |
+    key_left_shift |
+    key_left_control |
+    key_left_alt |
+    key_left_super |
+    key_right_shift |
+    key_right_control |
+    key_right_alt |
+    key_right_super |
+    key_menu
+.
+-type scancode() :: integer().
 
 -include("glfw.hrl").
 
