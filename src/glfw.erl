@@ -35,6 +35,8 @@
 
 -export_type([joystick/0]).
 -export_type([joystick_hat/0]).
+-export_type([gamepad_axe/0]).
+-export_type([gamepad_button/0]).
 
 -export([init_hint/2]).
 -export([init/0]).
@@ -414,6 +416,33 @@
 -define(GLFW_HAT_LEFT_UP, (?GLFW_HAT_LEFT bor ?GLFW_HAT_UP)).
 -define(GLFW_HAT_LEFT_DOWN, (?GLFW_HAT_LEFT bor ?GLFW_HAT_DOWN)).
 
+-define(GLFW_GAMEPAD_AXIS_LEFT_X, 0).
+-define(GLFW_GAMEPAD_AXIS_LEFT_Y, 1).
+-define(GLFW_GAMEPAD_AXIS_RIGHT_X, 2).
+-define(GLFW_GAMEPAD_AXIS_RIGHT_Y, 3).
+-define(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER, 4).
+-define(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER, 5).
+
+-define(GLFW_GAMEPAD_BUTTON_A, 0).
+-define(GLFW_GAMEPAD_BUTTON_B, 1).
+-define(GLFW_GAMEPAD_BUTTON_X, 2).
+-define(GLFW_GAMEPAD_BUTTON_Y, 3).
+-define(GLFW_GAMEPAD_BUTTON_LEFT_BUMPER, 4).
+-define(GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, 5).
+-define(GLFW_GAMEPAD_BUTTON_BACK, 6).
+-define(GLFW_GAMEPAD_BUTTON_START, 7).
+-define(GLFW_GAMEPAD_BUTTON_GUIDE, 8).
+-define(GLFW_GAMEPAD_BUTTON_LEFT_THUMB, 9).
+-define(GLFW_GAMEPAD_BUTTON_RIGHT_THUMB, 10).
+-define(GLFW_GAMEPAD_BUTTON_DPAD_UP, 11).
+-define(GLFW_GAMEPAD_BUTTON_DPAD_RIGHT, 12).
+-define(GLFW_GAMEPAD_BUTTON_DPAD_DOWN, 13).
+-define(GLFW_GAMEPAD_BUTTON_DPAD_LEFT, 14).
+-define(GLFW_GAMEPAD_BUTTON_CROSS, ?GLFW_GAMEPAD_BUTTON_A).
+-define(GLFW_GAMEPAD_BUTTON_CIRCLE, ?GLFW_GAMEPAD_BUTTON_B).
+-define(GLFW_GAMEPAD_BUTTON_SQUARE, ?GLFW_GAMEPAD_BUTTON_X).
+-define(GLFW_GAMEPAD_BUTTON_TRIANGLE, ?GLFW_GAMEPAD_BUTTON_Y).
+
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -type joystick_hat_buttons_hint_value() :: boolean().
@@ -602,6 +631,32 @@
     hat_right_down |
     hat_left_up |
     hat_left_down
+.
+
+-type gamepad_axe() ::
+    axe_left_x |
+    axe_left_y |
+    axe_right_x |
+    axe_right_y |
+    axe_left_trigger |
+    axe_right_trigger
+.
+-type gamepad_button() ::
+    button_a |
+    button_b |
+    button_x |
+    button_y |
+    button_left_bumper |
+    button_right_bumper |
+    button_back |
+    button_start |
+    button_guide |
+    button_left_thumb |
+    button_right_thumb |
+    button_dpad_up |
+    button_dpad_right |
+    button_dpad_down |
+    button_dpad_left
 .
 
 -include("glfw.hrl").
