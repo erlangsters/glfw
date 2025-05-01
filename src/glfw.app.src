@@ -1,0 +1,13 @@
+{application, glfw, [
+  {description, "GLFW binding for the BEAM"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+      kernel,
+      stdlib
+  ]},
+  {env, []},
+  {modules, [glfw]},
+  {licenses, ["MIT"]},
+  {links, []}
+]}.
