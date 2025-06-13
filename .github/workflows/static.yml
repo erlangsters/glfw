@@ -31,6 +31,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: apt-get update && apt-get install -y libegl-dev libglfw3-dev
+      # Temporary workaround: ExDoc needs to load the module but would fail to
+      # load the NIF. We just comment out the `-on_load()` attrib.
+      - run: sed -i 's/^-on_load(init_nif\/0)\.$/%-on_load(init_nif\/0)./' src/glfw.erl
       - run: rebar3 ex_doc
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
