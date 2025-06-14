@@ -252,6 +252,9 @@ To be written.
 
 -nifs([joystick_present_raw/1]).
 
+-export([window_egl_handle/1]).
+-nifs([window_egl_handle/1]).
+
 -on_load(init_nif/0).
 
 -define(GLFW_JOYSTICK_HAT_BUTTONS,   16#00050001).
@@ -773,7 +776,14 @@ The valid values for each init hint.
 -include("glfw.hrl").
 
 init_nif() ->
-    ok = erlang:load_nif("./priv/glfw", 0).
+    % The GLFW NIF module depends on the EGL NIF module, so we compute its
+    % location first, then pass it to the GLFW NIF loader.
+    EGLPrivDir = code:priv_dir(egl),
+    EGLNifLocation = filename:join(EGLPrivDir, "beam-egl") ++ ".so",
+
+    PrivDir = code:priv_dir(?MODULE),
+    NifPath = filename:join(PrivDir, "beam-glfw"),
+    ok = erlang:load_nif(NifPath, EGLNifLocation).
 
 -doc """
 Set an init hint.
@@ -3183,6 +3193,9 @@ joystick_present(Joystick) ->
     joystick_present_raw(JoystickRaw).
 
 joystick_present_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+window_egl_handle(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->
