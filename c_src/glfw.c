@@ -9,8 +9,13 @@
 //
 #include <string.h>
 #include <pthread.h>
+#include <dlfcn.h>
 #include <erl_nif.h>
+#include <EGL/egl.h>
 #include <GLFW/glfw3.h>
+
+static void* egl_nif_lib_handle = NULL;
+ErlNifResourceType* egl_window_resource_type;
 
 static pthread_t commands_executor;
 static pthread_mutex_t command_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -108,6 +113,25 @@ static void glfw_cursor_resource_dtor(ErlNifEnv* env, void* obj) {
 
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
+    char beam_egl_so_path[1024];
+    if (!enif_get_string(env, arg, beam_egl_so_path, sizeof(beam_egl_so_path), ERL_NIF_LATIN1)) {
+        fprintf(stderr, "failed to read EGL binding library path from argument\n");
+        return -1;
+    }
+
+    egl_nif_lib_handle = dlopen(beam_egl_so_path, RTLD_NOW);
+    if (!egl_nif_lib_handle) {
+        fprintf(stderr, "failed to load beam-egl.so: %s\n", dlerror());
+        return -1;
+    }
+
+    egl_window_resource_type = dlsym(egl_nif_lib_handle, "egl_window_resource_type");
+    if (!egl_window_resource_type) {
+        fprintf(stderr, "failed to load symbol egl_window_resource_type: %s\n", dlerror());
+        dlclose(egl_nif_lib_handle);
+        return -1;
+    }
+
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
         fprintf(stderr, "failed to open 'GLFW monitor' resource type\n");
@@ -1926,6 +1950,23 @@ static ERL_NIF_TERM nif_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_joystick_present, env, argc, argv);
 }
 
+static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetX11Window(window);
+
+    void* egl_window_resource = enif_alloc_resource(egl_window_resource_type, sizeof(EGLNativeWindowType));
+
+    *((EGLNativeWindowType*)egl_window_resource) = window_handle;
+
+    return enif_make_resource(env, egl_window_resource);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint},
     {"init", 0, nif_init_},
@@ -2016,7 +2057,9 @@ static ErlNifFunc nif_functions[] = {
     {"cursor_position", 1, nif_cursor_position},
     {"set_cursor_position_raw", 3, nif_set_cursor_position},
 
-    {"joystick_present_raw", 1, nif_joystick_present}
+    {"joystick_present_raw", 1, nif_joystick_present},
+
+    {"window_egl_handle", 1, nif_window_egl_handle}
 };
 
 ERL_NIF_INIT(
