@@ -8,6 +8,11 @@
 %% Written by Jonathan De Wachter <jonathan.dewachter@byteplug.io>, January 2025
 %%
 
+-record(glfw_error, {
+    code :: glfw:error_code(),
+    description :: glfw:error_description()
+}).
+
 -record(glfw_video_mode, {
     width :: integer(),
     height :: integer(),

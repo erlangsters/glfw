@@ -45,7 +45,8 @@ To be written.
 -export_type([init_hint_type/0]).
 -export_type([init_hint_value/0]).
 
--export_type([error_type/0]).
+-export_type([error_code/0]).
+-export_type([error_description/0]).
 
 -export_type([monitor/0]).
 -export_type([window/0]).
@@ -76,7 +77,7 @@ To be written.
 -export([terminate/0]).
 -export([version/0]).
 -export([version_string/0]).
--export([last_error/0]).
+-export([get_error/0]).
 -export([error_handler/0]).
 -export([set_error_handler/1]).
 -export([platform/0]).
@@ -166,7 +167,7 @@ To be written.
 -nifs([terminate/0]).
 -nifs([version/0]).
 -nifs([version_string/0]).
--nifs([last_error/0]).
+-nifs([get_error_raw/0]).
 -nifs([error_handler/0]).
 -nifs([set_error_handler/1]).
 -nifs([platform_raw/0]).
@@ -503,6 +504,22 @@ To be written.
 -define(GLFW_GAMEPAD_BUTTON_SQUARE, ?GLFW_GAMEPAD_BUTTON_X).
 -define(GLFW_GAMEPAD_BUTTON_TRIANGLE, ?GLFW_GAMEPAD_BUTTON_Y).
 
+-define(GLFW_NO_ERROR,              0).
+-define(GLFW_NOT_INITIALIZED,       16#00010001).
+-define(GLFW_NO_CURRENT_CONTEXT,    16#00010002).
+-define(GLFW_INVALID_ENUM,          16#00010003).
+-define(GLFW_INVALID_VALUE,         16#00010004).
+-define(GLFW_OUT_OF_MEMORY,         16#00010005).
+-define(GLFW_API_UNAVAILABLE,       16#00010006).
+-define(GLFW_VERSION_UNAVAILABLE,   16#00010007).
+-define(GLFW_PLATFORM_ERROR,        16#00010008).
+-define(GLFW_FORMAT_UNAVAILABLE,    16#00010009).
+-define(GLFW_NO_WINDOW_CONTEXT,     16#0001000A).
+-define(GLFW_CURSOR_UNAVAILABLE,    16#0001000B).
+-define(GLFW_FEATURE_UNAVAILABLE,   16#0001000C).
+-define(GLFW_FEATURE_UNIMPLEMENTED, 16#0001000D).
+-define(GLFW_PLATFORM_UNAVAILABLE,  16#0001000E).
+
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -doc "The valid values of the `joystick_hat_buttons` init hint.".
@@ -562,7 +579,7 @@ The valid values for each init hint.
     way_libdecor_hint_value()
 .
 
--type error_type() ::
+-type error_code() ::
     not_initialized |
     no_current_context |
     invalid_enum |
@@ -578,6 +595,7 @@ The valid values for each init hint.
     feature_unimplemented |
     platform_unavailable
 .
+-type error_description() :: undefined | string().
 
 -type monitor() :: reference().
 -type window() :: reference().
@@ -1026,8 +1044,50 @@ To be written.
 
 To be written.
 """.
--spec last_error() -> {error, Description :: string()} | no_error.
-last_error() ->
+-spec get_error() ->
+    {error, Code :: error_code(), Description :: error_description()} |
+    no_error
+.
+get_error() ->
+    {CodeRaw, Description} = get_error_raw(),
+    case CodeRaw of
+        ?GLFW_NO_ERROR ->
+            no_error;
+        _ ->
+            Code = case CodeRaw of
+                ?GLFW_NOT_INITIALIZED ->
+                    not_initialized;
+                ?GLFW_NO_CURRENT_CONTEXT ->
+                    no_current_context;
+                ?GLFW_INVALID_ENUM ->
+                    invalid_enum;
+                ?GLFW_INVALID_VALUE ->
+                    invalid_value;
+                ?GLFW_OUT_OF_MEMORY ->
+                    out_of_memory;
+                ?GLFW_API_UNAVAILABLE ->
+                    api_unavailable;
+                ?GLFW_VERSION_UNAVAILABLE ->
+                    version_unavailable;
+                ?GLFW_PLATFORM_ERROR ->
+                    platform_error;
+                ?GLFW_FORMAT_UNAVAILABLE ->
+                    format_unavailable;
+                ?GLFW_NO_WINDOW_CONTEXT ->
+                    no_window_context;
+                ?GLFW_CURSOR_UNAVAILABLE ->
+                    cursor_unavailable;
+                ?GLFW_FEATURE_UNAVAILABLE ->
+                    feature_unavailable;
+                ?GLFW_FEATURE_UNIMPLEMENTED ->
+                    feature_unimplemented;
+                ?GLFW_PLATFORM_UNAVAILABLE ->
+                    platform_unavailable
+            end,
+            {error, Code, Description}
+    end.
+
+get_error_raw() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -1044,7 +1104,7 @@ To be written.
 
 To be written.
 """.
--spec set_error_handler(pid()) -> ok | not_ok.
+-spec set_error_handler(undefined | pid()) -> ok.
 set_error_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
