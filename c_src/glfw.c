@@ -25,13 +25,14 @@ static ERL_NIF_TERM command_result;
 
 static int command_finished = 0;
 
-static ErlNifEnv* glfw_module_env = NULL;
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
 static ErlNifResourceType* glfw_window_resource_type = NULL;
 static ErlNifResourceType* glfw_cursor_resource_type = NULL;
 
 typedef struct {
+    ErlNifEnv* env;
     GLFWwindow* window;
+    ERL_NIF_TERM window_term;
     ERL_NIF_TERM window_position_handler;
     ERL_NIF_TERM window_size_handler;
     ERL_NIF_TERM window_close_handler;
@@ -40,7 +41,6 @@ typedef struct {
     ERL_NIF_TERM window_iconify_handler;
     ERL_NIF_TERM window_maximize_handler;
     ERL_NIF_TERM window_content_scale_handler;
-
 } GLFWWindowResource;
 
 // The function of the thread that executes "NIF commands". It just waits for a
@@ -108,8 +108,6 @@ static void glfw_cursor_resource_dtor(ErlNifEnv* env, void* obj) {
 
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
-    glfw_module_env = enif_alloc_env();
-
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
         fprintf(stderr, "failed to open 'GLFW monitor' resource type\n");
@@ -137,8 +135,6 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 
 static int nif_module_unload(ErlNifEnv* caller_env, void** priv_data)
 {
-    enif_free_env(glfw_module_env);
-
     // XXX: To be implemented.
 
     return 0;
@@ -660,6 +656,7 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
         glfw_window_resource_type,
         sizeof(GLFWWindowResource)
     );
+    window_resource->env = enif_alloc_env();
     window_resource->window = window;
     window_resource->window_position_handler = enif_make_atom(env, "undefined");
     window_resource->window_size_handler = enif_make_atom(env, "undefined");
@@ -672,13 +669,15 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
 
     glfwSetWindowUserPointer(window, window_resource);
 
-    ERL_NIF_TERM window_ref = enif_make_resource(env, window_resource);
+    ERL_NIF_TERM window_term = enif_make_resource(env, window_resource);
     enif_release_resource(window_resource);
+
+    window_resource->window_term = enif_make_copy(window_resource->env, window_term);
 
     return enif_make_tuple2(
         env,
         enif_make_atom(env, "ok"),
-        window_ref
+        window_term
     );
 }
 
@@ -1148,17 +1147,20 @@ static ERL_NIF_TERM nif_request_window_attention(ErlNifEnv* env, int argc, const
 void window_position_callback(GLFWwindow* window, int xpos, int ypos) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple2(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_position"),
-        enif_make_tuple2(
-            glfw_module_env,
-            enif_make_int(glfw_module_env, xpos),
-            enif_make_int(glfw_module_env, ypos)
-        )
+    ERL_NIF_TERM inner_result = enif_make_tuple2(
+        window_resource->env,
+        enif_make_int(window_resource->env, xpos),
+        enif_make_int(window_resource->env, ypos)
     );
 
-    enif_send(NULL, &window_resource->window_position_handler, glfw_module_env, result);
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_position"),
+        window_resource->window_term,
+        inner_result
+    );
+
+    enif_send(NULL, &window_resource->window_position_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1185,7 +1187,7 @@ static ERL_NIF_TERM glfw_set_window_position_handler(ErlNifEnv* env, int argc, c
     } else {
         glfwSetWindowPosCallback(window, window_position_callback);
     }
-    window_resource->window_position_handler = argv[1];
+    window_resource->window_position_handler = enif_make_copy(env, argv[1]);
 
     return enif_make_atom(env, "ok");
 }
@@ -1198,17 +1200,20 @@ static ERL_NIF_TERM nif_set_window_position_handler(ErlNifEnv* env, int argc, co
 void window_size_callback(GLFWwindow* window, int width, int height) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple2(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_size"),
-        enif_make_tuple2(
-            glfw_module_env,
-            enif_make_int(glfw_module_env, width),
-            enif_make_int(glfw_module_env, height)
-        )
+    ERL_NIF_TERM inner_result = enif_make_tuple2(
+        window_resource->env,
+        enif_make_int(window_resource->env, width),
+        enif_make_int(window_resource->env, height)
     );
 
-    enif_send(NULL, &window_resource->window_size_handler, glfw_module_env, result);
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_size"),
+        window_resource->window_term,
+        inner_result
+    );
+
+    enif_send(NULL, &window_resource->window_size_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1248,12 +1253,13 @@ static ERL_NIF_TERM nif_set_window_size_handler(ErlNifEnv* env, int argc, const 
 void window_close_callback(GLFWwindow* window) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple1(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_close")
+    ERL_NIF_TERM result = enif_make_tuple2(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_close"),
+        window_resource->window_term
     );
 
-    enif_send(NULL, &window_resource->window_close_handler, glfw_module_env, result);
+    enif_send(NULL, &window_resource->window_close_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_close_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1293,12 +1299,13 @@ static ERL_NIF_TERM nif_set_window_close_handler(ErlNifEnv* env, int argc, const
 void window_refresh_callback(GLFWwindow* window) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple1(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_refresh")
+    ERL_NIF_TERM result = enif_make_tuple2(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_refresh"),
+        window_resource->window_term
     );
 
-    enif_send(NULL, &window_resource->window_refresh_handler, glfw_module_env, result);
+    enif_send(NULL, &window_resource->window_refresh_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_refresh_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1338,13 +1345,14 @@ static ERL_NIF_TERM nif_set_window_refresh_handler(ErlNifEnv* env, int argc, con
 void window_focus_callback(GLFWwindow* window, int focused) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple2(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_focus"),
-        enif_make_atom(glfw_module_env, focused ? "true" : "false")
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_focus"),
+        window_resource->window_term,
+        enif_make_atom(window_resource->env, focused ? "true" : "false")
     );
 
-    enif_send(NULL, &window_resource->window_focus_handler, glfw_module_env, result);
+    enif_send(NULL, &window_resource->window_focus_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_focus_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1384,13 +1392,14 @@ static ERL_NIF_TERM nif_set_window_focus_handler(ErlNifEnv* env, int argc, const
 void window_iconify_callback(GLFWwindow* window, int iconified) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple2(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_iconify"),
-        enif_make_atom(glfw_module_env, iconified ? "true" : "false")
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_iconify"),
+        window_resource->window_term,
+        enif_make_atom(window_resource->env, iconified ? "true" : "false")
     );
 
-    enif_send(NULL, &window_resource->window_iconify_handler, glfw_module_env, result);
+    enif_send(NULL, &window_resource->window_iconify_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_iconify_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1430,13 +1439,14 @@ static ERL_NIF_TERM nif_set_window_iconify_handler(ErlNifEnv* env, int argc, con
 void window_maximize_callback(GLFWwindow* window, int maximized) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple2(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_maximize"),
-        enif_make_atom(glfw_module_env, maximized ? "true" : "false")
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_maximize"),
+        window_resource->window_term,
+        enif_make_atom(window_resource->env, maximized ? "true" : "false")
     );
 
-    enif_send(NULL, &window_resource->window_maximize_handler, glfw_module_env, result);
+    enif_send(NULL, &window_resource->window_maximize_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_maximize_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1476,17 +1486,20 @@ static ERL_NIF_TERM nif_set_window_maximize_handler(ErlNifEnv* env, int argc, co
 void window_content_scale_callback(GLFWwindow* window, float xscale, float yscale) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM result = enif_make_tuple2(
-        glfw_module_env,
-        enif_make_atom(glfw_module_env, "glfw_window_content_scale"),
-        enif_make_tuple2(
-            glfw_module_env,
-            enif_make_double(glfw_module_env, xscale),
-            enif_make_double(glfw_module_env, yscale)
-        )
+    ERL_NIF_TERM inner_result = enif_make_tuple2(
+        window_resource->env,
+        enif_make_int(window_resource->env, xscale),
+        enif_make_int(window_resource->env, yscale)
     );
 
-    enif_send(NULL, &window_resource->window_content_scale_handler, glfw_module_env, result);
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        enif_make_atom(window_resource->env, "glfw_window_content_scale"),
+        window_resource->window_term,
+        inner_result
+    );
+
+    enif_send(NULL, &window_resource->window_content_scale_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
