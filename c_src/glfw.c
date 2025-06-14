@@ -39,6 +39,8 @@ static ERL_NIF_TERM atom_false;
 static ERL_NIF_TERM atom_no_monitor;
 static ERL_NIF_TERM atom_no_window;
 
+static ERL_NIF_TERM atom_glfw_error;
+
 static ERL_NIF_TERM atom_glfw_video_mode;
 static ERL_NIF_TERM atom_glfw_gamma_ramp;
 static ERL_NIF_TERM atom_glfw_window_position;
@@ -56,6 +58,9 @@ static ERL_NIF_TERM atom_release;
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
 static ErlNifResourceType* glfw_window_resource_type = NULL;
 static ErlNifResourceType* glfw_cursor_resource_type = NULL;
+
+static ErlNifEnv* glfw_error_handler_env = NULL;
+static ERL_NIF_TERM glfw_error_handler;
 
 typedef struct {
     ErlNifEnv* env;
@@ -164,6 +169,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_no_monitor = enif_make_atom(env, "no_monitor");
     atom_no_window = enif_make_atom(env, "no_window");
 
+    atom_glfw_error = enif_make_atom(env, "glfw_error");
+
     atom_glfw_video_mode = enif_make_atom(env, "glfw_video_mode");
     atom_glfw_gamma_ramp = enif_make_atom(env, "glfw_gamma_ramp");
     atom_glfw_window_position = enif_make_atom(env, "glfw_window_position");
@@ -194,6 +201,9 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         return -1;
     }
 
+    glfw_error_handler_env = enif_alloc_env();
+    glfw_error_handler = enif_make_copy(glfw_error_handler_env, atom_undefined);
+
     // Start the "NIF commands" executor thread.
     if (pthread_create(&commands_executor, NULL, commands_executor_function, NULL) != 0) {
         fprintf(stderr, "failed to create the commands executor thread\n");
@@ -205,7 +215,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 
 static int nif_module_unload(ErlNifEnv* caller_env, void** priv_data)
 {
-    // XXX: To be implemented.
+    enif_free_env(glfw_error_handler_env);
 
     return 0;
 }
@@ -280,19 +290,117 @@ static ERL_NIF_TERM nif_version_string(ErlNifEnv* env, int argc, const ERL_NIF_T
     return enif_make_string(env, version, ERL_NIF_LATIN1);
 }
 
-static ERL_NIF_TERM nif_last_error(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_get_error(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    const char* description;
+    int error_code = glfwGetError(&description);
+
+    ERL_NIF_TERM desc_term;
+    if (description != NULL) {
+        desc_term = enif_make_string(env, description, ERL_NIF_UTF8);
+    } else {
+        desc_term = atom_undefined;
+    }
+
+    return enif_make_tuple2(
+        env,
+        enif_make_int(env, error_code),
+        desc_term
+    );
+}
+
+void error_callback(int error_code, const char *description) {
+    ERL_NIF_TERM code_term;
+    switch(error_code) {
+        case GLFW_NOT_INITIALIZED:
+            code_term = enif_make_atom(glfw_error_handler_env, "not_initialized");
+            break;
+        case GLFW_NO_CURRENT_CONTEXT:
+            code_term = enif_make_atom(glfw_error_handler_env, "no_current_context");
+            break;
+        case GLFW_INVALID_ENUM:
+            code_term = enif_make_atom(glfw_error_handler_env, "invalid_enum");
+            break;
+        case GLFW_INVALID_VALUE:
+            code_term = enif_make_atom(glfw_error_handler_env, "invalid_value");
+            break;
+        case GLFW_OUT_OF_MEMORY:
+            code_term = enif_make_atom(glfw_error_handler_env, "out_of_memory");
+            break;
+        case GLFW_API_UNAVAILABLE:
+            code_term = enif_make_atom(glfw_error_handler_env, "api_unavailable");
+            break;
+        case GLFW_VERSION_UNAVAILABLE:
+            code_term = enif_make_atom(glfw_error_handler_env, "version_unavailable");
+            break;
+        case GLFW_PLATFORM_ERROR:
+            code_term = enif_make_atom(glfw_error_handler_env, "platform_error");
+            break;
+        case GLFW_FORMAT_UNAVAILABLE:
+            code_term = enif_make_atom(glfw_error_handler_env, "format_unavailable");
+            break;
+        case GLFW_NO_WINDOW_CONTEXT:
+            code_term = enif_make_atom(glfw_error_handler_env, "no_window_context");
+            break;
+        case GLFW_CURSOR_UNAVAILABLE:
+            code_term = enif_make_atom(glfw_error_handler_env, "cursor_unavailable");
+            break;
+        case GLFW_FEATURE_UNAVAILABLE:
+            code_term = enif_make_atom(glfw_error_handler_env, "feature_unavailable");
+            break;
+        case GLFW_FEATURE_UNIMPLEMENTED:
+            code_term = enif_make_atom(glfw_error_handler_env, "feature_unimplemented");
+            break;
+        case GLFW_PLATFORM_UNAVAILABLE:
+            code_term = enif_make_atom(glfw_error_handler_env, "platform_unavailable");
+            break;
+        default:
+            code_term = atom_undefined;
+    }
+
+    ERL_NIF_TERM description_term;
+    if (description != NULL) {
+        description_term = enif_make_string(glfw_error_handler_env, description, ERL_NIF_UTF8);
+    } else {
+        description_term = atom_undefined;
+    }
+
+    ERL_NIF_TERM result = enif_make_tuple3(
+        glfw_error_handler_env,
+        atom_glfw_error,
+        code_term,
+        description_term
+    );
+
+    enif_send(NULL, &glfw_error_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return glfw_error_handler;
+}
+
+static ERL_NIF_TERM glfw_set_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    enif_clear_env(glfw_error_handler_env);
+
+    int is_undefined = enif_is_identical(argv[1], atom_undefined);
+    if(is_undefined) {
+        glfwSetErrorCallback(NULL);
+        glfw_error_handler = enif_make_copy(glfw_error_handler_env, atom_undefined);
+    } else {
+        glfwSetErrorCallback(error_callback);
+        glfw_error_handler = enif_make_copy(glfw_error_handler_env, argv[0]);
+    }
+
+    return atom_ok;
 }
 
 static ERL_NIF_TERM nif_set_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_set_error_handler, env, argc, argv);
 }
 
 static ERL_NIF_TERM nif_platform(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2018,7 +2126,7 @@ static ErlNifFunc nif_functions[] = {
     {"terminate", 0, nif_terminate},
     {"version", 0, nif_version},
     {"version_string", 0, nif_version_string},
-    {"last_error", 0, nif_last_error},
+    {"get_error_raw", 0, nif_get_error},
     {"error_handler", 0, nif_error_handler},
     {"set_error_handler", 1, nif_set_error_handler},
     {"platform_raw", 0, nif_platform},
