@@ -62,6 +62,8 @@ static ERL_NIF_TERM atom_glfw_char_mods;
 static ERL_NIF_TERM atom_glfw_mouse_button;
 static ERL_NIF_TERM atom_glfw_cursor_position;
 static ERL_NIF_TERM atom_glfw_cursor_enter;
+static ERL_NIF_TERM atom_glfw_scroll;
+static ERL_NIF_TERM atom_glfw_drop;
 
 static ERL_NIF_TERM atom_press;
 static ERL_NIF_TERM atom_release;
@@ -91,6 +93,8 @@ typedef struct {
     ERL_NIF_TERM mouse_button_handler;
     ERL_NIF_TERM cursor_position_handler;
     ERL_NIF_TERM cursor_enter_handler;
+    ERL_NIF_TERM scroll_handler;
+    ERL_NIF_TERM drop_handler;
 } GLFWWindowResource;
 
 // The function of the thread that executes "NIF commands". It just waits for a
@@ -209,6 +213,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_glfw_mouse_button = enif_make_atom(env, "glfw_mouse_button");
     atom_glfw_cursor_position = enif_make_atom(env, "glfw_cursor_position");
     atom_glfw_cursor_enter = enif_make_atom(env, "glfw_cursor_enter");
+    atom_glfw_scroll = enif_make_atom(env, "glfw_scroll");
+    atom_glfw_drop = enif_make_atom(env, "glfw_drop");
 
     atom_press = enif_make_atom(env, "press");
     atom_release = enif_make_atom(env, "release");
@@ -2424,6 +2430,83 @@ static ERL_NIF_TERM nif_set_cursor_enter_handler(ErlNifEnv* env, int argc, const
     return execute_command(glfw_set_cursor_enter_handler, env, argc, argv);
 }
 
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+    GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
+
+    ERL_NIF_TERM xoffset_term = enif_make_double(window_resource->env, xoffset);
+    ERL_NIF_TERM yoffset_term = enif_make_double(window_resource->env, yoffset);
+
+    ERL_NIF_TERM inner_result = enif_make_tuple2(
+        window_resource->env,
+        xoffset_term,
+        yoffset_term
+    );
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        atom_glfw_scroll,
+        window_resource->window_term,
+        inner_result
+    );
+
+    enif_send(NULL, &window_resource->scroll_handler, NULL, result);
+}
+
+static ERL_NIF_TERM nif_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+
+    return window_resource->scroll_handler;
+}
+static ERL_NIF_TERM glfw_set_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int is_undefined = enif_is_identical(argv[1], atom_undefined);
+    if(is_undefined) {
+        glfwSetScrollCallback(window, NULL);
+    } else {
+        glfwSetScrollCallback(window, scroll_callback);
+    }
+    window_resource->scroll_handler = argv[1];
+
+    return atom_ok;
+}
+static ERL_NIF_TERM nif_set_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_scroll_handler, env, argc, argv);
+}
+
+void drop_callback(GLFWwindow *window, int path_count, const char *paths[]) {
+    // XXX
+}
+
+static ERL_NIF_TERM nif_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+
+    return window_resource->drop_handler;
+}
+
+static ERL_NIF_TERM glfw_set_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return atom_true;
+}
+
+static ERL_NIF_TERM nif_set_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_drop_handler, env, argc, argv);
+}
+
 static ERL_NIF_TERM glfw_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int joy;
@@ -2564,6 +2647,10 @@ static ErlNifFunc nif_functions[] = {
     {"set_cursor_position_handler", 2, nif_set_cursor_position_handler},
     {"cursor_enter_handler", 1, nif_cursor_enter_handler},
     {"set_cursor_enter_handler", 2, nif_set_cursor_enter_handler},
+    {"scroll_handler", 1, nif_scroll_handler},
+    {"set_scroll_handler", 2, nif_set_scroll_handler},
+    {"drop_handler", 1, nif_drop_handler},
+    {"set_drop_handler", 2, nif_set_drop_handler},
 
     {"joystick_present_raw", 1, nif_joystick_present},
 
