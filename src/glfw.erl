@@ -172,6 +172,10 @@ To be written.
 -export([set_cursor_position_handler/2]).
 -export([cursor_enter_handler/1]).
 -export([set_cursor_enter_handler/2]).
+-export([scroll_handler/1]).
+-export([set_scroll_handler/2]).
+-export([drop_handler/1]).
+-export([set_drop_handler/2]).
 
 -export([joystick_present/1]).
 
@@ -276,6 +280,10 @@ To be written.
 -nifs([set_cursor_position_handler/2]).
 -nifs([cursor_enter_handler/1]).
 -nifs([set_cursor_enter_handler/2]).
+-nifs([scroll_handler/1]).
+-nifs([set_scroll_handler/2]).
+-nifs([drop_handler/1]).
+-nifs([set_drop_handler/2]).
 
 -nifs([joystick_present_raw/1]).
 
@@ -3366,6 +3374,42 @@ To be written.
 """.
 -spec set_cursor_enter_handler(window(), undefined | pid()) -> ok.
 set_cursor_enter_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec scroll_handler(window()) -> undefined | pid().
+scroll_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_scroll_handler(window(), undefined | pid()) -> ok.
+set_scroll_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec drop_handler(window()) -> undefined | pid().
+drop_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_drop_handler(window(), undefined | pid()) -> ok.
+set_drop_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """

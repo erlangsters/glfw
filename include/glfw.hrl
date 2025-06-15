@@ -107,3 +107,13 @@
     window :: glfw:window(),
     entered :: boolean()
 }).
+
+-record(glfw_scroll, {
+    window :: glfw:window(),
+    offset :: {X :: float(), Y :: float()}
+}).
+
+-record(glfw_drop, {
+    window :: glfw:window(),
+    paths :: [string()] % XXX: or [binary()] ??
+}).
