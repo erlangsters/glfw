@@ -160,6 +160,9 @@ To be written.
 -export([cursor_position/1]).
 -export([set_cursor_position/2]).
 
+-export([key_handler/1]).
+-export([set_key_handler/2]).
+
 -export([joystick_present/1]).
 
 -nifs([init_hint_raw/2]).
@@ -250,6 +253,9 @@ To be written.
 
 -nifs([cursor_position/1]).
 -nifs([set_cursor_position_raw/3]).
+
+-nifs([key_handler/1]).
+-nifs([set_key_handler/2]).
 
 -nifs([joystick_present_raw/1]).
 
@@ -3232,6 +3238,24 @@ set_cursor_position(Window, Position) ->
     set_cursor_position_raw(Window, X, Y).
 
 set_cursor_position_raw(_Window, _X, _Y) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec key_handler(window()) -> undefined | pid().
+key_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_key_handler(window(), undefined | pid()) -> ok.
+set_key_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
