@@ -10,18 +10,18 @@ available shortly. The master branch will be rewound!
 [![Build Status](https://img.shields.io/github/actions/workflow/status/erlangsters/glfw/workflow.yml)](https://github.com/erlangsters/glfw/actions/workflows/workflow.yml)
 [![Documentation Link](https://img.shields.io/badge/documentation-available-yellow)](http://erlangsters.github.io/glfw/)
 
-A binding of [GFLW](https://www.glfw.org/) version 3.4 for the Erlang and 
+A binding of [GFLW](https://www.glfw.org/) version 3.4 for the Erlang and
 Elixir programming language. It's designed to work exclusively with the EGL 1.5
-[binding](https://github.com/erlangsters/egl-1.5) and, indirectly, one of the
-OpenGL [bindings](https://github.com/orgs/erlangsters/repositories?type=all&q=opengl-).
+[binding](https://github.com/erlangsters/egl-1.5) and, indirectly, with one of
+the OpenGL [bindings](https://github.com/orgs/erlangsters/repositories?type=all&q=opengl-).
 
 ```erlang
 glfw:init().
 {ok, Window} = glfw:create_window(640, 480, "Hello, World!").
 ```
 
-It's a manually written (not generated) binding which is tested to work on
-Linux, macOs and Windows.
+It's a a thread-safe and idiomatic binding that is not generated. It's tested
+to work flawlessly on Linux, macOs and Windows.
 
 > For very good reasons, this binding has its limitations and will remain this
 > way. For instance, it does not expose Vulkan-related features, and it limits
@@ -31,6 +31,114 @@ Written by the Erlangsters [community](https://about.erlangsters.org/) and
 released under the MIT [license](/https://opensource.org/license/mit).
 
 XXX: Implement child windows.
+
+XXX: Verify/clarify  how glfwTerminate() could corrupt the BEAM by invalidating
+     pointer to exisitng resource (cursor, window, etc).
+
+XXX: What happens if monitor resource sent in the monitor callback, then later
+     another retrieve with monitors/0. Should they be shared ?
+
+XXX: Verify it builds on earlier version of GLFW (version 3.3 on debian 12 for instance).
+
+XXX: Should time-related functions be implemented
+
+- glfwGetTimerFrequency
+- glfwGetTimerValue
+- glfwGetTime
+- glfwSetTime
+
+It's for GLFW version 3.4, however it will compile fine with previous version.
+Just make sure not to  use features if linking against earlier version. Use the
+`glfw:version()`.
+
+
+For more example, consult the test/ folder.
+
+
+## Getting started
+
+An example will speak louder than words.
+
+```erlang
+glfw:init().
+{ok, Window} = glfw:create_window(800, 600, "Hello, GLFW!").
+
+glfw:set_key_handler(Window, self()).
+window_loop(Window).
+```
+
+> Notice how the concept of "callbacks" is replaced with "handlers". Instead of
+> functions being called, we register a process which then receives the events
+> as BEAM messages to process them asynchronously.
+
+Here is how the main loop could look like.
+
+```erlang
+loop_window(Window) ->
+case glfw:window_should_close(Window) of
+     true ->
+          glfw:terminate();
+     false ->
+          glfw:poll_events(),
+          handle_events(Window),
+          loop_window(Window)
+end.
+```
+
+Here is how processing events could look like.
+
+
+```erlang
+
+handle_events(Window) ->
+     receive
+          #glfw_key{window=Window, key={X, Y}} ->
+          glfw:window_should_close(Window, true),
+          handle_events(Window);
+     after 0 ->
+          ok
+     end.
+```
+
+Note about contextless window.
+
+```erlang
+WindowHandle = glfw:window_egl_handle(Window).
+{ok, Surface} = egl:create_window_surface(Display, Config, WindowHandle, []).
+```
+
+To be written.
+
+An effort to provide an adapted documentation was made, and therefore you can
+rely on the binding's documentation.
+
+## Contextless windows
+
+To be written.
+
+For more information, consult this [document](/docs/contextless-windows.md).
+
+## Thread safety
+
+To be written.
+
+For more information, consult this [document](/docs/thread-safety.md).
+
+## API mapping
+
+To be written.
+
+For more information, consult this [document](/docs/api-mapping.md).
+
+
+
+
+
+
+
+
+
+
 
 ## Quick preview
 
@@ -60,39 +168,6 @@ glfw:init_hint(this, that).
 glfw:init().
 % Do thing.
 glfw:terminate().
-```
-
-Some adjustments here and where were made to make it more natural (or to align
-with the existing convention used by all Erlangsters libraries and frameworks).
-Notable examples are:
-
-```erlang
-last_error/set_error_handler.
-no_pointer_user_data.
-
-A monitor prefix was added!
-glfwGetVideoModes
-glfwGetVideoMode
-glfwSetGamma
-glfwGetGammaRamp
-glfwSetGammaRamp
-
-
-```
-
-
-
-
-
-In C, when a pointer on some object is returend, in it's returned as a
-reference. You still need to manually manage the lifetime of those. For instnace
-if
-
-```erlang
-{ok, Window} = glfw:create_window(640, 480, "Hello, World!")
-% Later...
-ok = glfw:destroy_window(Window).
-% Do not use the Window variable again...
 ```
 
 About the versioning scheme, it closely follow the scheme of the upstream
