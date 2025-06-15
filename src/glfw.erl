@@ -185,6 +185,9 @@ To be written.
 
 -export([get_joystick_guid/1]).
 
+-export([joystick_handler/0]).
+-export([set_joystick_handler/1]).
+
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -298,6 +301,9 @@ To be written.
 -nifs([get_joystick_hats_raw/1]).
 
 -nifs([get_joystick_guid_raw/1]).
+
+-nifs([joystick_handler/0]).
+-nifs([set_joystick_handler/1]).
 
 -export([window_egl_handle/1]).
 -nifs([window_egl_handle/1]).
@@ -3495,6 +3501,24 @@ get_joystick_guid(Joystick) ->
     get_joystick_guid_raw(JoystickRaw).
 
 get_joystick_guid_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec joystick_handler() -> undefined | pid().
+joystick_handler() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_joystick_handler(undefined | pid()) -> ok.
+set_joystick_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 window_egl_handle(_Window) ->

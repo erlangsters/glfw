@@ -65,10 +65,15 @@ static ERL_NIF_TERM atom_glfw_cursor_enter;
 static ERL_NIF_TERM atom_glfw_scroll;
 static ERL_NIF_TERM atom_glfw_drop;
 
+static ERL_NIF_TERM atom_glfw_joystick;
+
 static ERL_NIF_TERM atom_press;
 static ERL_NIF_TERM atom_release;
 
 static ERL_NIF_TERM atom_not_present;
+static ERL_NIF_TERM atom_joysticks[GLFW_JOYSTICK_LAST + 1];
+static ERL_NIF_TERM atom_connected;
+static ERL_NIF_TERM atom_disconnected;
 
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
 static ErlNifResourceType* glfw_window_resource_type = NULL;
@@ -98,6 +103,9 @@ typedef struct {
     ERL_NIF_TERM scroll_handler;
     ERL_NIF_TERM drop_handler;
 } GLFWWindowResource;
+
+static ErlNifEnv* glfw_joystick_handler_env = NULL;
+static ERL_NIF_TERM glfw_joystick_handler;
 
 // The function of the thread that executes "NIF commands". It just waits for a
 // command to be ready, executes it and signals that the command is done (while
@@ -218,10 +226,30 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_glfw_scroll = enif_make_atom(env, "glfw_scroll");
     atom_glfw_drop = enif_make_atom(env, "glfw_drop");
 
+    atom_glfw_joystick = enif_make_atom(env, "glfw_joystick");
+
     atom_press = enif_make_atom(env, "press");
     atom_release = enif_make_atom(env, "release");
 
     atom_not_present = enif_make_atom(env, "not_present");
+    atom_joysticks[0] = enif_make_atom(env, "joystick_1");
+    atom_joysticks[1] = enif_make_atom(env, "joystick_2");
+    atom_joysticks[2] = enif_make_atom(env, "joystick_3");
+    atom_joysticks[3] = enif_make_atom(env, "joystick_4");
+    atom_joysticks[4] = enif_make_atom(env, "joystick_5");
+    atom_joysticks[5] = enif_make_atom(env, "joystick_6");
+    atom_joysticks[6] = enif_make_atom(env, "joystick_7");
+    atom_joysticks[7] = enif_make_atom(env, "joystick_8");
+    atom_joysticks[8] = enif_make_atom(env, "joystick_9");
+    atom_joysticks[9] = enif_make_atom(env, "joystick_10");
+    atom_joysticks[10] = enif_make_atom(env, "joystick_11");
+    atom_joysticks[11] = enif_make_atom(env, "joystick_12");
+    atom_joysticks[12] = enif_make_atom(env, "joystick_13");
+    atom_joysticks[13] = enif_make_atom(env, "joystick_14");
+    atom_joysticks[14] = enif_make_atom(env, "joystick_15");
+    atom_joysticks[15] = enif_make_atom(env, "joystick_16");
+    atom_connected = enif_make_atom(env, "connected");
+    atom_disconnected = enif_make_atom(env, "disconnected");
 
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
@@ -242,6 +270,9 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     glfw_error_handler_env = enif_alloc_env();
     glfw_error_handler = enif_make_copy(glfw_error_handler_env, atom_undefined);
 
+    glfw_joystick_handler_env = enif_alloc_env();
+    glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, atom_undefined);
+
     // Start the "NIF commands" executor thread.
     if (pthread_create(&commands_executor, NULL, commands_executor_function, NULL) != 0) {
         fprintf(stderr, "failed to create the commands executor thread\n");
@@ -254,6 +285,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 static int nif_module_unload(ErlNifEnv* caller_env, void** priv_data)
 {
     enif_free_env(glfw_error_handler_env);
+    enif_free_env(glfw_joystick_handler_env);
 
     return 0;
 }
@@ -2646,6 +2678,43 @@ static ERL_NIF_TERM nif_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ER
     return execute_command(glfw_get_joystick_guid_raw, env, argc, argv);
 }
 
+void joystick_callback(int jid, int event) {
+    ERL_NIF_TERM result = enif_make_tuple3(
+        glfw_joystick_handler_env,
+        atom_glfw_joystick,
+        atom_joysticks[jid],
+        event == GLFW_CONNECTED ? atom_connected : atom_disconnected
+    );
+
+    enif_send(NULL, &glfw_joystick_handler, NULL, result);
+}
+
+static ERL_NIF_TERM nif_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return glfw_joystick_handler;
+}
+
+static ERL_NIF_TERM glfw_set_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    enif_clear_env(glfw_joystick_handler_env);
+
+    int is_undefined = enif_is_identical(argv[1], atom_undefined);
+    if(is_undefined) {
+        glfwSetJoystickCallback(NULL);
+        glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, atom_undefined);
+    } else {
+        glfwSetJoystickCallback(joystick_callback);
+        glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, argv[0]);
+    }
+
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_set_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_joystick_handler, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -2777,6 +2846,9 @@ static ErlNifFunc nif_functions[] = {
     {"get_joystick_hats_raw", 1, nif_get_joystick_hats_raw},
 
     {"get_joystick_guid_raw", 1, nif_get_joystick_guid_raw},
+
+    {"joystick_handler", 0, nif_joystick_handler},
+    {"set_joystick_handler", 1, nif_set_joystick_handler},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
