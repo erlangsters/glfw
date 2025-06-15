@@ -2626,6 +2626,26 @@ static ERL_NIF_TERM nif_get_joystick_hats_raw(ErlNifEnv* env, int argc, const ER
     return execute_command(glfw_get_joystick_hats_raw, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* guid = glfwGetJoystickGUID(jid);
+    if (guid == NULL) {
+        return atom_not_present;
+    }
+
+    return enif_make_string(env, guid, ERL_NIF_UTF8);
+}
+
+static ERL_NIF_TERM nif_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_joystick_guid_raw, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -2755,6 +2775,8 @@ static ErlNifFunc nif_functions[] = {
     {"get_joystick_axes_raw", 1, nif_get_joystick_axes_raw},
     {"get_joystick_buttons_raw", 1, nif_get_joystick_buttons_raw},
     {"get_joystick_hats_raw", 1, nif_get_joystick_hats_raw},
+
+    {"get_joystick_guid_raw", 1, nif_get_joystick_guid_raw},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
