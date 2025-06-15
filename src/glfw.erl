@@ -162,6 +162,10 @@ To be written.
 
 -export([key_handler/1]).
 -export([set_key_handler/2]).
+-export([char_handler/1]).
+-export([set_char_handler/2]).
+-export([char_mods_handler/1]).
+-export([set_char_mods_handler/2]).
 
 -export([joystick_present/1]).
 
@@ -256,6 +260,10 @@ To be written.
 
 -nifs([key_handler/1]).
 -nifs([set_key_handler/2]).
+-nifs([char_handler/1]).
+-nifs([set_char_handler/2]).
+-nifs([char_mods_handler/1]).
+-nifs([set_char_mods_handler/2]).
 
 -nifs([joystick_present_raw/1]).
 
@@ -3256,6 +3264,42 @@ To be written.
 """.
 -spec set_key_handler(window(), undefined | pid()) -> ok.
 set_key_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec char_handler(window()) -> undefined | pid().
+char_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_char_handler(window(), undefined | pid()) -> ok.
+set_char_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec char_mods_handler(window()) -> undefined | pid().
+char_mods_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_char_mods_handler(window(), undefined | pid()) -> ok.
+set_char_mods_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """

@@ -79,3 +79,14 @@
     action :: press | release | repeat,
     mods :: integer()
 }).
+
+-record(glfw_char, {
+    window :: glfw:window(),
+    codepoint :: erlang:char()
+}).
+
+-record(glfw_char_mods, {
+    window :: glfw:window(),
+    codepoint :: erlang:char(),
+    mods :: integer()
+}).
