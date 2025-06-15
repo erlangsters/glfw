@@ -71,3 +71,11 @@
     window :: glfw:window(),
     scale :: {X :: float(), Y :: float()}
 }).
+
+-record(glfw_key, {
+    window :: glfw:window(),
+    key :: glfw:key(),
+    scancode :: glfw:scancode(),
+    action :: press | release | repeat,
+    mods :: integer()
+}).

@@ -36,6 +36,10 @@ static ERL_NIF_TERM atom_undefined;
 static ERL_NIF_TERM atom_true;
 static ERL_NIF_TERM atom_false;
 
+static ERL_NIF_TERM atom_press;
+static ERL_NIF_TERM atom_release;
+static ERL_NIF_TERM atom_repeat;
+
 static ERL_NIF_TERM atom_no_monitor;
 static ERL_NIF_TERM atom_no_window;
 
@@ -51,6 +55,8 @@ static ERL_NIF_TERM atom_glfw_window_focus;
 static ERL_NIF_TERM atom_glfw_window_iconify;
 static ERL_NIF_TERM atom_glfw_window_maximize;
 static ERL_NIF_TERM atom_glfw_window_content_scale;
+
+static ERL_NIF_TERM atom_glfw_key;
 
 static ERL_NIF_TERM atom_press;
 static ERL_NIF_TERM atom_release;
@@ -74,6 +80,7 @@ typedef struct {
     ERL_NIF_TERM window_iconify_handler;
     ERL_NIF_TERM window_maximize_handler;
     ERL_NIF_TERM window_content_scale_handler;
+    ERL_NIF_TERM key_handler;
 } GLFWWindowResource;
 
 // The function of the thread that executes "NIF commands". It just waits for a
@@ -166,6 +173,10 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_true = enif_make_atom(env, "true");
     atom_false = enif_make_atom(env, "false");
 
+    atom_press = enif_make_atom(env, "press");
+    atom_release = enif_make_atom(env, "release");
+    atom_repeat = enif_make_atom(env, "repeat");
+
     atom_no_monitor = enif_make_atom(env, "no_monitor");
     atom_no_window = enif_make_atom(env, "no_window");
 
@@ -181,6 +192,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_glfw_window_iconify = enif_make_atom(env, "glfw_window_iconify");
     atom_glfw_window_maximize = enif_make_atom(env, "glfw_window_maximize");
     atom_glfw_window_content_scale = enif_make_atom(env, "glfw_window_content_scale");
+
+    atom_glfw_key = enif_make_atom(env, "glfw_key");
 
     atom_press = enif_make_atom(env, "press");
     atom_release = enif_make_atom(env, "release");
@@ -2082,6 +2095,69 @@ static ERL_NIF_TERM nif_set_cursor_position(ErlNifEnv* env, int argc, const ERL_
     return execute_command(glfw_set_cursor_position, env, argc, argv);
 }
 
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+
+    GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
+
+    ERL_NIF_TERM key_term = enif_make_int(window_resource->env, key);
+    ERL_NIF_TERM scancode_term = enif_make_int(window_resource->env, scancode);
+    ERL_NIF_TERM action_term;
+    if (action == GLFW_PRESS) {
+        action_term = atom_press;
+    } else if (action == GLFW_RELEASE) {
+        action_term = atom_release;
+    } else if (action == GLFW_REPEAT) {
+        action_term = atom_repeat;
+    }
+    ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
+
+    ERL_NIF_TERM result = enif_make_tuple6(
+        window_resource->env,
+        atom_glfw_key,
+        window_resource->window_term,
+        key_term,
+        scancode_term,
+        action_term,
+        mods_term
+    );
+
+    enif_send(NULL, &window_resource->key_handler, NULL, result);
+}
+
+static ERL_NIF_TERM nif_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+
+    return window_resource->key_handler;
+}
+
+static ERL_NIF_TERM glfw_set_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int is_undefined = enif_is_identical(argv[1], atom_undefined);
+    if(is_undefined) {
+        glfwSetKeyCallback(window, NULL);
+    } else {
+        glfwSetKeyCallback(window, key_callback);
+    }
+    window_resource->key_handler = argv[1];
+
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_set_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_key_handler, env, argc, argv);
+}
+
 static ERL_NIF_TERM glfw_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int joy;
@@ -2209,6 +2285,8 @@ static ErlNifFunc nif_functions[] = {
 
     {"cursor_position", 1, nif_cursor_position},
     {"set_cursor_position_raw", 3, nif_set_cursor_position},
+
+    {"key_handler", 1, nif_key_handler},
 
     {"joystick_present_raw", 1, nif_joystick_present},
 
