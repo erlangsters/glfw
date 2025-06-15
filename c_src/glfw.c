@@ -75,6 +75,29 @@ static ERL_NIF_TERM atom_joysticks[GLFW_JOYSTICK_LAST + 1];
 static ERL_NIF_TERM atom_connected;
 static ERL_NIF_TERM atom_disconnected;
 
+// Gamepad atoms.
+static ERL_NIF_TERM atom_axe_left_x;
+static ERL_NIF_TERM atom_axe_left_y;
+static ERL_NIF_TERM atom_axe_right_x;
+static ERL_NIF_TERM atom_axe_right_y;
+static ERL_NIF_TERM atom_axe_left_trigger;
+static ERL_NIF_TERM atom_axe_right_trigger;
+static ERL_NIF_TERM atom_button_a;
+static ERL_NIF_TERM atom_button_b;
+static ERL_NIF_TERM atom_button_x;
+static ERL_NIF_TERM atom_button_y;
+static ERL_NIF_TERM atom_button_left_bumper;
+static ERL_NIF_TERM atom_button_right_bumper;
+static ERL_NIF_TERM atom_button_back;
+static ERL_NIF_TERM atom_button_start;
+static ERL_NIF_TERM atom_button_guide;
+static ERL_NIF_TERM atom_button_left_thumb;
+static ERL_NIF_TERM atom_button_right_thumb;
+static ERL_NIF_TERM atom_button_dpad_up;
+static ERL_NIF_TERM atom_button_dpad_right;
+static ERL_NIF_TERM atom_button_dpad_down;
+static ERL_NIF_TERM atom_button_dpad_left;
+
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
 static ErlNifResourceType* glfw_window_resource_type = NULL;
 static ErlNifResourceType* glfw_cursor_resource_type = NULL;
@@ -250,6 +273,28 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_joysticks[15] = enif_make_atom(env, "joystick_16");
     atom_connected = enif_make_atom(env, "connected");
     atom_disconnected = enif_make_atom(env, "disconnected");
+
+    atom_axe_left_x = enif_make_atom(env, "axe_left_x");
+    atom_axe_left_y = enif_make_atom(env, "axe_left_y");
+    atom_axe_right_x = enif_make_atom(env, "axe_right_x");
+    atom_axe_right_y = enif_make_atom(env, "axe_right_y");
+    atom_axe_left_trigger = enif_make_atom(env, "axe_left_trigger");
+    atom_axe_right_trigger = enif_make_atom(env, "axe_right_trigger");
+    atom_button_a = enif_make_atom(env, "button_a");
+    atom_button_b = enif_make_atom(env, "button_b");
+    atom_button_x = enif_make_atom(env, "button_x");
+    atom_button_y = enif_make_atom(env, "button_y");
+    atom_button_left_bumper = enif_make_atom(env, "button_left_bumper");
+    atom_button_right_bumper = enif_make_atom(env, "button_right_bumper");
+    atom_button_back = enif_make_atom(env, "button_back");
+    atom_button_start = enif_make_atom(env, "button_start");
+    atom_button_guide = enif_make_atom(env, "button_guide");
+    atom_button_left_thumb = enif_make_atom(env, "button_left_thumb");
+    atom_button_right_thumb = enif_make_atom(env, "button_right_thumb");
+    atom_button_dpad_up = enif_make_atom(env, "button_dpad_up");
+    atom_button_dpad_right = enif_make_atom(env, "button_dpad_right");
+    atom_button_dpad_down = enif_make_atom(env, "button_dpad_down");
+    atom_button_dpad_left = enif_make_atom(env, "button_dpad_left");
 
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
@@ -2774,6 +2819,82 @@ static ERL_NIF_TERM nif_update_gamepad_mappings(ErlNifEnv* env, int argc, const 
     return execute_command(glfw_update_gamepad_mappings, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_get_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* name = glfwGetGamepadName(jid);
+    if (name == NULL) {
+        return atom_error;
+    }
+
+    return enif_make_tuple2(
+        env,
+        atom_ok,
+        enif_make_string(env, name, ERL_NIF_UTF8)
+    );
+}
+
+static ERL_NIF_TERM nif_get_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_gamepad_name, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_get_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    GLFWgamepadstate state;
+    if (!glfwGetGamepadState(jid, &state)) {
+        return atom_error;
+    }
+
+    // Create axes map
+    ERL_NIF_TERM axes_map = enif_make_new_map(env);
+    enif_make_map_put(env, axes_map, atom_axe_left_x, enif_make_double(env, state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]), &axes_map);
+    enif_make_map_put(env, axes_map, atom_axe_left_y, enif_make_double(env, state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]), &axes_map);
+    enif_make_map_put(env, axes_map, atom_axe_right_x, enif_make_double(env, state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]), &axes_map);
+    enif_make_map_put(env, axes_map, atom_axe_right_y, enif_make_double(env, state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]), &axes_map);
+    enif_make_map_put(env, axes_map, atom_axe_left_trigger, enif_make_double(env, state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER]), &axes_map);
+    enif_make_map_put(env, axes_map, atom_axe_right_trigger, enif_make_double(env, state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER]), &axes_map);
+
+    // Create buttons map
+    ERL_NIF_TERM buttons_map = enif_make_new_map(env);
+    enif_make_map_put(env, buttons_map, atom_button_a, state.buttons[GLFW_GAMEPAD_BUTTON_A] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_b, state.buttons[GLFW_GAMEPAD_BUTTON_B] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_x, state.buttons[GLFW_GAMEPAD_BUTTON_X] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_y, state.buttons[GLFW_GAMEPAD_BUTTON_Y] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_left_bumper, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_right_bumper, state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_back, state.buttons[GLFW_GAMEPAD_BUTTON_BACK] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_start, state.buttons[GLFW_GAMEPAD_BUTTON_START] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_guide, state.buttons[GLFW_GAMEPAD_BUTTON_GUIDE] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_left_thumb, state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_THUMB] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_right_thumb, state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_THUMB] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_dpad_up, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_dpad_right, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_dpad_down, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+    enif_make_map_put(env, buttons_map, atom_button_dpad_left, state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT] == GLFW_PRESS ? atom_press : atom_release, &buttons_map);
+
+    return enif_make_tuple3(
+        env,
+        atom_ok,
+        axes_map,
+        buttons_map
+    );
+}
+
+static ERL_NIF_TERM nif_get_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_gamepad_state, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -2912,6 +3033,9 @@ static ErlNifFunc nif_functions[] = {
 
     {"joystick_is_gamepad_raw", 1, nif_joystick_is_gamepad},
     {"update_gamepad_mappings", 1, nif_update_gamepad_mappings},
+
+    {"get_gamepad_name_raw", 1, nif_get_gamepad_name},
+    {"get_gamepad_state_raw", 1, nif_get_gamepad_state},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
