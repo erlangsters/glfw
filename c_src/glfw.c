@@ -59,6 +59,7 @@ static ERL_NIF_TERM atom_glfw_window_content_scale;
 static ERL_NIF_TERM atom_glfw_key;
 static ERL_NIF_TERM atom_glfw_char;
 static ERL_NIF_TERM atom_glfw_char_mods;
+static ERL_NIF_TERM atom_glfw_mouse_button;
 
 static ERL_NIF_TERM atom_press;
 static ERL_NIF_TERM atom_release;
@@ -85,6 +86,7 @@ typedef struct {
     ERL_NIF_TERM key_handler;
     ERL_NIF_TERM char_handler;
     ERL_NIF_TERM char_mods_handler;
+    ERL_NIF_TERM mouse_button_handler;
 } GLFWWindowResource;
 
 // The function of the thread that executes "NIF commands". It just waits for a
@@ -200,6 +202,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_glfw_key = enif_make_atom(env, "glfw_key");
     atom_glfw_char = enif_make_atom(env, "glfw_char");
     atom_glfw_char_mods = enif_make_atom(env, "glfw_char_mods");
+    atom_glfw_mouse_button = enif_make_atom(env, "glfw_mouse_button");
 
     atom_press = enif_make_atom(env, "press");
     atom_release = enif_make_atom(env, "release");
@@ -2260,6 +2263,62 @@ static ERL_NIF_TERM nif_set_character_mods_handler(ErlNifEnv* env, int argc, con
     return execute_command(glfw_set_character_mods_handler, env, argc, argv);
 }
 
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
+    GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
+
+    ERL_NIF_TERM button_term = enif_make_int(window_resource->env, button);
+    ERL_NIF_TERM action_term;
+    if (action == GLFW_PRESS) {
+        action_term = atom_press;
+    } else if (action == GLFW_RELEASE) {
+        action_term = atom_release;
+    }
+    ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
+
+    ERL_NIF_TERM result = enif_make_tuple5(
+        window_resource->env,
+        atom_glfw_mouse_button,
+        window_resource->window_term,
+        button_term,
+        action_term,
+        mods_term
+    );
+
+    enif_send(NULL, &window_resource->mouse_button_handler, NULL, result);
+}
+
+static ERL_NIF_TERM nif_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+
+    return window_resource->mouse_button_handler;
+}
+static ERL_NIF_TERM glfw_set_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int is_undefined = enif_is_identical(argv[1], atom_undefined);
+    if(is_undefined) {
+        glfwSetMouseButtonCallback(window, NULL);
+    } else {
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+    }
+    window_resource->mouse_button_handler = argv[1];
+
+    return atom_ok;
+}
+static ERL_NIF_TERM nif_set_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_mouse_button_handler, env, argc, argv);
+}
+
 static ERL_NIF_TERM glfw_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int joy;
@@ -2394,6 +2453,8 @@ static ErlNifFunc nif_functions[] = {
     {"set_char_handler", 2, nif_set_character_handler},
     {"char_mods_handler", 1, nif_character_mods_handler},
     {"set_char_mods_handler", 2, nif_set_character_mods_handler},
+    {"mouse_button_handler", 1, nif_mouse_button_handler},
+    {"set_mouse_button_handler", 2, nif_set_mouse_button_handler},
 
     {"joystick_present_raw", 1, nif_joystick_present},
 

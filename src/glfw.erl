@@ -166,6 +166,8 @@ To be written.
 -export([set_char_handler/2]).
 -export([char_mods_handler/1]).
 -export([set_char_mods_handler/2]).
+-export([mouse_button_handler/1]).
+-export([set_mouse_button_handler/2]).
 
 -export([joystick_present/1]).
 
@@ -264,6 +266,8 @@ To be written.
 -nifs([set_char_handler/2]).
 -nifs([char_mods_handler/1]).
 -nifs([set_char_mods_handler/2]).
+-nifs([mouse_button_handler/1]).
+-nifs([set_mouse_button_handler/2]).
 
 -nifs([joystick_present_raw/1]).
 
@@ -3300,6 +3304,24 @@ To be written.
 """.
 -spec set_char_mods_handler(window(), undefined | pid()) -> ok.
 set_char_mods_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec mouse_button_handler(window()) -> undefined | pid().
+mouse_button_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_mouse_button_handler(window(), undefined | pid()) -> ok.
+set_mouse_button_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """

@@ -90,3 +90,10 @@
     codepoint :: erlang:char(),
     mods :: integer()
 }).
+
+-record(glfw_mouse_button, {
+    window :: glfw:window(),
+    button :: glfw:mouse_button(),
+    action :: press | release,
+    mods :: integer()
+}).
