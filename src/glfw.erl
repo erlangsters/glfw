@@ -190,6 +190,7 @@ To be written.
 -export([set_joystick_handler/1]).
 
 -export([joystick_is_gamepad/1]).
+-export([update_gamepad_mappings/1]).
 
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
@@ -310,6 +311,7 @@ To be written.
 -nifs([set_joystick_handler/1]).
 
 -nifs([joystick_is_gamepad_raw/1]).
+-nifs([update_gamepad_mappings/1]).
 
 -export([window_egl_handle/1]).
 -nifs([window_egl_handle/1]).
@@ -3551,6 +3553,15 @@ joystick_is_gamepad(Joystick) ->
     joystick_is_gamepad_raw(JoystickRaw).
 
 joystick_is_gamepad_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec update_gamepad_mappings(string()) -> boolean().
+update_gamepad_mappings(_String) ->
     erlang:nif_error(nif_library_not_loaded).
 
 window_egl_handle(_Window) ->
