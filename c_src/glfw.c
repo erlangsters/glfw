@@ -2736,6 +2736,27 @@ static ERL_NIF_TERM nif_set_joystick_handler(ErlNifEnv* env, int argc, const ERL
     return execute_command(glfw_set_joystick_handler, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_joystick_is_gamepad(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int joy;
+    if (!enif_get_int(env, argv[0], &joy)) {
+        return enif_make_badarg(env);
+    }
+
+    int result = glfwJoystickIsGamepad(joy);
+    if (result == GLFW_TRUE) {
+        return atom_true;
+    }
+    else {
+        return atom_false;
+    }
+}
+
+static ERL_NIF_TERM nif_joystick_is_gamepad(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_joystick_is_gamepad, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -2871,6 +2892,8 @@ static ErlNifFunc nif_functions[] = {
 
     {"joystick_handler", 0, nif_joystick_handler},
     {"set_joystick_handler", 1, nif_set_joystick_handler},
+
+    {"joystick_is_gamepad_raw", 1, nif_joystick_is_gamepad},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
