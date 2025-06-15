@@ -168,6 +168,10 @@ To be written.
 -export([set_char_mods_handler/2]).
 -export([mouse_button_handler/1]).
 -export([set_mouse_button_handler/2]).
+-export([cursor_position_handler/1]).
+-export([set_cursor_position_handler/2]).
+-export([cursor_enter_handler/1]).
+-export([set_cursor_enter_handler/2]).
 
 -export([joystick_present/1]).
 
@@ -268,6 +272,10 @@ To be written.
 -nifs([set_char_mods_handler/2]).
 -nifs([mouse_button_handler/1]).
 -nifs([set_mouse_button_handler/2]).
+-nifs([cursor_position_handler/1]).
+-nifs([set_cursor_position_handler/2]).
+-nifs([cursor_enter_handler/1]).
+-nifs([set_cursor_enter_handler/2]).
 
 -nifs([joystick_present_raw/1]).
 
@@ -3322,6 +3330,42 @@ To be written.
 """.
 -spec set_mouse_button_handler(window(), undefined | pid()) -> ok.
 set_mouse_button_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec cursor_position_handler(window()) -> undefined | pid().
+cursor_position_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_cursor_position_handler(window(), undefined | pid()) -> ok.
+set_cursor_position_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec cursor_enter_handler(window()) -> undefined | pid().
+cursor_enter_handler(_Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_cursor_enter_handler(window(), undefined | pid()) -> ok.
+set_cursor_enter_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """

@@ -97,3 +97,13 @@
     action :: press | release,
     mods :: integer()
 }).
+
+-record(glfw_cursor_position, {
+    window :: glfw:window(),
+    position :: {X :: float(), Y :: float()}
+}).
+
+-record(glfw_cursor_enter, {
+    window :: glfw:window(),
+    entered :: boolean()
+}).
