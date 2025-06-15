@@ -68,6 +68,8 @@ static ERL_NIF_TERM atom_glfw_drop;
 static ERL_NIF_TERM atom_press;
 static ERL_NIF_TERM atom_release;
 
+static ERL_NIF_TERM atom_not_present;
+
 static ErlNifResourceType* glfw_monitor_resource_type = NULL;
 static ErlNifResourceType* glfw_window_resource_type = NULL;
 static ErlNifResourceType* glfw_cursor_resource_type = NULL;
@@ -218,6 +220,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 
     atom_press = enif_make_atom(env, "press");
     atom_release = enif_make_atom(env, "release");
+
+    atom_not_present = enif_make_atom(env, "not_present");
 
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
@@ -2528,6 +2532,100 @@ static ERL_NIF_TERM nif_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_joystick_present, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_get_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    int count;
+    const float* axes = glfwGetJoystickAxes(jid, &count);
+
+    if (axes == NULL) {
+        return atom_not_present;
+    }
+
+    ERL_NIF_TERM axes_list = enif_make_list(env, 0);
+
+    for (int i = count - 1; i >= 0; i--) {
+        axes_list = enif_make_list_cell(env,
+            enif_make_double(env, (double)axes[i]),
+            axes_list
+        );
+    }
+
+    return axes_list;
+}
+
+static ERL_NIF_TERM nif_get_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_joystick_axes_raw, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_get_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    int count;
+    const unsigned char* buttons = glfwGetJoystickButtons(jid, &count);
+
+    if (buttons == NULL) {
+        return atom_not_present;
+    }
+
+    ERL_NIF_TERM buttons_list = enif_make_list(env, 0);
+
+    for (int i = count - 1; i >= 0; i--) {
+        ERL_NIF_TERM button_state;
+        if (buttons[i] == GLFW_PRESS) {
+            button_state = atom_press;
+        } else {
+            button_state = atom_release;
+        }
+        buttons_list = enif_make_list_cell(env, button_state, buttons_list);
+    }
+
+    return buttons_list;
+}
+
+static ERL_NIF_TERM nif_get_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_joystick_buttons_raw, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_get_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    int count;
+    const unsigned char* hats = glfwGetJoystickHats(jid, &count);
+
+    if (hats == NULL) {
+        return atom_not_present;
+    }
+
+    ERL_NIF_TERM hats_list = enif_make_list(env, 0);
+
+    for (int i = count - 1; i >= 0; i--) {
+        ERL_NIF_TERM hat_state = enif_make_int(env, hats[i]);
+        hats_list = enif_make_list_cell(env, hat_state, hats_list);
+    }
+
+    return hats_list;
+}
+
+static ERL_NIF_TERM nif_get_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_joystick_hats_raw, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -2653,6 +2751,10 @@ static ErlNifFunc nif_functions[] = {
     {"set_drop_handler", 2, nif_set_drop_handler},
 
     {"joystick_present_raw", 1, nif_joystick_present},
+
+    {"get_joystick_axes_raw", 1, nif_get_joystick_axes_raw},
+    {"get_joystick_buttons_raw", 1, nif_get_joystick_buttons_raw},
+    {"get_joystick_hats_raw", 1, nif_get_joystick_hats_raw},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
