@@ -117,3 +117,8 @@
     window :: glfw:window(),
     paths :: [string()] % XXX: or [binary()] ??
 }).
+
+-record(glfw_joystick, {
+    joystick :: glfw:joystick(),
+    event :: connected | disconnected
+}).
