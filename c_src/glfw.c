@@ -2658,6 +2658,27 @@ static ERL_NIF_TERM nif_get_joystick_hats_raw(ErlNifEnv* env, int argc, const ER
     return execute_command(glfw_get_joystick_hats_raw, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_get_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int jid;
+    if (!enif_get_int(env, argv[0], &jid)) {
+        return enif_make_badarg(env);
+    }
+
+    const char* name = glfwGetJoystickName(jid);
+    if (name == NULL) {
+        return atom_not_present;
+    }
+
+    return enif_make_string(env, name, ERL_NIF_UTF8);
+}
+
+static ERL_NIF_TERM nif_get_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_get_joystick_name_raw, env, argc, argv);
+}
+
+
 static ERL_NIF_TERM glfw_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
@@ -2845,6 +2866,7 @@ static ErlNifFunc nif_functions[] = {
     {"get_joystick_buttons_raw", 1, nif_get_joystick_buttons_raw},
     {"get_joystick_hats_raw", 1, nif_get_joystick_hats_raw},
 
+    {"get_joystick_name_raw", 1, nif_get_joystick_name_raw},
     {"get_joystick_guid_raw", 1, nif_get_joystick_guid_raw},
 
     {"joystick_handler", 0, nif_joystick_handler},

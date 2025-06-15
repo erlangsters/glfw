@@ -183,6 +183,7 @@ To be written.
 -export([get_joystick_buttons/1]).
 -export([get_joystick_hats/1]).
 
+-export([get_joystick_name/1]).
 -export([get_joystick_guid/1]).
 
 -export([joystick_handler/0]).
@@ -300,6 +301,7 @@ To be written.
 -nifs([get_joystick_buttons_raw/1]).
 -nifs([get_joystick_hats_raw/1]).
 
+-nifs([get_joystick_name_raw/1]).
 -nifs([get_joystick_guid_raw/1]).
 
 -nifs([joystick_handler/0]).
@@ -3488,6 +3490,19 @@ get_joystick_hats(Joystick) ->
     get_joystick_hats_raw(JoystickRaw).
 
 get_joystick_hats_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec get_joystick_name(joystick()) -> not_present | binary().
+get_joystick_name(Joystick) ->
+    JoystickRaw = to_raw_joystick(Joystick),
+    get_joystick_name_raw(JoystickRaw).
+
+get_joystick_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
