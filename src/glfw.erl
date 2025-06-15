@@ -179,6 +179,10 @@ To be written.
 
 -export([joystick_present/1]).
 
+-export([get_joystick_axes/1]).
+-export([get_joystick_buttons/1]).
+-export([get_joystick_hats/1]).
+
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -286,6 +290,10 @@ To be written.
 -nifs([set_drop_handler/2]).
 
 -nifs([joystick_present_raw/1]).
+
+-nifs([get_joystick_axes_raw/1]).
+-nifs([get_joystick_buttons_raw/1]).
+-nifs([get_joystick_hats_raw/1]).
 
 -export([window_egl_handle/1]).
 -nifs([window_egl_handle/1]).
@@ -3431,6 +3439,45 @@ joystick_present(Joystick) ->
     joystick_present_raw(JoystickRaw).
 
 joystick_present_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec get_joystick_axes(joystick()) -> not_present | [float()].
+get_joystick_axes(Joystick) ->
+    JoystickRaw = to_raw_joystick(Joystick),
+    get_joystick_axes_raw(JoystickRaw).
+
+get_joystick_axes_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec get_joystick_buttons(joystick()) -> not_present | [release | press].
+get_joystick_buttons(Joystick) ->
+    JoystickRaw = to_raw_joystick(Joystick),
+    get_joystick_buttons_raw(JoystickRaw).
+
+get_joystick_buttons_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec get_joystick_hats(joystick()) -> not_present | [integer()].
+get_joystick_hats(Joystick) ->
+    JoystickRaw = to_raw_joystick(Joystick),
+    get_joystick_hats_raw(JoystickRaw).
+
+get_joystick_hats_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 window_egl_handle(_Window) ->
