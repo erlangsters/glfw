@@ -2757,6 +2757,23 @@ static ERL_NIF_TERM nif_joystick_is_gamepad(ErlNifEnv* env, int argc, const ERL_
     return execute_command(glfw_joystick_is_gamepad, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_update_gamepad_mappings(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    // Most SDL mappings are under 4KB.
+    char mapping[4096];
+    if (!enif_get_string(env, argv[0], mapping, sizeof(mapping), ERL_NIF_LATIN1)) {
+        return enif_make_badarg(env);
+    }
+
+    int result = glfwUpdateGamepadMappings(mapping);
+    return (result == GLFW_TRUE) ? atom_true : atom_false;
+}
+
+static ERL_NIF_TERM nif_update_gamepad_mappings(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_update_gamepad_mappings, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -2894,6 +2911,7 @@ static ErlNifFunc nif_functions[] = {
     {"set_joystick_handler", 1, nif_set_joystick_handler},
 
     {"joystick_is_gamepad_raw", 1, nif_joystick_is_gamepad},
+    {"update_gamepad_mappings", 1, nif_update_gamepad_mappings},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
