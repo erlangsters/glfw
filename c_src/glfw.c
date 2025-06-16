@@ -576,7 +576,7 @@ static ERL_NIF_TERM glfw_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     if (!monitor) {
-        return atom_no_monitor;
+        return atom_undefined;
     }
 
     void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
@@ -585,11 +585,7 @@ static ERL_NIF_TERM glfw_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF
     ERL_NIF_TERM monitor_ref = enif_make_resource(env, monitor_resource);
     enif_release_resource(monitor_resource);
 
-    return enif_make_tuple2(
-        env,
-        atom_ok,
-        monitor_ref
-    );
+    return monitor_ref;
 }
 
 static ERL_NIF_TERM nif_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2725,7 +2721,6 @@ static ERL_NIF_TERM nif_get_joystick_name_raw(ErlNifEnv* env, int argc, const ER
 {
     return execute_command(glfw_get_joystick_name_raw, env, argc, argv);
 }
-
 
 static ERL_NIF_TERM glfw_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {

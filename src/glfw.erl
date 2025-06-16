@@ -1297,7 +1297,7 @@ the task bar or global menu bar are located.
     see_also => {glfw, monitors, 0},
     since => "3.0"
 }).
--spec primary_monitor() -> {ok, monitor()} | no_monitor.
+-spec primary_monitor() -> undefined | monitor().
 primary_monitor() ->
     erlang:nif_error(nif_library_not_loaded).
 
