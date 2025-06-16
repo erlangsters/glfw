@@ -755,7 +755,7 @@ static ERL_NIF_TERM nif_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_
     return execute_command(glfw_monitor_set_handler, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_monitor_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
@@ -787,12 +787,12 @@ static ERL_NIF_TERM glfw_monitor_video_modes(ErlNifEnv* env, int argc, const ERL
     return list;
 }
 
-static ERL_NIF_TERM nif_monitor_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_monitor_video_modes, env, argc, argv);
+    return execute_command(glfw_video_modes, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
@@ -815,12 +815,12 @@ static ERL_NIF_TERM glfw_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_
     );
 }
 
-static ERL_NIF_TERM nif_monitor_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_monitor_video_mode, env, argc, argv);
+    return execute_command(glfw_video_mode, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
@@ -836,12 +836,12 @@ static ERL_NIF_TERM glfw_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_N
     return atom_ok;
 }
 
-static ERL_NIF_TERM nif_monitor_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_monitor_set_gamma, env, argc, argv);
+    return execute_command(glfw_set_gamma, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
@@ -874,12 +874,12 @@ static ERL_NIF_TERM glfw_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_
     );
 }
 
-static ERL_NIF_TERM nif_monitor_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_monitor_gamma_ramp, env, argc, argv);
+    return execute_command(glfw_gamma_ramp, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     // XXX: Review implementation.
 
@@ -954,9 +954,9 @@ error:
     return enif_make_badarg(env);
 }
 
-static ERL_NIF_TERM nif_monitor_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_monitor_set_gamma_ramp, env, argc, argv);
+    return execute_command(glfw_set_gamma_ramp, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2976,11 +2976,11 @@ static ErlNifFunc nif_functions[] = {
     {"monitor_name", 1, nif_monitor_name},
     {"monitor_handler", 0, nif_monitor_handler},
     {"monitor_set_handler", 1, nif_monitor_set_handler},
-    {"monitor_video_modes", 1, nif_monitor_video_modes},
-    {"monitor_video_mode", 1, nif_monitor_video_mode},
-    {"monitor_set_gamma", 2, nif_monitor_set_gamma},
-    {"monitor_gamma_ramp", 1, nif_monitor_gamma_ramp},
-    {"monitor_set_gamma_ramp", 2, nif_monitor_set_gamma_ramp},
+    {"video_modes", 1, nif_video_modes},
+    {"video_mode", 1, nif_video_mode},
+    {"set_gamma", 2, nif_set_gamma},
+    {"gamma_ramp", 1, nif_gamma_ramp},
+    {"set_gamma_ramp", 2, nif_set_gamma_ramp},
 
     {"create_window", 3, nif_create_window},
     {"destroy_window", 1, nif_destroy_window},

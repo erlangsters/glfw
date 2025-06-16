@@ -92,11 +92,11 @@ To be written.
 -export([monitor_name/1]).
 -export([monitor_handler/0]).
 -export([monitor_set_handler/1]).
--export([monitor_video_modes/1]).
--export([monitor_video_mode/1]).
--export([monitor_set_gamma/2]).
--export([monitor_gamma_ramp/1]).
--export([monitor_set_gamma_ramp/2]).
+-export([video_modes/1]).
+-export([video_mode/1]).
+-export([set_gamma/2]).
+-export([gamma_ramp/1]).
+-export([set_gamma_ramp/2]).
 
 -export([create_window/3]).
 -export([destroy_window/1]).
@@ -215,11 +215,11 @@ To be written.
 -nifs([monitor_name/1]).
 -nifs([monitor_handler/0]).
 -nifs([monitor_set_handler/1]).
--nifs([monitor_video_modes/1]).
--nifs([monitor_video_mode/1]).
--nifs([monitor_set_gamma/2]).
--nifs([monitor_gamma_ramp/1]).
--nifs([monitor_set_gamma_ramp/2]).
+-nifs([video_modes/1]).
+-nifs([video_mode/1]).
+-nifs([set_gamma/2]).
+-nifs([gamma_ramp/1]).
+-nifs([set_gamma_ramp/2]).
 
 -nifs([create_window/3]).
 -nifs([destroy_window/1]).
@@ -1485,11 +1485,11 @@ height), then resolution width and finally by refresh rate.
         "Monitor" => "The monitor to query."
     },
     return => "An array of video modes, or NULL if an error occurred.",
-    see_also => {glfw, monitor_video_mode, 1},
+    see_also => {glfw, video_mode, 1},
     since => "1.0"
 }).
--spec monitor_video_modes(monitor()) -> undefined | [#glfw_video_mode{}].
-monitor_video_modes(_Monitor) ->
+-spec video_modes(monitor()) -> undefined | [#glfw_video_mode{}].
+video_modes(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -1509,11 +1509,11 @@ that window is iconified.
         "Monitor" => "The monitor to query."
     },
     return => "The current mode of the monitor, or NULL if an error occurred.",
-    see_also => {glfw, monitor_video_modes, 1},
+    see_also => {glfw, video_modes, 1},
     since => "3.0"
 }).
--spec monitor_video_mode(monitor()) -> undefined | #glfw_video_mode{}.
-monitor_video_mode(_Monitor) ->
+-spec video_mode(monitor()) -> undefined | #glfw_video_mode{}.
+video_mode(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -1554,8 +1554,8 @@ hint.
     return => "GLFW_TRUE if successful, or GLFW_FALSE if an error occurred.",
     since => "3.0"
 }).
--spec monitor_set_gamma(monitor(), float()) -> ok | not_ok.
-monitor_set_gamma(_Monitor, _Gamma) ->
+-spec set_gamma(monitor(), float()) -> ok | not_ok.
+set_gamma(_Monitor, _Gamma) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -1581,8 +1581,8 @@ It returns the current gamma ramp of the specified monitor.
     return => "The current gamma ramp, or NULL if an error occurred.",
     since => "3.0"
 }).
--spec monitor_gamma_ramp(monitor()) -> undefined | #glfw_gamma_ramp{}.
-monitor_gamma_ramp(_Monitor) ->
+-spec gamma_ramp(monitor()) -> undefined | #glfw_gamma_ramp{}.
+gamma_ramp(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -1621,8 +1621,8 @@ hint.
     },
     since => "3.0"
 }).
--spec monitor_set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok | not_ok.
-monitor_set_gamma_ramp(_Monitor, _Ramp) ->
+-spec set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok | not_ok.
+set_gamma_ramp(_Monitor, _Ramp) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
