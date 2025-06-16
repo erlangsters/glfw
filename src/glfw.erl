@@ -1852,7 +1852,7 @@ Pointer lifetime
     return => "The UTF-8 encoded window title, or NULL if an error occurred.",
     see_also => {glfw, set_window_title, 2}
 }).
--spec window_title(window()) -> string().
+-spec window_title(window()) -> undefined | string().
 window_title(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 

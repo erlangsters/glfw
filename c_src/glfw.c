@@ -1046,7 +1046,10 @@ static ERL_NIF_TERM glfw_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TE
     GLFWwindow* window = window_resource->window;
 
     const char* title = glfwGetWindowTitle(window);
-    return enif_make_string(env, title, ERL_NIF_LATIN1);
+    if (title == NULL) {
+        return atom_undefined;
+    }
+    return enif_make_string(env, title, ERL_NIF_UTF8);
 }
 
 static ERL_NIF_TERM nif_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1062,8 +1065,8 @@ static ERL_NIF_TERM glfw_set_window_title(ErlNifEnv* env, int argc, const ERL_NI
     }
     GLFWwindow* window = window_resource->window;
 
-    char title[256];
-    if (!enif_get_string(env, argv[1], title, sizeof(title), ERL_NIF_LATIN1)) {
+    char title[1024];
+    if (!enif_get_string(env, argv[1], title, sizeof(title), ERL_NIF_UTF8)) {
         return enif_make_badarg(env);
     }
 
