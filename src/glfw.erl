@@ -1445,7 +1445,7 @@ guaranteed to be unique among the connected monitors.
     return => "The UTF-8 encoded name of the monitor, or NULL if an error occurred.",
     since => "3.0"
 }).
--spec monitor_name(monitor()) -> string().
+-spec monitor_name(monitor()) -> undefined | string().
 monitor_name(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
