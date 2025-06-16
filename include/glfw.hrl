@@ -13,6 +13,11 @@
     description :: glfw:error_description()
 }).
 
+-record(glfw_monitor, {
+    monitor :: glfw:monitor(),
+    event :: connected | disconnected
+}).
+
 -record(glfw_video_mode, {
     width :: integer(),
     height :: integer(),

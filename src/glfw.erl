@@ -90,8 +90,8 @@ To be written.
 -export([monitor_physical_size/1]).
 -export([monitor_content_scale/1]).
 -export([monitor_name/1]).
--export([monitor_handler/1]).
--export([monitor_set_handler/2]).
+-export([monitor_handler/0]).
+-export([monitor_set_handler/1]).
 -export([monitor_video_modes/1]).
 -export([monitor_video_mode/1]).
 -export([monitor_set_gamma/2]).
@@ -213,8 +213,8 @@ To be written.
 -nifs([monitor_physical_size/1]).
 -nifs([monitor_content_scale/1]).
 -nifs([monitor_name/1]).
--nifs([monitor_handler/1]).
--nifs([monitor_set_handler/2]).
+-nifs([monitor_handler/0]).
+-nifs([monitor_set_handler/1]).
 -nifs([monitor_video_modes/1]).
 -nifs([monitor_video_mode/1]).
 -nifs([monitor_set_gamma/2]).
@@ -1454,8 +1454,8 @@ To be written.
 
 To be written.
 """.
--spec monitor_handler(monitor()) -> undefined | pid().
-monitor_handler(_Monitor) ->
+-spec monitor_handler() -> undefined | pid().
+monitor_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -1463,8 +1463,8 @@ To be written.
 
 To be written.
 """.
--spec monitor_set_handler(monitor(), pid()) -> ok | not_ok.
-monitor_set_handler(_Monitor, _Handler) ->
+-spec monitor_set_handler(undefined | pid()) -> ok.
+monitor_set_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """

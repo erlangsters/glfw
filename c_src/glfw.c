@@ -45,6 +45,8 @@ static ERL_NIF_TERM atom_no_window;
 
 static ERL_NIF_TERM atom_glfw_error;
 
+static ERL_NIF_TERM atom_glfw_monitor;
+
 static ERL_NIF_TERM atom_glfw_video_mode;
 static ERL_NIF_TERM atom_glfw_gamma_ramp;
 static ERL_NIF_TERM atom_glfw_window_position;
@@ -104,6 +106,9 @@ static ErlNifResourceType* glfw_cursor_resource_type = NULL;
 
 static ErlNifEnv* glfw_error_handler_env = NULL;
 static ERL_NIF_TERM glfw_error_handler;
+
+static ErlNifEnv* glfw_monitor_handler_env = NULL;
+static ERL_NIF_TERM glfw_monitor_handler;
 
 typedef struct {
     ErlNifEnv* env;
@@ -229,6 +234,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 
     atom_glfw_error = enif_make_atom(env, "glfw_error");
 
+    atom_glfw_monitor = enif_make_atom(env, "glfw_monitor");
+
     atom_glfw_video_mode = enif_make_atom(env, "glfw_video_mode");
     atom_glfw_gamma_ramp = enif_make_atom(env, "glfw_gamma_ramp");
     atom_glfw_window_position = enif_make_atom(env, "glfw_window_position");
@@ -314,6 +321,9 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 
     glfw_error_handler_env = enif_alloc_env();
     glfw_error_handler = enif_make_copy(glfw_error_handler_env, atom_undefined);
+
+    glfw_monitor_handler_env = enif_alloc_env();
+    glfw_monitor_handler = enif_make_copy(glfw_monitor_handler_env, atom_undefined);
 
     glfw_joystick_handler_env = enif_alloc_env();
     glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, atom_undefined);
@@ -702,15 +712,47 @@ static ERL_NIF_TERM nif_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TER
     return execute_command(glfw_monitor_name, env, argc, argv);
 }
 
+void monitor_callback(GLFWmonitor *monitor, int event) {
+    void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
+    *((GLFWmonitor**)monitor_resource) = monitor;
+
+    ERL_NIF_TERM monitor_term = enif_make_resource(glfw_monitor_handler_env, monitor_resource);
+    enif_release_resource(monitor_resource);
+
+    ERL_NIF_TERM result = enif_make_tuple3(
+        glfw_monitor_handler_env,
+        atom_glfw_monitor,
+        monitor_term,
+        event == GLFW_CONNECTED ? atom_connected : atom_disconnected
+    );
+
+    enif_send(NULL, &glfw_monitor_handler, NULL, result);
+}
 
 static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return glfw_monitor_handler;
+}
+
+static ERL_NIF_TERM glfw_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    enif_clear_env(glfw_monitor_handler_env);
+
+    int is_undefined = enif_is_identical(argv[1], atom_undefined);
+    if(is_undefined) {
+        glfwSetMonitorCallback(NULL);
+        glfw_monitor_handler = enif_make_copy(glfw_monitor_handler_env, atom_undefined);
+    } else {
+        glfwSetMonitorCallback(monitor_callback);
+        glfw_monitor_handler = enif_make_copy(glfw_monitor_handler_env, argv[0]);
+    }
+
+    return atom_ok;
 }
 
 static ERL_NIF_TERM nif_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return enif_make_int(env, 42);
+    return execute_command(glfw_monitor_set_handler, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_monitor_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2932,8 +2974,8 @@ static ErlNifFunc nif_functions[] = {
     {"monitor_physical_size", 1, nif_monitor_physical_size},
     {"monitor_content_scale", 1, nif_monitor_content_scale},
     {"monitor_name", 1, nif_monitor_name},
-    {"monitor_handler", 1, nif_monitor_handler},
-    {"monitor_set_handler", 2, nif_monitor_set_handler},
+    {"monitor_handler", 0, nif_monitor_handler},
+    {"monitor_set_handler", 1, nif_monitor_set_handler},
     {"monitor_video_modes", 1, nif_monitor_video_modes},
     {"monitor_video_mode", 1, nif_monitor_video_mode},
     {"monitor_set_gamma", 2, nif_monitor_set_gamma},
