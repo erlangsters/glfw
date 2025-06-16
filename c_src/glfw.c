@@ -691,7 +691,10 @@ static ERL_NIF_TERM glfw_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TE
     }
 
     const char* name = glfwGetMonitorName(*monitor);
-    return enif_make_string(env, name, ERL_NIF_LATIN1);
+    if (name == NULL) {
+        return atom_undefined;
+    }
+    return enif_make_string(env, name, ERL_NIF_UTF8);
 }
 
 static ERL_NIF_TERM nif_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
