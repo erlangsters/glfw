@@ -11,33 +11,52 @@
 -moduledoc """
 GLFW binding.
 
-It provides a binding to the GLFW library, which is used for creating windows
-with no OpenGL context and managing input.
+It implements a thread-safe and idiomatic binding to the GLFW library.
+
+> The API was minimally adjusted, in obvious ways, to be more idiomatic to work
+> in Erlang and Elixir. Your GLFW knowledge remains entirely applicable.
 
 ```erlang
-
+glfw:init().
+{ok, Window} = glfw:create_window(800, 600, "Hello, World!").
+window_loop(Window).
+glfw:terminate().
 ```
 
-Unlike the C library, GLFW is entirely thread-safe.
+Thread-safety is not an issue with this binding. It's designed to be entirely
+thread-safe.
 
-> How it works?
-> The GLFW library .
-> Futhermore, callbacks becomes message. blabla
+> Under the hood, all GLFW functions are executed in a single OS thread.
 
-- when ints are used but they represent enums (implemented with constants), they
-re translated to atom
+One particularity of this binding is that windows are always contextless (for
+good reasons), which means that you handle creation of the OpenGL context
+manually.
 
-- when ints are used but only GLFW_TRUE and GLFW_FALSE are valid values, they
-are translated to boolean()
+> As a consequence, all the context-related part of the API is not available.
 
+```erlang
+WindowHandle = glfw:window_egl_handle(Window).
+{ok, Surface} = egl:create_window_surface(Display, Config, WindowHandle, []).
+```
 
-xxx: talk about memory management
+Another important particularity is how events are handled. Instead of callbacks
+which are not idiomatic, you register "handlers", which processes which are
+sent the events.
 
-It's a binding, so perhaps the best way to approach it is by looking at how it
-differs from the C library. That way, you can assume it behaves the same unless
-stated otherwise.
+```erlang
+glfw:set_key_handler(Window, self()).
+receive
+    #glfw_key{window=Window, key=Key} ->
+        io:format("Key event was received (key: ~p)~n", [Key])
+end.
+```
 
-To be written.
+For more example code, the demo tests and test suites in the repository are
+good place, to find example. xxx
+
+If you're confused about the API and how a GLFW feature translates in this
+binding, consult the [API mapping](docs/api-mapping.md) document, which
+document every aspect of it.
 """.
 
 -export_type([platform/0]).
