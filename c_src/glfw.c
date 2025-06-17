@@ -454,33 +454,33 @@ void error_callback(int error_code, const char *description) {
         case GLFW_OUT_OF_MEMORY:
             code_term = enif_make_atom(glfw_error_handler_env, "out_of_memory");
             break;
-        case GLFW_API_UNAVAILABLE:
-            code_term = enif_make_atom(glfw_error_handler_env, "api_unavailable");
-            break;
-        case GLFW_VERSION_UNAVAILABLE:
-            code_term = enif_make_atom(glfw_error_handler_env, "version_unavailable");
-            break;
-        case GLFW_PLATFORM_ERROR:
-            code_term = enif_make_atom(glfw_error_handler_env, "platform_error");
-            break;
-        case GLFW_FORMAT_UNAVAILABLE:
-            code_term = enif_make_atom(glfw_error_handler_env, "format_unavailable");
-            break;
-        case GLFW_NO_WINDOW_CONTEXT:
-            code_term = enif_make_atom(glfw_error_handler_env, "no_window_context");
-            break;
-        case GLFW_CURSOR_UNAVAILABLE:
-            code_term = enif_make_atom(glfw_error_handler_env, "cursor_unavailable");
-            break;
-        case GLFW_FEATURE_UNAVAILABLE:
-            code_term = enif_make_atom(glfw_error_handler_env, "feature_unavailable");
-            break;
-        case GLFW_FEATURE_UNIMPLEMENTED:
-            code_term = enif_make_atom(glfw_error_handler_env, "feature_unimplemented");
-            break;
-        case GLFW_PLATFORM_UNAVAILABLE:
-            code_term = enif_make_atom(glfw_error_handler_env, "platform_unavailable");
-            break;
+        // case GLFW_API_UNAVAILABLE:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "api_unavailable");
+        //     break;
+        // case GLFW_VERSION_UNAVAILABLE:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "version_unavailable");
+        //     break;
+        // case GLFW_PLATFORM_ERROR:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "platform_error");
+        //     break;
+        // case GLFW_FORMAT_UNAVAILABLE:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "format_unavailable");
+        //     break;
+        // case GLFW_NO_WINDOW_CONTEXT:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "no_window_context");
+        //     break;
+        // case GLFW_CURSOR_UNAVAILABLE:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "cursor_unavailable");
+        //     break;
+        // case GLFW_FEATURE_UNAVAILABLE:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "feature_unavailable");
+        //     break;
+        // case GLFW_FEATURE_UNIMPLEMENTED:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "feature_unimplemented");
+        //     break;
+        // case GLFW_PLATFORM_UNAVAILABLE:
+        //     code_term = enif_make_atom(glfw_error_handler_env, "platform_unavailable");
+        //     break;
         default:
             code_term = atom_undefined;
     }
