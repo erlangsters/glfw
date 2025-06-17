@@ -195,6 +195,9 @@ To be written.
 -export([get_gamepad_name/1]).
 -export([get_gamepad_state/1]).
 
+-export([clipboard_string/1]).
+-export([set_clipboard_string/2]).
+
 -nifs([init_hint_raw/2]).
 -nifs([init/0]).
 -nifs([terminate/0]).
@@ -318,6 +321,9 @@ To be written.
 
 -nifs([get_gamepad_name_raw/1]).
 -nifs([get_gamepad_state_raw/1]).
+
+-nifs([clipboard_string/1]).
+-nifs([set_clipboard_string/2]).
 
 -export([window_egl_handle/1]).
 -nifs([window_egl_handle/1]).
@@ -3597,6 +3603,24 @@ get_gamepad_state(Joystick) ->
     get_gamepad_state_raw(JoystickRaw).
 
 get_gamepad_state_raw(_Joystick) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec clipboard_string(undefined | window()) -> {ok, string()} | error.
+clipboard_string(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_clipboard_string(undefined | window(), string()) -> ok.
+set_clipboard_string(_Window, _String) ->
     erlang:nif_error(nif_library_not_loaded).
 
 window_egl_handle(_Window) ->
