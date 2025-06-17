@@ -104,8 +104,8 @@ document every aspect of it.
 -export([get_error/0]).
 -export([error_handler/0]).
 -export([set_error_handler/1]).
--export([platform/0]).
--export([platform_supported/1]).
+% -export([platform/0]).
+% -export([platform_supported/1]).
 
 -export([monitors/0]).
 -export([primary_monitor/0]).
@@ -129,7 +129,7 @@ document every aspect of it.
 
 -export([window_should_close/1]).
 -export([set_window_should_close/2]).
--export([window_title/1]).
+% -export([window_title/1]).
 -export([set_window_title/2]).
 -export([set_window_icon/2]).
 -export([window_position/1]).
@@ -239,8 +239,8 @@ document every aspect of it.
 -nifs([get_error_raw/0]).
 -nifs([error_handler/0]).
 -nifs([set_error_handler/1]).
--nifs([platform_raw/0]).
--nifs([platform_supported_raw/1]).
+% -nifs([platform_raw/0]).
+% -nifs([platform_supported_raw/1]).
 
 -nifs([monitors/0]).
 -nifs([primary_monitor/0]).
@@ -264,7 +264,7 @@ document every aspect of it.
 -nifs([destroy_window/1]).
 -nifs([window_should_close/1]).
 -nifs([set_window_should_close/2]).
--nifs([window_title/1]).
+% -nifs([window_title/1]).
 -nifs([set_window_title/2]).
 -nifs([set_window_icon/2]).
 -nifs([window_position/1]).
@@ -1401,84 +1401,84 @@ To be written.
 set_error_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
--doc """
-Return the selected platform.
+% -doc """
+% Return the selected platform.
 
-It returns the platform that was selected during initialization. The returned
-value will be one of GLFW_PLATFORM_WIN32, GLFW_PLATFORM_COCOA,
-GLFW_PLATFORM_WAYLAND, GLFW_PLATFORM_X11 or GLFW_PLATFORM_NULL.
+% It returns the platform that was selected during initialization. The returned
+% value will be one of GLFW_PLATFORM_WIN32, GLFW_PLATFORM_COCOA,
+% GLFW_PLATFORM_WAYLAND, GLFW_PLATFORM_X11 or GLFW_PLATFORM_NULL.
 
-> #### Possible Errors {: .error}
->
-> - GLFW_NOT_INITIALIZED
-""".
--doc(#{
-    return => "The currently selected platform, or zero if an error occurred.",
-    see_also => {glfw, platform_supported, 1},
-    since => "3.4"
-}).
--spec platform() -> {ok, platform()} | error.
-platform() ->
-    Value = platform_raw(),
-    case Value of
-        0 ->
-            error;
-        ?GLFW_PLATFORM_WIN32 ->
-            {ok, win32};
-        ?GLFW_PLATFORM_COCOA ->
-            {ok, cocoa};
-        ?GLFW_PLATFORM_WAYLAND ->
-            {ok, wayland};
-        ?GLFW_PLATFORM_X11 ->
-            {ok, x11};
-        ?GLFW_PLATFORM_NULL ->
-            {ok, null}
-    end.
+% > #### Possible Errors {: .error}
+% >
+% > - GLFW_NOT_INITIALIZED
+% """.
+% -doc(#{
+%     return => "The currently selected platform, or zero if an error occurred.",
+%     see_also => {glfw, platform_supported, 1},
+%     since => "3.4"
+% }).
+% -spec platform() -> {ok, platform()} | error.
+% platform() ->
+%     Value = platform_raw(),
+%     case Value of
+%         0 ->
+%             error;
+%         ?GLFW_PLATFORM_WIN32 ->
+%             {ok, win32};
+%         ?GLFW_PLATFORM_COCOA ->
+%             {ok, cocoa};
+%         ?GLFW_PLATFORM_WAYLAND ->
+%             {ok, wayland};
+%         ?GLFW_PLATFORM_X11 ->
+%             {ok, x11};
+%         ?GLFW_PLATFORM_NULL ->
+%             {ok, null}
+%     end.
 
-platform_raw() ->
-    erlang:nif_error(nif_library_not_loaded).
+% platform_raw() ->
+%     erlang:nif_error(nif_library_not_loaded).
 
--doc """
-Check if the platform is supported.
+% -doc """
+% Check if the platform is supported.
 
-It returns whether the library was compiled with support for the specified
-platform. The platform must be one of GLFW_PLATFORM_WIN32, GLFW_PLATFORM_COCOA,
-GLFW_PLATFORM_WAYLAND, GLFW_PLATFORM_X11 or GLFW_PLATFORM_NULL.
+% It returns whether the library was compiled with support for the specified
+% platform. The platform must be one of GLFW_PLATFORM_WIN32, GLFW_PLATFORM_COCOA,
+% GLFW_PLATFORM_WAYLAND, GLFW_PLATFORM_X11 or GLFW_PLATFORM_NULL.
 
-> #### Possible Errors {: .error}
->
-> - GLFW_INVALID_ENUM
+% > #### Possible Errors {: .error}
+% >
+% > - GLFW_INVALID_ENUM
 
-> #### Remarks {: .neutral}
->
-> This function may be called before glfwInit.
-""".
--doc(#{
-    parameters => #{
-        "Platform" => "The platform to query."
-    },
-    return => "GLFW_TRUE if the platform is supported, or GLFW_FALSE otherwise.",
-    see_also => {glfw, platform, 0},
-    since => "3.4"
-}).
--spec platform_supported(platform()) -> boolean().
-platform_supported(Platform) ->
-    Value = case Platform of
-        win32 ->
-            ?GLFW_PLATFORM_WIN32;
-        cocoa ->
-            ?GLFW_PLATFORM_COCOA;
-        wayland ->
-            ?GLFW_PLATFORM_WAYLAND;
-        x11 ->
-            ?GLFW_PLATFORM_X11;
-        null ->
-            ?GLFW_PLATFORM_NULL
-    end,
-    platform_supported_raw(Value).
+% > #### Remarks {: .neutral}
+% >
+% > This function may be called before glfwInit.
+% """.
+% -doc(#{
+%     parameters => #{
+%         "Platform" => "The platform to query."
+%     },
+%     return => "GLFW_TRUE if the platform is supported, or GLFW_FALSE otherwise.",
+%     see_also => {glfw, platform, 0},
+%     since => "3.4"
+% }).
+% -spec platform_supported(platform()) -> boolean().
+% platform_supported(Platform) ->
+%     Value = case Platform of
+%         win32 ->
+%             ?GLFW_PLATFORM_WIN32;
+%         cocoa ->
+%             ?GLFW_PLATFORM_COCOA;
+%         wayland ->
+%             ?GLFW_PLATFORM_WAYLAND;
+%         x11 ->
+%             ?GLFW_PLATFORM_X11;
+%         null ->
+%             ?GLFW_PLATFORM_NULL
+%     end,
+%     platform_supported_raw(Value).
 
-platform_supported_raw(_Platform) ->
-    erlang:nif_error(nif_library_not_loaded).
+% platform_supported_raw(_Platform) ->
+%     erlang:nif_error(nif_library_not_loaded).
 
 -doc"""
 List of connected monitors.
@@ -2146,36 +2146,36 @@ should be closed.
 set_window_should_close(_Window, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
--doc """
-Return the window title.
+% -doc """
+% Return the window title.
 
-It returns the window title, encoded as UTF-8, of the specified window. This is
-the title set previously by glfwCreateWindow or glfwSetWindowTitle.
+% It returns the window title, encoded as UTF-8, of the specified window. This is
+% the title set previously by glfwCreateWindow or glfwSetWindowTitle.
 
-> #### Possible Errors {: .error}
->
-> - GLFW_NOT_INITIALIZED
+% > #### Possible Errors {: .error}
+% >
+% > - GLFW_NOT_INITIALIZED
 
-> #### Remarks {: .neutral}
->
-> The returned title is currently a copy of the title last set by
-> glfwCreateWindow or glfwSetWindowTitle. It does not include any additional
-> text which may be appended by the platform or another program.
+% > #### Remarks {: .neutral}
+% >
+% > The returned title is currently a copy of the title last set by
+% > glfwCreateWindow or glfwSetWindowTitle. It does not include any additional
+% > text which may be appended by the platform or another program.
 
-Pointer lifetime
-    The returned string is allocated and freed by GLFW. You should not free it yourself. It is valid until the next call to glfwGetWindowTitle or glfwSetWindowTitle, or until the library is terminated.
+% Pointer lifetime
+%     The returned string is allocated and freed by GLFW. You should not free it yourself. It is valid until the next call to glfwGetWindowTitle or glfwSetWindowTitle, or until the library is terminated.
 
-""".
--doc(#{
-    parameters => #{
-        "Window" => "The window to query."
-    },
-    return => "The UTF-8 encoded window title, or NULL if an error occurred.",
-    see_also => {glfw, set_window_title, 2}
-}).
--spec window_title(window()) -> undefined | string().
-window_title(_Window) ->
-    erlang:nif_error(nif_library_not_loaded).
+% """.
+% -doc(#{
+%     parameters => #{
+%         "Window" => "The window to query."
+%     },
+%     return => "The UTF-8 encoded window title, or NULL if an error occurred.",
+%     see_also => {glfw, set_window_title, 2}
+% }).
+% -spec window_title(window()) -> undefined | string().
+% window_title(_Window) ->
+%     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
 Set the window title.
