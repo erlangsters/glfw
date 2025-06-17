@@ -179,12 +179,12 @@ To be written.
 
 -export([joystick_present/1]).
 
--export([get_joystick_axes/1]).
--export([get_joystick_buttons/1]).
--export([get_joystick_hats/1]).
+-export([joystick_axes/1]).
+-export([joystick_buttons/1]).
+-export([joystick_hats/1]).
 
--export([get_joystick_name/1]).
--export([get_joystick_guid/1]).
+-export([joystick_name/1]).
+-export([joystick_guid/1]).
 
 -export([joystick_handler/0]).
 -export([set_joystick_handler/1]).
@@ -192,8 +192,8 @@ To be written.
 -export([joystick_is_gamepad/1]).
 -export([update_gamepad_mappings/1]).
 
--export([get_gamepad_name/1]).
--export([get_gamepad_state/1]).
+-export([gamepad_name/1]).
+-export([gamepad_state/1]).
 
 -export([clipboard_string/1]).
 -export([set_clipboard_string/2]).
@@ -306,12 +306,12 @@ To be written.
 
 -nifs([joystick_present_raw/1]).
 
--nifs([get_joystick_axes_raw/1]).
--nifs([get_joystick_buttons_raw/1]).
--nifs([get_joystick_hats_raw/1]).
+-nifs([joystick_axes_raw/1]).
+-nifs([joystick_buttons_raw/1]).
+-nifs([joystick_hats_raw/1]).
 
--nifs([get_joystick_name_raw/1]).
--nifs([get_joystick_guid_raw/1]).
+-nifs([joystick_name_raw/1]).
+-nifs([joystick_guid_raw/1]).
 
 -nifs([joystick_handler/0]).
 -nifs([set_joystick_handler/1]).
@@ -319,8 +319,8 @@ To be written.
 -nifs([joystick_is_gamepad_raw/1]).
 -nifs([update_gamepad_mappings/1]).
 
--nifs([get_gamepad_name_raw/1]).
--nifs([get_gamepad_state_raw/1]).
+-nifs([gamepad_name_raw/1]).
+-nifs([gamepad_state_raw/1]).
 
 -nifs([clipboard_string/1]).
 -nifs([set_clipboard_string/2]).
@@ -3476,12 +3476,12 @@ To be written.
 
 To be written.
 """.
--spec get_joystick_axes(joystick()) -> not_present | [float()].
-get_joystick_axes(Joystick) ->
+-spec joystick_axes(joystick()) -> not_present | [float()].
+joystick_axes(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_joystick_axes_raw(JoystickRaw).
+    joystick_axes_raw(JoystickRaw).
 
-get_joystick_axes_raw(_Joystick) ->
+joystick_axes_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -3489,12 +3489,12 @@ To be written.
 
 To be written.
 """.
--spec get_joystick_buttons(joystick()) -> not_present | [release | press].
-get_joystick_buttons(Joystick) ->
+-spec joystick_buttons(joystick()) -> not_present | [release | press].
+joystick_buttons(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_joystick_buttons_raw(JoystickRaw).
+    joystick_buttons_raw(JoystickRaw).
 
-get_joystick_buttons_raw(_Joystick) ->
+joystick_buttons_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -3502,12 +3502,12 @@ To be written.
 
 To be written.
 """.
--spec get_joystick_hats(joystick()) -> not_present | [integer()].
-get_joystick_hats(Joystick) ->
+-spec joystick_hats(joystick()) -> not_present | [integer()].
+joystick_hats(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_joystick_hats_raw(JoystickRaw).
+    joystick_hats_raw(JoystickRaw).
 
-get_joystick_hats_raw(_Joystick) ->
+joystick_hats_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -3515,12 +3515,12 @@ To be written.
 
 To be written.
 """.
--spec get_joystick_name(joystick()) -> not_present | binary().
-get_joystick_name(Joystick) ->
+-spec joystick_name(joystick()) -> not_present | binary().
+joystick_name(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_joystick_name_raw(JoystickRaw).
+    joystick_name_raw(JoystickRaw).
 
-get_joystick_name_raw(_Joystick) ->
+joystick_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -3528,12 +3528,12 @@ To be written.
 
 To be written.
 """.
--spec get_joystick_guid(joystick()) -> not_present | binary().
-get_joystick_guid(Joystick) ->
+-spec joystick_guid(joystick()) -> not_present | binary().
+joystick_guid(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_joystick_guid_raw(JoystickRaw).
+    joystick_guid_raw(JoystickRaw).
 
-get_joystick_guid_raw(_Joystick) ->
+joystick_guid_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -3581,12 +3581,12 @@ To be written.
 
 To be written.
 """.
--spec get_gamepad_name(joystick()) -> {ok, string()} | error.
-get_gamepad_name(Joystick) ->
+-spec gamepad_name(joystick()) -> {ok, string()} | error.
+gamepad_name(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_gamepad_name_raw(JoystickRaw).
+    gamepad_name_raw(JoystickRaw).
 
-get_gamepad_name_raw(_Joystick) ->
+gamepad_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -3594,15 +3594,15 @@ To be written.
 
 To be written.
 """.
--spec get_gamepad_state(joystick()) ->
+-spec gamepad_state(joystick()) ->
     {ok, #{gamepad_axe() => float()}, #{gamepad_button() => press | release}} |
     error
 .
-get_gamepad_state(Joystick) ->
+gamepad_state(Joystick) ->
     JoystickRaw = to_raw_joystick(Joystick),
-    get_gamepad_state_raw(JoystickRaw).
+    gamepad_state_raw(JoystickRaw).
 
-get_gamepad_state_raw(_Joystick) ->
+gamepad_state_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
