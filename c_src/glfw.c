@@ -2938,6 +2938,69 @@ static ERL_NIF_TERM nif_get_gamepad_state(ErlNifEnv* env, int argc, const ERL_NI
     return execute_command(glfw_get_gamepad_state, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    if (enif_is_identical(argv[0], atom_undefined)) {
+        const char* string = glfwGetClipboardString(NULL);
+        if (string == NULL) {
+            return atom_error;
+        }
+        return enif_make_tuple2(
+            env,
+            atom_ok,
+            enif_make_string(env, string, ERL_NIF_UTF8)
+        );
+    } else {
+        GLFWWindowResource* window_resource;
+        if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+            return enif_make_badarg(env);
+        }
+        GLFWwindow* window = window_resource->window;
+
+        const char* string = glfwGetClipboardString(window);
+        if (string == NULL) {
+            return atom_error;
+        }
+        return enif_make_tuple2(
+            env,
+            atom_ok,
+            enif_make_string(env, string, ERL_NIF_UTF8)
+        );
+    }
+}
+
+static ERL_NIF_TERM nif_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_clipboard_string, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    char string[1024];  // XXXX
+    if (!enif_get_string(env, argv[1], string, sizeof(string), ERL_NIF_UTF8)) {
+        return enif_make_badarg(env);
+    }
+
+    if (enif_is_identical(argv[0], atom_undefined)) {
+        glfwSetClipboardString(NULL, string);
+        return atom_ok;
+    } else {
+        GLFWWindowResource* window_resource;
+        if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+            return enif_make_badarg(env);
+        }
+        GLFWwindow* window = window_resource->window;
+
+        glfwSetClipboardString(window, string);
+        return atom_ok;
+    }
+}
+
+static ERL_NIF_TERM nif_set_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_clipboard_string, env, argc, argv);
+}
+
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     GLFWWindowResource* window_resource;
@@ -3079,6 +3142,9 @@ static ErlNifFunc nif_functions[] = {
 
     {"get_gamepad_name_raw", 1, nif_get_gamepad_name},
     {"get_gamepad_state_raw", 1, nif_get_gamepad_state},
+
+    {"clipboard_string", 1, nif_clipboard_string},
+    {"set_clipboard_string", 2, nif_set_clipboard_string},
 
     {"window_egl_handle", 1, nif_window_egl_handle}
 };
