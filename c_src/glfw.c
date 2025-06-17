@@ -2653,7 +2653,7 @@ static ERL_NIF_TERM nif_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_joystick_present, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2679,12 +2679,12 @@ static ERL_NIF_TERM glfw_get_joystick_axes_raw(ErlNifEnv* env, int argc, const E
     return axes_list;
 }
 
-static ERL_NIF_TERM nif_get_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_joystick_axes_raw, env, argc, argv);
+    return execute_command(glfw_joystick_axes_raw, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2713,12 +2713,12 @@ static ERL_NIF_TERM glfw_get_joystick_buttons_raw(ErlNifEnv* env, int argc, cons
     return buttons_list;
 }
 
-static ERL_NIF_TERM nif_get_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_joystick_buttons_raw, env, argc, argv);
+    return execute_command(glfw_joystick_buttons_raw, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2742,12 +2742,12 @@ static ERL_NIF_TERM glfw_get_joystick_hats_raw(ErlNifEnv* env, int argc, const E
     return hats_list;
 }
 
-static ERL_NIF_TERM nif_get_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_joystick_hats_raw, env, argc, argv);
+    return execute_command(glfw_joystick_hats_raw, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2762,12 +2762,12 @@ static ERL_NIF_TERM glfw_get_joystick_name_raw(ErlNifEnv* env, int argc, const E
     return enif_make_string(env, name, ERL_NIF_UTF8);
 }
 
-static ERL_NIF_TERM nif_get_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_joystick_name_raw, env, argc, argv);
+    return execute_command(glfw_joystick_name_raw, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2782,9 +2782,9 @@ static ERL_NIF_TERM glfw_get_joystick_guid_raw(ErlNifEnv* env, int argc, const E
     return enif_make_string(env, guid, ERL_NIF_UTF8);
 }
 
-static ERL_NIF_TERM nif_get_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_joystick_guid_raw, env, argc, argv);
+    return execute_command(glfw_joystick_guid_raw, env, argc, argv);
 }
 
 void joystick_callback(int jid, int event) {
@@ -2862,7 +2862,7 @@ static ERL_NIF_TERM nif_update_gamepad_mappings(ErlNifEnv* env, int argc, const 
     return execute_command(glfw_update_gamepad_mappings, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2881,12 +2881,12 @@ static ERL_NIF_TERM glfw_get_gamepad_name(ErlNifEnv* env, int argc, const ERL_NI
     );
 }
 
-static ERL_NIF_TERM nif_get_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_gamepad_name, env, argc, argv);
+    return execute_command(glfw_gamepad_name, env, argc, argv);
 }
 
-static ERL_NIF_TERM glfw_get_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
@@ -2933,9 +2933,9 @@ static ERL_NIF_TERM glfw_get_gamepad_state(ErlNifEnv* env, int argc, const ERL_N
     );
 }
 
-static ERL_NIF_TERM nif_get_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    return execute_command(glfw_get_gamepad_state, env, argc, argv);
+    return execute_command(glfw_gamepad_state, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3127,12 +3127,12 @@ static ErlNifFunc nif_functions[] = {
 
     {"joystick_present_raw", 1, nif_joystick_present},
 
-    {"get_joystick_axes_raw", 1, nif_get_joystick_axes_raw},
-    {"get_joystick_buttons_raw", 1, nif_get_joystick_buttons_raw},
-    {"get_joystick_hats_raw", 1, nif_get_joystick_hats_raw},
+    {"joystick_axes_raw", 1, nif_joystick_axes_raw},
+    {"joystick_buttons_raw", 1, nif_joystick_buttons_raw},
+    {"joystick_hats_raw", 1, nif_joystick_hats_raw},
 
-    {"get_joystick_name_raw", 1, nif_get_joystick_name_raw},
-    {"get_joystick_guid_raw", 1, nif_get_joystick_guid_raw},
+    {"joystick_name_raw", 1, nif_joystick_name_raw},
+    {"joystick_guid_raw", 1, nif_joystick_guid_raw},
 
     {"joystick_handler", 0, nif_joystick_handler},
     {"set_joystick_handler", 1, nif_set_joystick_handler},
@@ -3140,8 +3140,8 @@ static ErlNifFunc nif_functions[] = {
     {"joystick_is_gamepad_raw", 1, nif_joystick_is_gamepad},
     {"update_gamepad_mappings", 1, nif_update_gamepad_mappings},
 
-    {"get_gamepad_name_raw", 1, nif_get_gamepad_name},
-    {"get_gamepad_state_raw", 1, nif_get_gamepad_state},
+    {"gamepad_name_raw", 1, nif_gamepad_name},
+    {"gamepad_state_raw", 1, nif_gamepad_state},
 
     {"clipboard_string", 1, nif_clipboard_string},
     {"set_clipboard_string", 2, nif_set_clipboard_string},
