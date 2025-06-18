@@ -959,6 +959,59 @@ static ERL_NIF_TERM nif_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_T
     return execute_command(glfw_set_gamma_ramp, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_default_window_hints(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    glfwDefaultWindowHints();
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_default_window_hints(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_default_window_hints, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_window_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int hint, value;
+    if (!enif_get_int(env, argv[0], &hint)) {
+        return enif_make_badarg(env);
+    }
+    if (!enif_get_int(env, argv[1], &value)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwWindowHint(hint, value);
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_window_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_hint, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_window_hint_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    // XXX: Depending on the hint, the value is either UTF-8 or Latin1.
+    int hint;
+    char value[1024];
+
+    if (!enif_get_int(env, argv[0], &hint)) {
+        return enif_make_badarg(env);
+    }
+
+    if (!enif_get_string(env, argv[1], value, sizeof(value), ERL_NIF_UTF8)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwWindowHintString(hint, value);
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_window_hint_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_hint_string, env, argc, argv);
+}
+
 static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     if (argc != 3) {
@@ -3044,6 +3097,10 @@ static ErlNifFunc nif_functions[] = {
     {"set_gamma", 2, nif_set_gamma},
     {"gamma_ramp", 1, nif_gamma_ramp},
     {"set_gamma_ramp", 2, nif_set_gamma_ramp},
+
+    {"default_window_hints", 0, nif_default_window_hints},
+    {"window_hint_raw", 2, nif_window_hint},
+    {"window_hint_string_raw", 2, nif_window_hint_string},
 
     {"create_window", 3, nif_create_window},
     {"destroy_window", 1, nif_destroy_window},

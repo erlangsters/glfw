@@ -49,10 +49,13 @@ To be written.
 -export_type([error_description/0]).
 
 -export_type([monitor/0]).
--export_type([window/0]).
--export_type([cursor/0]).
-
 -export_type([monitor_event/0]).
+
+-export_type([window_hint_type/0]).
+-export_type([window_hint_value/0]).
+-export_type([window/0]).
+
+-export_type([cursor/0]).
 
 -export_type([size_limits/0]).
 -export_type([aspect_ratio/0]).
@@ -98,8 +101,11 @@ To be written.
 -export([gamma_ramp/1]).
 -export([set_gamma_ramp/2]).
 
+-export([default_window_hints/0]).
+-export([window_hint/2]).
 -export([create_window/3]).
 -export([destroy_window/1]).
+
 -export([window_should_close/1]).
 -export([set_window_should_close/2]).
 -export([window_title/1]).
@@ -224,6 +230,9 @@ To be written.
 -nifs([gamma_ramp/1]).
 -nifs([set_gamma_ramp/2]).
 
+-nifs([default_window_hints/0]).
+-nifs([window_hint_raw/2]).
+-nifs([window_hint_string_raw/2]).
 -nifs([create_window/3]).
 -nifs([destroy_window/1]).
 -nifs([window_should_close/1]).
@@ -359,6 +368,36 @@ To be written.
 -define(GLFW_FALSE, 0).
 -define(GLFW_TRUE, 1).
 -define(GLFW_DONT_CARE, -1).
+
+-define(GLFW_RESIZABLE,                16#00020003).
+-define(GLFW_VISIBLE,                  16#00020004).
+-define(GLFW_DECORATED,                16#00020005).
+-define(GLFW_FOCUSED,                  16#00020001).
+-define(GLFW_AUTO_ICONIFY,             16#00020006).
+-define(GLFW_FLOATING,                 16#00020007).
+-define(GLFW_MAXIMIZED,                16#00020008).
+-define(GLFW_CENTER_CURSOR,            16#00020009).
+-define(GLFW_TRANSPARENT_FRAMEBUFFER,  16#0002000A).
+-define(GLFW_FOCUS_ON_SHOW,            16#0002000C).
+-define(GLFW_SCALE_TO_MONITOR,         16#0002200C).
+-define(GLFW_SCALE_FRAMEBUFFER,        16#0002200D).
+-define(GLFW_MOUSE_PASSTHROUGH,        16#0002000D).
+-define(GLFW_POSITION_Y,               16#0002000F).
+-define(GLFW_POSITION_X,               16#0002000E).
+-define(GLFW_REFRESH_RATE,             16#0002100F).
+-define(GLFW_WIN32_KEYBOARD_MENU,      16#00025001).
+-define(GLFW_WIN32_SHOWDEFAULT,        16#00025002).
+-define(GLFW_COCOA_FRAME_NAME,         16#00023002).
+-define(GLFW_COCOA_GRAPHICS_SWITCHING, 16#00023003).
+-define(GLFW_WAYLAND_APP_ID,           16#00026001).
+-define(GLFW_X11_INSTANCE_NAME,        16#00024002).
+-define(GLFW_X11_CLASS_NAME,           16#00024001).
+
+% XXX: Double-check this: max value of a signed int is 2147483647. However,
+%      the GLFW documentation says that the value is 16#80000000, which is
+%      2147483648.
+% -define(GLFW_ANY_POSITION, 16#80000000).
+-define(GLFW_ANY_POSITION, -1).
 
 -define(GLFW_CURSOR,               16#00033001).
 -define(GLFW_STICKY_KEYS,          16#00033002).
@@ -670,6 +709,88 @@ The valid values for each init hint.
 -type error_description() :: undefined | string().
 
 -type monitor() :: reference().
+
+-type window_hint_resizable() :: boolean().
+-type window_hint_visible() :: boolean().
+-type window_hint_decorated() :: boolean().
+-type window_hint_focused() :: boolean().
+-type window_hint_auto_iconify() :: boolean().
+-type window_hint_floating() :: boolean().
+-type window_hint_maximized() :: boolean().
+-type window_hint_center_cursor() :: boolean().
+-type window_hint_transparent_framebuffer() :: boolean().
+-type window_hint_focus_on_show() :: boolean().
+-type window_hint_scale_to_monitor() :: boolean().
+-type window_hint_scale_framebuffer() :: boolean().
+-type window_hint_mouse_passthrough() :: boolean().
+-type window_hint_position_y() :: any_position | integer().
+-type window_hint_position_x() :: any_position | integer().
+-type window_hint_refresh_rate() :: dont_care | integer().
+-type window_hint_win32_keyboard_menu() :: boolean().
+-type window_hint_win32_showdefault() :: boolean().
+-type window_hint_cocoa_frame_name() :: string().
+-type window_hint_cocoa_graphics_switching() :: boolean().
+-type window_hint_wayland_app_id() :: string().
+-type window_hint_x11_instance_name() :: string().
+-type window_hint_x11_class_name() :: string().
+
+-doc """
+The available window hints.
+
+| Hint                    | Note                               | Values                               |
+|-------------------------|------------------------------------|--------------------------------------|
+| `foobar`                | To be written.      | `window_hint_foobar_value()`         |
+""".
+-type window_hint_type() ::
+    resizable |
+    visible |
+    decorated |
+    focused |
+    auto_iconify |
+    floating |
+    maximized |
+    center_cursor |
+    transparent_framebuffer |
+    focus_on_show |
+    scale_to_monitor |
+    scale_framebuffer |
+    mouse_passthrough |
+    position_y |
+    position_x |
+    refresh_rate |
+    win32_keyboard_menu |
+    win32_showdefault |
+    cocoa_frame_name |
+    cocoa_graphics_switching |
+    wayland_app_id |
+    x11_instance_name |
+    x11_class_name
+.
+-type window_hint_value() ::
+    window_hint_resizable() |
+    window_hint_visible() |
+    window_hint_decorated() |
+    window_hint_focused() |
+    window_hint_auto_iconify() |
+    window_hint_floating() |
+    window_hint_maximized() |
+    window_hint_center_cursor() |
+    window_hint_transparent_framebuffer() |
+    window_hint_focus_on_show() |
+    window_hint_scale_to_monitor() |
+    window_hint_scale_framebuffer() |
+    window_hint_mouse_passthrough() |
+    window_hint_position_y() |
+    window_hint_position_x() |
+    window_hint_refresh_rate() |
+    window_hint_win32_keyboard_menu() |
+    window_hint_win32_showdefault() |
+    window_hint_cocoa_frame_name() |
+    window_hint_cocoa_graphics_switching() |
+    window_hint_wayland_app_id() |
+    window_hint_x11_instance_name() |
+    window_hint_x11_class_name()
+.
 -type window() :: reference().
 -type cursor() :: reference().
 
@@ -1629,6 +1750,100 @@ hint.
 }).
 -spec set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok | not_ok.
 set_gamma_ramp(_Monitor, _Ramp) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec default_window_hints() -> ok.
+default_window_hints() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec window_hint(window_hint_type(), window_hint_value()) -> ok.
+window_hint(Hint, Value) when is_list(Value) ->
+    HintRaw = case Hint of
+        cocoa_frame_name ->
+            ?GLFW_COCOA_FRAME_NAME;
+        wayland_app_id ->
+            ?GLFW_WAYLAND_APP_ID;
+        x11_instance_name ->
+            ?GLFW_X11_INSTANCE_NAME;
+        x11_class_name ->
+            ?GLFW_X11_CLASS_NAME
+    end,
+    window_hint_string_raw(HintRaw, Value);
+window_hint(Hint, Value) ->
+    {HintRaw, ValueRaw} = case Hint of
+        resizable ->
+            {?GLFW_RESIZABLE, to_raw_bool(Value)};
+        visible ->
+            {?GLFW_VISIBLE, to_raw_bool(Value)};
+        decorated ->
+            {?GLFW_DECORATED, to_raw_bool(Value)};
+        focused ->
+            {?GLFW_FOCUSED, to_raw_bool(Value)};
+        auto_iconify ->
+            {?GLFW_AUTO_ICONIFY, to_raw_bool(Value)};
+        floating ->
+            {?GLFW_FLOATING, to_raw_bool(Value)};
+        maximized ->
+            {?GLFW_MAXIMIZED, to_raw_bool(Value)};
+        center_cursor ->
+            {?GLFW_CENTER_CURSOR, to_raw_bool(Value)};
+        transparent_framebuffer ->
+            {?GLFW_TRANSPARENT_FRAMEBUFFER, to_raw_bool(Value)};
+        focus_on_show ->
+            {?GLFW_FOCUS_ON_SHOW, to_raw_bool(Value)};
+        scale_to_monitor ->
+            {?GLFW_SCALE_TO_MONITOR, to_raw_bool(Value)};
+        scale_framebuffer ->
+            {?GLFW_SCALE_FRAMEBUFFER, to_raw_bool(Value)};
+        mouse_passthrough ->
+            {?GLFW_MOUSE_PASSTHROUGH, to_raw_bool(Value)};
+        position_x ->
+            ValueRaw_ = case Value of
+                any_position ->
+                    ?GLFW_ANY_POSITION;
+                _ ->
+                    Value
+            end,
+            {?GLFW_POSITION_X, ValueRaw_};
+        position_y ->
+            ValueRaw_ = case Value of
+                any_position ->
+                    ?GLFW_ANY_POSITION;
+                _ ->
+                    Value
+            end,
+            {?GLFW_POSITION_Y, ValueRaw_};
+        refresh_rate ->
+            ValueRaw_ = case Value of
+                dont_care ->
+                    ?GLFW_DONT_CARE;
+                _ ->
+                    Value
+            end,
+            {?GLFW_REFRESH_RATE, ValueRaw_};
+        win32_keyboard_menu ->
+            {?GLFW_WIN32_KEYBOARD_MENU, to_raw_bool(Value)};
+        win32_showdefault ->
+            {?GLFW_WIN32_SHOWDEFAULT, to_raw_bool(Value)};
+        cocoa_graphics_switching ->
+            {?GLFW_COCOA_GRAPHICS_SWITCHING, to_raw_bool(Value)}
+    end,
+    window_hint_raw(HintRaw, ValueRaw).
+
+window_hint_raw(_Hint, _Value) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+window_hint_string_raw(_Hint, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
