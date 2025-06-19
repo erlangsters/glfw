@@ -1596,6 +1596,62 @@ static ERL_NIF_TERM nif_set_window_monitor(ErlNifEnv* env, int argc, const ERL_N
     return execute_command(glfw_set_window_monitor, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int attrib;
+    if (!enif_get_int(env, argv[1], &attrib)) {
+        return enif_make_badarg(env);
+    }
+    int value = glfwGetWindowAttrib(window, attrib);
+
+    // All values happen to be either true or false, but that might change in
+    // later version of GLFW.
+    if (value == GLFW_TRUE) {
+        return atom_true;
+    } else if (value == GLFW_FALSE) {
+        return atom_false;
+    } else {
+        return atom_undefined;
+    }
+}
+
+static ERL_NIF_TERM nif_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_attrib, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int attrib;
+    if (!enif_get_int(env, argv[1], &attrib)) {
+        return enif_make_badarg(env);
+    }
+    int value;
+    if (!enif_get_int(env, argv[2], &value)) {
+        return enif_make_badarg(env);
+    }
+    glfwSetWindowAttrib(window, attrib, value);
+
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_set_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_attrib, env, argc, argv);
+}
+
 void window_position_callback(GLFWwindow* window, int xpos, int ypos) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
@@ -3192,6 +3248,9 @@ static ErlNifFunc nif_functions[] = {
 
     {"window_monitor", 1, nif_window_monitor},
     {"set_window_monitor_raw", 7, nif_set_window_monitor},
+
+    {"window_attrib_raw", 2, nif_window_attrib},
+    {"set_window_attrib_raw", 3, nif_set_window_attrib},
 
     {"window_position_handler", 1, nif_window_position_handler},
     {"set_window_position_handler", 2, nif_set_window_position_handler},

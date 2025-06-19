@@ -53,6 +53,8 @@ To be written.
 
 -export_type([window_hint_type/0]).
 -export_type([window_hint_value/0]).
+-export_type([window_attrib/0]).
+-export_type([window_attrib_value/0]).
 -export_type([window/0]).
 
 -export_type([cursor/0]).
@@ -131,6 +133,9 @@ To be written.
 
 -export([window_monitor/1]).
 -export([set_window_monitor/7]).
+
+-export([window_attrib/2]).
+-export([set_window_attrib/3]).
 
 -export([window_position_handler/1]).
 -export([set_window_position_handler/2]).
@@ -263,6 +268,9 @@ To be written.
 
 -nifs([window_monitor/1]).
 -nifs([set_window_monitor_raw/7]).
+
+-nifs([window_attrib_raw/2]).
+-nifs([set_window_attrib_raw/3]).
 
 -nifs([window_position_handler/1]).
 -nifs([set_window_position_handler/2]).
@@ -398,6 +406,10 @@ To be written.
 -define(GLFW_WAYLAND_APP_ID,           16#00026001).
 -define(GLFW_X11_INSTANCE_NAME,        16#00024002).
 -define(GLFW_X11_CLASS_NAME,           16#00024001).
+
+-define(GLFW_ICONIFIED, 16#00020002).
+-define(GLFW_HOVERED,   16#0002000B).
+-define(GLFW_DOUBLEBUFFER, 16#00021010).
 
 % XXX: Double-check this: max value of a signed int is 2147483647. However,
 %      the GLFW documentation says that the value is 16#80000000, which is
@@ -796,6 +808,57 @@ The available window hints.
     window_hint_wayland_app_id() |
     window_hint_x11_instance_name() |
     window_hint_x11_class_name()
+.
+
+-type window_attrib_focused() :: boolean().
+-type window_attrib_iconified() :: boolean().
+-type window_attrib_maximized() :: boolean().
+-type window_attrib_hovered() :: boolean().
+-type window_attrib_visible() :: boolean().
+-type window_attrib_resizable() :: boolean().
+-type window_attrib_decorated() :: boolean().
+-type window_attrib_auto_iconify() :: boolean().
+-type window_attrib_floating() :: boolean().
+-type window_attrib_transparent_framebuffer() :: boolean().
+-type window_attrib_focus_on_show() :: boolean().
+-type window_attrib_mouse_passthrough() :: boolean().
+-type window_attrib_doublebuffer() :: boolean().
+
+-doc """
+To be written.
+""".
+-type window_attrib() ::
+    iconified |
+    maximized |
+    hovered |
+    visible |
+    resizable |
+    decorated |
+    auto_iconify |
+    floating |
+    transparent_framebuffer |
+    focus_on_show |
+    mouse_passthrough |
+    doublebuffer
+.
+
+-doc """
+To be written.
+""".
+-type window_attrib_value() ::
+    window_attrib_focused() |
+    window_attrib_iconified() |
+    window_attrib_maximized() |
+    window_attrib_hovered() |
+    window_attrib_visible() |
+    window_attrib_resizable() |
+    window_attrib_decorated() |
+    window_attrib_auto_iconify() |
+    window_attrib_floating() |
+    window_attrib_transparent_framebuffer() |
+    window_attrib_focus_on_show() |
+    window_attrib_mouse_passthrough() |
+    window_attrib_doublebuffer()
 .
 -type window() :: reference().
 -type cursor() :: reference().
@@ -2757,6 +2820,90 @@ set_window_monitor(Window, Monitor, X, Y, Width, Height, RefreshRate) ->
     set_window_monitor_raw(Window, Monitor, X, Y, Width, Height, RefreshRateRaw).
 
 set_window_monitor_raw(_Window, _Monitor, _X, _Y, _Width, _Height, _RefreshRate) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec window_attrib(window(), window_attrib()) -> ok.
+window_attrib(Window, Attrib) ->
+    AttribRaw = case Attrib of
+        iconified ->
+            ?GLFW_ICONIFIED;
+        maximized ->
+            ?GLFW_MAXIMIZED;
+        hovered ->
+            ?GLFW_HOVERED;
+        visible ->
+            ?GLFW_VISIBLE;
+        resizable ->
+            ?GLFW_RESIZABLE;
+        decorated ->
+            ?GLFW_DECORATED;
+        auto_iconify ->
+            ?GLFW_AUTO_ICONIFY;
+        floating ->
+            ?GLFW_FLOATING;
+        transparent_framebuffer ->
+            ?GLFW_TRANSPARENT_FRAMEBUFFER;
+        focus_on_show ->
+            ?GLFW_FOCUS_ON_SHOW;
+        mouse_passthrough ->
+            ?GLFW_MOUSE_PASSTHROUGH;
+        doublebuffer ->
+            ?GLFW_DOUBLEBUFFER
+    end,
+    window_attrib_raw(Window, AttribRaw).
+
+window_attrib_raw(_Window, _Attrib) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_window_attrib(window(), window_attrib(), window_attrib_value()) -> ok.
+set_window_attrib(Window, Attrib, Value) ->
+    AttribRaw = case Attrib of
+        iconified ->
+            ?GLFW_ICONIFIED;
+        maximized ->
+            ?GLFW_MAXIMIZED;
+        hovered ->
+            ?GLFW_HOVERED;
+        visible ->
+            ?GLFW_VISIBLE;
+        resizable ->
+            ?GLFW_RESIZABLE;
+        decorated ->
+            ?GLFW_DECORATED;
+        auto_iconify ->
+            ?GLFW_AUTO_ICONIFY;
+        floating ->
+            ?GLFW_FLOATING;
+        transparent_framebuffer ->
+            ?GLFW_TRANSPARENT_FRAMEBUFFER;
+        focus_on_show ->
+            ?GLFW_FOCUS_ON_SHOW;
+        mouse_passthrough ->
+            ?GLFW_MOUSE_PASSTHROUGH;
+        doublebuffer ->
+            ?GLFW_DOUBLEBUFFER
+    end,
+    % All values happen to be boolean, however, it might change in future
+    % versions of GLFW.
+    ValueRaw = case Value of
+        true ->
+            ?GLFW_TRUE;
+        false ->
+            ?GLFW_FALSE
+    end,
+    set_window_attrib_raw(Window, AttribRaw, ValueRaw).
+
+set_window_attrib_raw(_Window, _Attrib, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
