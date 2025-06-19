@@ -634,12 +634,12 @@ To be written.
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -doc "The valid values of the `joystick_hat_buttons` init hint.".
--type joystick_hat_buttons_hint_value() :: boolean().
+-type init_hint_joystick_hat_buttons() :: boolean().
 -doc "The valid values of the `platform` hint.".
--type platform_hint_value() :: any | platform().
+-type init_hint_platform() :: any | platform().
 
 -doc "The valid values of the `angle_platform_type` init hint.".
--type angle_platform_hint_value() ::
+-type init_hint_angle_platform() ::
     angle_platform_type_none |
     angle_platform_type_opengl |
     angle_platform_type_opengles |
@@ -649,11 +649,11 @@ To be written.
     angle_platform_type_metal
 .
 -doc "The valid values of the `cocoa_chdir_resources` init hint.".
--type cocoa_chdir_resources_hint_value() :: boolean().
+-type init_hint_cocoa_chdir_resources() :: boolean().
 -doc "The valid values of the `cocoa_chdir_resources` init hint.".
--type cocoa_menubar_hint_value() :: boolean().
+-type init_hint_cocoa_menubar() :: boolean().
 -doc "The valid values of the `wayland_libdecor` init hint.".
--type way_libdecor_hint_value() ::
+-type init_hint_way_libdecor() ::
     wayland_prefer_libdecor |
     wayland_disable_libdecor
 .
@@ -663,12 +663,12 @@ The available init hints.
 
 | Hint                    | Note                               | Values                               |
 |-------------------------|------------------------------------|--------------------------------------|
-| `platform`              | Platform selection init hint.      | `platform_hint_value()`              |
-| `joystick_hat_buttons`  | Joystick hat buttons init hint.    | `joystick_hat_buttons_hint_value()`  |
-| `angle_platform_type`   | ANGLE rendering backend init hint. | `angle_platform_hint_value()`        |
-| `cocoa_chdir_resources` | macOS specific init hint.          | `cocoa_chdir_resources_hint_value()` |
-| `cocoa_menubar`         | macOS specific init hint.          | `cocoa_menubar_hint_value()`         |
-| `wayland_libdecor`      | Wayland specific init hint.        | `way_libdecor_hint_value()`          |
+| `platform`              | Platform selection init hint.      | `init_hint_platform()`              |
+| `joystick_hat_buttons`  | Joystick hat buttons init hint.    | `init_hint_joystick_hat_buttons()`  |
+| `angle_platform_type`   | ANGLE rendering backend init hint. | `init_hint_angle_platform()`        |
+| `cocoa_chdir_resources` | macOS specific init hint.          | `init_hint_cocoa_chdir_resources()` |
+| `cocoa_menubar`         | macOS specific init hint.          | `init_hint_cocoa_menubar()`         |
+| `wayland_libdecor`      | Wayland specific init hint.        | `init_hint_way_libdecor()`          |
 """.
 -type init_hint_type() ::
     platform |
@@ -682,12 +682,12 @@ The available init hints.
 The valid values for each init hint.
 """.
 -type init_hint_value() ::
-    platform_hint_value() |
-    joystick_hat_buttons_hint_value() |
-    angle_platform_hint_value() |
-    cocoa_chdir_resources_hint_value() |
-    cocoa_menubar_hint_value() |
-    way_libdecor_hint_value()
+    init_hint_platform() |
+    init_hint_joystick_hat_buttons() |
+    init_hint_angle_platform() |
+    init_hint_cocoa_chdir_resources() |
+    init_hint_cocoa_menubar() |
+    init_hint_way_libdecor()
 .
 
 -type error_code() ::
