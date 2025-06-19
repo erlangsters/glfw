@@ -129,6 +129,9 @@ To be written.
 -export([focus_window/1]).
 -export([request_window_attention/1]).
 
+-export([window_monitor/1]).
+-export([set_window_monitor/7]).
+
 -export([window_position_handler/1]).
 -export([set_window_position_handler/2]).
 -export([window_size_handler/1]).
@@ -257,6 +260,9 @@ To be written.
 -nifs([hide_window/1]).
 -nifs([focus_window/1]).
 -nifs([request_window_attention/1]).
+
+-nifs([window_monitor/1]).
+-nifs([set_window_monitor_raw/7]).
 
 -nifs([window_position_handler/1]).
 -nifs([set_window_position_handler/2]).
@@ -2716,6 +2722,41 @@ application, the system will end the request automatically.
 }).
 -spec request_window_attention(window()) -> ok.
 request_window_attention(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec window_monitor(window()) -> undefined | monitor().
+window_monitor(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+To be written.
+
+To be written.
+""".
+-spec set_window_monitor(
+    window(),
+    undefined | monitor(),
+    integer(),
+    integer(),
+    integer(),
+    integer(),
+    dont_care | integer()
+) -> ok.
+set_window_monitor(Window, Monitor, X, Y, Width, Height, RefreshRate) ->
+    RefreshRateRaw = case RefreshRate of
+        dont_care ->
+            ?GLFW_DONT_CARE;
+        _ ->
+            RefreshRate
+    end,
+    set_window_monitor_raw(Window, Monitor, X, Y, Width, Height, RefreshRateRaw).
+
+set_window_monitor_raw(_Window, _Monitor, _X, _Y, _Width, _Height, _RefreshRate) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
