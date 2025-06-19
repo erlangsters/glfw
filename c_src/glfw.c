@@ -1533,6 +1533,69 @@ static ERL_NIF_TERM nif_request_window_attention(ErlNifEnv* env, int argc, const
     return execute_command(glfw_request_window_attention, env, argc, argv);
 }
 
+static ERL_NIF_TERM glfw_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    GLFWmonitor* monitor = glfwGetWindowMonitor(window);
+    if (monitor == NULL) {
+        return atom_undefined;
+    }
+
+    GLFWmonitor** monitor_resource = enif_alloc_resource(
+        glfw_monitor_resource_type,
+        sizeof(GLFWmonitor*)
+    );
+    *monitor_resource = monitor;
+    ERL_NIF_TERM monitor_term = enif_make_resource(env, monitor_resource);
+    enif_release_resource(monitor_resource);
+    return monitor_term;
+}
+
+static ERL_NIF_TERM nif_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_monitor, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_set_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    GLFWmonitor* monitor_ptr = NULL;
+    if (!enif_is_identical(argv[1], atom_undefined)) {
+        GLFWmonitor** monitor;
+        if (!enif_get_resource(env, argv[1], glfw_monitor_resource_type, (void**) &monitor)) {
+            return enif_make_badarg(env);
+        }
+        monitor_ptr = *monitor;
+    }
+
+    int xpos, ypos, width, height, refresh_rate;
+    if (!enif_get_int(env, argv[2], &xpos) ||
+        !enif_get_int(env, argv[3], &ypos) ||
+        !enif_get_int(env, argv[4], &width) ||
+        !enif_get_int(env, argv[5], &height) ||
+        !enif_get_int(env, argv[6], &refresh_rate)) {
+        return enif_make_badarg(env);
+    }
+
+    glfwSetWindowMonitor(window, monitor_ptr, xpos, ypos, width, height, refresh_rate);
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_set_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_monitor, env, argc, argv);
+}
+
 void window_position_callback(GLFWwindow* window, int xpos, int ypos) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
@@ -3126,6 +3189,9 @@ static ErlNifFunc nif_functions[] = {
     {"hide_window", 1, nif_hide_window},
     {"focus_window", 1, nif_focus_window},
     {"request_window_attention", 1, nif_request_window_attention},
+
+    {"window_monitor", 1, nif_window_monitor},
+    {"set_window_monitor_raw", 7, nif_set_window_monitor},
 
     {"window_position_handler", 1, nif_window_position_handler},
     {"set_window_position_handler", 2, nif_set_window_position_handler},
