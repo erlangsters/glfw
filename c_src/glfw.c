@@ -14,8 +14,11 @@
 #include <EGL/egl.h>
 #include <GLFW/glfw3.h>
 
+typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
+get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
+
 static void* egl_nif_lib_handle = NULL;
-ErlNifResourceType* egl_window_resource_type;
+static ErlNifResourceType* egl_window_resource_type;
 
 static pthread_t commands_executor;
 static pthread_mutex_t command_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -206,18 +209,19 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         return -1;
     }
 
-    egl_nif_lib_handle = dlopen(beam_egl_so_path, RTLD_NOW);
+    egl_nif_lib_handle = dlopen(beam_egl_so_path, RTLD_NOW | RTLD_GLOBAL);
     if (!egl_nif_lib_handle) {
         fprintf(stderr, "failed to load beam-egl.so: %s\n", dlerror());
         return -1;
     }
 
-    egl_window_resource_type = dlsym(egl_nif_lib_handle, "egl_window_resource_type");
-    if (!egl_window_resource_type) {
-        fprintf(stderr, "failed to load symbol egl_window_resource_type: %s\n", dlerror());
+    get_egl_window_resource_type = dlsym(egl_nif_lib_handle, "get_egl_window_resource_type");
+    if (!get_egl_window_resource_type) {
+        fprintf(stderr, "failed to load symbol get_egl_window_resource_type: %s\n", dlerror());
         dlclose(egl_nif_lib_handle);
         return -1;
     }
+    egl_window_resource_type = get_egl_window_resource_type(env);
 
     atom_ok = enif_make_atom(env, "ok");
     atom_error = enif_make_atom(env, "error");
@@ -3183,11 +3187,22 @@ static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NI
 
     EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetX11Window(window);
 
+    // Allocate and create the resource
     void* egl_window_resource = enif_alloc_resource(egl_window_resource_type, sizeof(EGLNativeWindowType));
+    if (!egl_window_resource) {
+        return enif_make_atom(env, "allocation_failed");
+    }
 
+    // Copy the window handle
     *((EGLNativeWindowType*)egl_window_resource) = window_handle;
 
-    return enif_make_resource(env, egl_window_resource);
+    // Create the Erlang term
+    ERL_NIF_TERM resource_term = enif_make_resource(env, egl_window_resource);
+
+    // Release our reference to the resource - Erlang GC will handle it from here
+    enif_release_resource(egl_window_resource);
+
+    return resource_term;
 }
 
 static ErlNifFunc nif_functions[] = {
