@@ -3175,19 +3175,38 @@ static ERL_NIF_TERM nif_set_clipboard_string(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    printf("nif_window_egl_handle (begin)\n");
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
     }
+    printf("nif_window_egl_handle called: bbb\n");
     GLFWwindow* window = window_resource->window;
 
     EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetX11Window(window);
 
+    // Allocate and create the resource
+    printf("nif_window_egl_handle called: cc\n");
     void* egl_window_resource = enif_alloc_resource(egl_window_resource_type, sizeof(EGLNativeWindowType));
 
-    *((EGLNativeWindowType*)egl_window_resource) = window_handle;
+    printf("nif_window_egl_handle called: ddd\n");
+    if (!egl_window_resource) {
+        return enif_make_atom(env, "allocation_failed");
+    }
 
-    return enif_make_resource(env, egl_window_resource);
+    // Copy the window handle
+    *((EGLNativeWindowType*)egl_window_resource) = window_handle;
+    printf("nif_window_egl_handle called: eee\n");
+
+    // Create the Erlang term
+    ERL_NIF_TERM resource_term = enif_make_resource(env, egl_window_resource);
+
+    printf("nif_window_egl_handle called: fff\n");
+    // Release our reference to the resource - Erlang GC will handle it from here
+    enif_release_resource(egl_window_resource);
+
+
+    return enif_make_resource(env, resource_term);
 }
 
 static ErlNifFunc nif_functions[] = {
