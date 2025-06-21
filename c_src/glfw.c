@@ -14,8 +14,11 @@
 #include <EGL/egl.h>
 #include <GLFW/glfw3.h>
 
+typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
+get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
+
 static void* egl_nif_lib_handle = NULL;
-extern ErlNifResourceType* egl_window_resource_type;
+static ErlNifResourceType* egl_window_resource_type;
 
 static pthread_t commands_executor;
 static pthread_mutex_t command_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -212,12 +215,13 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         return -1;
     }
 
-    egl_window_resource_type = dlsym(egl_nif_lib_handle, "egl_window_resource_type");
-    if (!egl_window_resource_type) {
-        fprintf(stderr, "failed to load symbol egl_window_resource_type: %s\n", dlerror());
+    get_egl_window_resource_type = dlsym(egl_nif_lib_handle, "get_egl_window_resource_type");
+    if (!get_egl_window_resource_type) {
+        fprintf(stderr, "failed to load symbol get_egl_window_resource_type: %s\n", dlerror());
         dlclose(egl_nif_lib_handle);
         return -1;
     }
+    egl_window_resource_type = get_egl_window_resource_type(env);
     fprintf(stderr, "[beam-glfw.so] egl_window_resource_type = %p\n", (void*)egl_window_resource_type);
 
     atom_ok = enif_make_atom(env, "ok");
