@@ -15,7 +15,7 @@
 #include <GLFW/glfw3.h>
 
 static void* egl_nif_lib_handle = NULL;
-ErlNifResourceType* egl_window_resource_type;
+extern ErlNifResourceType* egl_window_resource_type;
 
 static pthread_t commands_executor;
 static pthread_mutex_t command_mutex = PTHREAD_MUTEX_INITIALIZER;
