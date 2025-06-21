@@ -3196,17 +3196,13 @@ static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NI
 
     // Copy the window handle
     *((EGLNativeWindowType*)egl_window_resource) = window_handle;
-    printf("nif_window_egl_handle called: eee\n");
 
     // Create the Erlang term
     ERL_NIF_TERM resource_term = enif_make_resource(env, egl_window_resource);
 
-    printf("nif_window_egl_handle called: fff\n");
     // Release our reference to the resource - Erlang GC will handle it from here
-    // enif_release_resource(egl_window_resource);
+    enif_release_resource(egl_window_resource);
 
-
-    // return enif_make_resource(env, resource_term);
     return resource_term;
 }
 
