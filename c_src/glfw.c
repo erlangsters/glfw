@@ -218,6 +218,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         dlclose(egl_nif_lib_handle);
         return -1;
     }
+    fprintf(stderr, "[beam-glfw.so] egl_window_resource_type = %p\n", (void*)egl_window_resource_type);
 
     atom_ok = enif_make_atom(env, "ok");
     atom_error = enif_make_atom(env, "error");
