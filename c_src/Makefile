@@ -9,7 +9,7 @@ ifeq ($(UNAME_SYS), Darwin)
 	LDFLAGS ?= -flat_namespace -undefined suppress
 else ifeq ($(UNAME_SYS), Linux)
 	CC ?= gcc
-	CFLAGS ?= -O3 -std=c99 -finline-functions -Wall -Wmissing-prototypes
+	CFLAGS ?= -O0 -std=c99 -finline-functions -Wall -Wmissing-prototypes -Wfatal-errors
 endif
 
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)

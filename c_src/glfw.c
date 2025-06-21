@@ -206,7 +206,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         return -1;
     }
 
-    egl_nif_lib_handle = dlopen(beam_egl_so_path, RTLD_NOW);
+    egl_nif_lib_handle = dlopen(beam_egl_so_path, RTLD_NOW | RTLD_GLOBAL);
     if (!egl_nif_lib_handle) {
         fprintf(stderr, "failed to load beam-egl.so: %s\n", dlerror());
         return -1;
