@@ -1079,10 +1079,22 @@ init_nif() ->
     % location first, then pass it to the GLFW NIF loader.
     EGLPrivDir = code:priv_dir(egl),
     EGLNifLocation = filename:join(EGLPrivDir, "beam-egl") ++ ".so",
+    io:format("[glfw] egl NIF location: ~p~n", [EGLNifLocation]),
 
-    PrivDir = code:priv_dir(?MODULE),
-    NifPath = filename:join(PrivDir, "beam-glfw"),
-    ok = erlang:load_nif(NifPath, EGLNifLocation).
+    LibName = "beam-glfw",
+    SoName = case code:priv_dir(?MODULE) of
+        {error, bad_name} ->
+            case filelib:is_dir(filename:join(["..", priv])) of
+                true ->
+                    filename:join(["..", priv, LibName]);
+                _ ->
+                    filename:join([priv, LibName])
+            end;
+        Dir ->
+            filename:join(Dir, LibName)
+    end,
+    io:format("[glfw] glfw NIF location ~s~n", [SoName]),
+    erlang:load_nif(SoName, EGLNifLocation).
 
 -doc """
 Set an init hint.
