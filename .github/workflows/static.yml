@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: apt-get update && apt-get install -y libegl-dev libglfw3-dev
-      - run: rebar3 ex_doc
+      - run: rebar3 as docs ex_doc
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
