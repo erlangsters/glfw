@@ -767,7 +767,7 @@ static ERL_NIF_TERM glfw_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TER
     }
 
     int count;
-    const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+    const GLFWvidmode* modes = glfwGetVideoModes(*monitor, &count);
     if (!modes) {
         return atom_undefined;
     }
@@ -803,7 +803,7 @@ static ERL_NIF_TERM glfw_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         return enif_make_badarg(env);
     }
 
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    const GLFWvidmode* mode = glfwGetVideoMode(*monitor);
     if (!mode) {
         return atom_undefined;
     }
