@@ -13,14 +13,14 @@
 
 glfw_monitor_test() ->
     [] = glfw:monitors(),
-    no_monitor = glfw:primary_monitor(),
+    undefined = glfw:primary_monitor(),
 
     true = glfw:init(),
 
     Monitors = glfw:monitors(),
     ?assert(erlang:is_list(Monitors)),
 
-    {ok, Monitor} = glfw:primary_monitor(),
+    Monitor = glfw:primary_monitor(),
     ?assert(erlang:is_reference(Monitor)),
 
     {X1, Y1} = glfw:monitor_position(Monitor),
@@ -49,17 +49,18 @@ glfw_monitor_test() ->
     io:format(user, "monitor name: ~p~n", [Name]),
     ?assert(erlang:is_list(Name)),
 
-    % XXX: Video mode stuff.
-    [] = glfw:monitor_video_modes(Monitor),
-    VideoMode = glfw:monitor_video_mode(Monitor),
+    VideoModes = glfw:video_modes(Monitor),
+    lists:foreach(fun print_video_mode/1, VideoModes),
+
+    VideoMode = glfw:video_mode(Monitor),
     print_video_mode(VideoMode),
 
-    ok = glfw:monitor_set_gamma(Monitor, 1.0),
+    ok = glfw:set_gamma(Monitor, 1.0),
 
-    GammaRamp = glfw:monitor_gamma_ramp(Monitor),
+    GammaRamp = glfw:gamma_ramp(Monitor),
     print_gamma_ramp(GammaRamp),
 
-    ok = glfw:monitor_set_gamma_ramp(Monitor, GammaRamp),
+    ok = glfw:set_gamma_ramp(Monitor, GammaRamp),
 
     ok.
 
@@ -78,7 +79,6 @@ print_gamma_ramp(#glfw_gamma_ramp{
     green = Green,
     blue = Blue
 }) ->
-
     io:format(
         user,
         "gamma ramp (red: ~p, green: ~p, blue: ~p)~n",
