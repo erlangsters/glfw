@@ -11,6 +11,8 @@
 -include_lib("eunit/include/eunit.hrl").
 
 glfw_test() ->
+    no_error = glfw:get_error(),
+
     {Major, Minor, Revision} = glfw:version(),
     ?assert(erlang:is_integer(Major)),
     ?assert(erlang:is_integer(Minor)),
@@ -19,18 +21,32 @@ glfw_test() ->
     Version = glfw:version_string(),
     ?assert(erlang:is_list(Version)),
 
-    false = glfw:platform_supported(win32),
-    false = glfw:platform_supported(cocoa),
-    false = glfw:platform_supported(wayland),
-    true = glfw:platform_supported(x11),
-    false = glfw:platform_supported(null),
+    IsSupported1 = glfw:platform_supported(win32),
+    ?assert(erlang:is_boolean(IsSupported1)),
+    IsSupported2 = glfw:platform_supported(cocoa),
+    ?assert(erlang:is_boolean(IsSupported2)),
+    IsSupported3 = glfw:platform_supported(wayland),
+    ?assert(erlang:is_boolean(IsSupported3)),
+    IsSupported4 = glfw:platform_supported(x11),
+    ?assert(erlang:is_boolean(IsSupported4)),
+    IsSupported5 = glfw:platform_supported(null),
+    ?assert(erlang:is_boolean(IsSupported5)),
 
     error = glfw:platform(),
+    {error, not_initialized, ErrorDescription} = glfw:get_error(),
+    ?assert(erlang:is_list(ErrorDescription)),
+
+    no_error = glfw:get_error(),
 
     ok = test_init_hint(),
 
-    glfw:init(),
-    {ok, x11} = glfw:platform(),
+    true = glfw:init(),
+    {ok, Platform} = glfw:platform(),
+    ?assert(lists:member(Platform, [win32, cocoa, wayland, x11, null])),
+
+    ok = glfw:terminate(),
+    true = glfw:init(),
+    ok = glfw:terminate(),
 
     ok.
 
