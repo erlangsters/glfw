@@ -6,6 +6,7 @@
 run() ->
     io:format("GLFW Joystick/Gamepad Test Demo~n"),
     glfw:init(),
+    test_error_handler:setup(),
 
     Joysticks = [
         joystick_1,
