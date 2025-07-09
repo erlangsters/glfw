@@ -173,7 +173,7 @@ ERL_NIF_TERM execute_command(
     ERL_NIF_TERM (*function)(ErlNifEnv*, int, const ERL_NIF_TERM[]),
     ErlNifEnv* env,
     int argc,
-    ERL_NIF_TERM* argv[]
+    const ERL_NIF_TERM argv[]
 ) {
     pthread_mutex_lock(&command_mutex);
     command_function = function;
@@ -533,7 +533,7 @@ void error_callback(int error_code, const char *description) {
         description_term
     );
 
-    enif_send(NULL, &glfw_error_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&glfw_error_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -789,7 +789,7 @@ void monitor_callback(GLFWmonitor *monitor, int event) {
         event == GLFW_CONNECTED ? atom_connected : atom_disconnected
     );
 
-    enif_send(NULL, &glfw_monitor_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&glfw_monitor_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1809,7 +1809,7 @@ void window_position_callback(GLFWwindow* window, int xpos, int ypos) {
         inner_result
     );
 
-    enif_send(NULL, &window_resource->window_position_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_position_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1866,7 +1866,7 @@ void window_size_callback(GLFWwindow* window, int width, int height) {
         inner_result
     );
 
-    enif_send(NULL, &window_resource->window_size_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_size_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1916,7 +1916,7 @@ void window_close_callback(GLFWwindow* window) {
         window_resource->window_term
     );
 
-    enif_send(NULL, &window_resource->window_close_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_close_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_close_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1966,7 +1966,7 @@ void window_refresh_callback(GLFWwindow* window) {
         window_resource->window_term
     );
 
-    enif_send(NULL, &window_resource->window_refresh_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_refresh_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_refresh_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2017,7 +2017,7 @@ void window_focus_callback(GLFWwindow* window, int focused) {
         focused ? atom_true : atom_false
     );
 
-    enif_send(NULL, &window_resource->window_focus_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_focus_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_focus_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2068,7 +2068,7 @@ void window_iconify_callback(GLFWwindow* window, int iconified) {
         iconified ? atom_true : atom_false
     );
 
-    enif_send(NULL, &window_resource->window_iconify_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_iconify_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_iconify_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2119,7 +2119,7 @@ void window_maximize_callback(GLFWwindow* window, int maximized) {
         maximized ? atom_true : atom_false
     );
 
-    enif_send(NULL, &window_resource->window_maximize_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_maximize_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_maximize_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2176,7 +2176,7 @@ void window_content_scale_callback(GLFWwindow* window, float xscale, float yscal
         inner_result
     );
 
-    enif_send(NULL, &window_resource->window_content_scale_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->window_content_scale_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2650,7 +2650,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         mods_term
     );
 
-    enif_send(NULL, &window_resource->key_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->key_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2703,7 +2703,7 @@ void char_callback(GLFWwindow *window, unsigned int codepoint) {
         codepoint_term
     );
 
-    enif_send(NULL, &window_resource->char_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->char_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_character_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2756,7 +2756,7 @@ void char_mods_callback(GLFWwindow *window, unsigned int codepoint, int mods) {
         mods_term
     );
 
-    enif_send(NULL, &window_resource->char_mods_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->char_mods_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_character_mods_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2816,7 +2816,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         mods_term
     );
 
-    enif_send(NULL, &window_resource->mouse_button_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->mouse_button_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2873,7 +2873,7 @@ void cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
         inner_result
     );
 
-    enif_send(NULL, &window_resource->cursor_position_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->cursor_position_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_cursor_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2923,7 +2923,7 @@ void cursor_enter_callback(GLFWwindow *window, int entered) {
         entered ? atom_true : atom_false
     );
 
-    enif_send(NULL, &window_resource->cursor_enter_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->cursor_enter_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2980,7 +2980,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
         inner_result
     );
 
-    enif_send(NULL, &window_resource->scroll_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&window_resource->scroll_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3227,7 +3227,7 @@ void joystick_callback(int jid, int event) {
         event == GLFW_CONNECTED ? atom_connected : atom_disconnected
     );
 
-    enif_send(NULL, &glfw_joystick_handler, NULL, result);
+    enif_send(NULL, (ErlNifPid*)&glfw_joystick_handler, NULL, result);
 }
 
 static ERL_NIF_TERM nif_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
