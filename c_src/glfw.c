@@ -142,6 +142,8 @@ static ERL_NIF_TERM glfw_joystick_handler;
 // command to be ready, executes it and signals that the command is done (while
 // making the result available).
 void* commands_executor_function(void* arg) {
+    (void)arg;
+
     // XXX: Improve the implementation. For now it does the job.
     while (1) {
         pthread_mutex_lock(&command_mutex);
@@ -193,16 +195,24 @@ ERL_NIF_TERM execute_command(
 }
 
 static void glfw_monitor_resource_dtor(ErlNifEnv* env, void* obj) {
+    (void)env;
+    (void)obj;
 }
 
 static void glfw_window_resource_dtor(ErlNifEnv* env, void* obj) {
+    (void)env;
+    (void)obj;
 }
 
 static void glfw_cursor_resource_dtor(ErlNifEnv* env, void* obj) {
+    (void)env;
+    (void)obj;
 }
 
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
+    (void)priv_data;
+
     char beam_egl_so_path[1024];
     if (!enif_get_string(env, arg, beam_egl_so_path, sizeof(beam_egl_so_path), ERL_NIF_LATIN1)) {
         fprintf(stderr, "failed to read EGL binding library path from argument\n");
@@ -341,16 +351,19 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     return 0;
 }
 
-static int nif_module_unload(ErlNifEnv* caller_env, void** priv_data)
+static void nif_module_unload(ErlNifEnv* caller_env, void* priv_data)
 {
+    (void)caller_env;
+    (void)priv_data;
+
     enif_free_env(glfw_error_handler_env);
     enif_free_env(glfw_joystick_handler_env);
-
-    return 0;
 }
 
 static ERL_NIF_TERM glfw_init_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int hint;
     int value;
 
@@ -372,6 +385,10 @@ static ERL_NIF_TERM nif_init_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
 static ERL_NIF_TERM glfw_init_command(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     int result = glfwInit();
     if (result == GLFW_TRUE) {
         return atom_true;
@@ -388,6 +405,10 @@ static ERL_NIF_TERM nif_init_(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
 static ERL_NIF_TERM glfw_terminate_command(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     glfwTerminate();
     return atom_ok;
 }
@@ -399,6 +420,9 @@ static ERL_NIF_TERM nif_terminate(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
 static ERL_NIF_TERM nif_version(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+    (void)argv;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     int major, minor, rev;
@@ -413,6 +437,9 @@ static ERL_NIF_TERM nif_version(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
 static ERL_NIF_TERM nif_version_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+    (void)argv;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     const char* version = glfwGetVersionString();
@@ -421,6 +448,9 @@ static ERL_NIF_TERM nif_version_string(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM nif_get_error(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+    (void)argv;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     const char* description;
@@ -508,11 +538,18 @@ void error_callback(int error_code, const char *description) {
 
 static ERL_NIF_TERM nif_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     return glfw_error_handler;
 }
 
 static ERL_NIF_TERM glfw_set_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+
     enif_clear_env(glfw_error_handler_env);
 
     int is_undefined = enif_is_identical(argv[1], atom_undefined);
@@ -534,6 +571,10 @@ static ERL_NIF_TERM nif_set_error_handler(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM nif_platform(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     int platform = glfwGetPlatform();
@@ -542,6 +583,8 @@ static ERL_NIF_TERM nif_platform(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
 static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     int platform;
@@ -560,6 +603,9 @@ static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_N
 
 static ERL_NIF_TERM glfw_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+    (void)argv;
+
     int count;
     GLFWmonitor** monitors = glfwGetMonitors(&count);
     if (!monitors) {
@@ -588,6 +634,9 @@ static ERL_NIF_TERM nif_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
 static ERL_NIF_TERM glfw_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+    (void)argv;
+
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     if (!monitor) {
         return atom_undefined;
@@ -609,6 +658,8 @@ static ERL_NIF_TERM nif_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_
 
 static ERL_NIF_TERM glfw_monitor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -631,6 +682,8 @@ static ERL_NIF_TERM nif_monitor_position(ErlNifEnv* env, int argc, const ERL_NIF
 
 static ERL_NIF_TERM glfw_monitor_work_area(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -655,6 +708,8 @@ static ERL_NIF_TERM nif_monitor_work_area(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM glfw_monitor_physical_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -677,6 +732,8 @@ static ERL_NIF_TERM nif_monitor_physical_size(ErlNifEnv* env, int argc, const ER
 
 static ERL_NIF_TERM glfw_monitor_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -699,6 +756,8 @@ static ERL_NIF_TERM nif_monitor_content_scale(ErlNifEnv* env, int argc, const ER
 
 static ERL_NIF_TERM glfw_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -735,11 +794,18 @@ void monitor_callback(GLFWmonitor *monitor, int event) {
 
 static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     return glfw_monitor_handler;
 }
 
 static ERL_NIF_TERM glfw_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+
     enif_clear_env(glfw_monitor_handler_env);
 
     int is_undefined = enif_is_identical(argv[1], atom_undefined);
@@ -761,6 +827,8 @@ static ERL_NIF_TERM nif_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_
 
 static ERL_NIF_TERM glfw_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -798,6 +866,8 @@ static ERL_NIF_TERM nif_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -826,6 +896,8 @@ static ERL_NIF_TERM nif_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ERL_NIF_TERM glfw_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -847,6 +919,8 @@ static ERL_NIF_TERM nif_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
 static ERL_NIF_TERM glfw_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWmonitor** monitor;
     if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
         return enif_make_badarg(env);
@@ -885,6 +959,8 @@ static ERL_NIF_TERM nif_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ERL_NIF_TERM glfw_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // XXX: Review implementation.
 
     GLFWmonitor** monitor;
@@ -965,6 +1041,10 @@ static ERL_NIF_TERM nif_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_default_window_hints(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     glfwDefaultWindowHints();
     return atom_ok;
 }
@@ -976,6 +1056,8 @@ static ERL_NIF_TERM nif_default_window_hints(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM glfw_window_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int hint, value;
     if (!enif_get_int(env, argv[0], &hint)) {
         return enif_make_badarg(env);
@@ -995,6 +1077,8 @@ static ERL_NIF_TERM nif_window_hint(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_window_hint_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // XXX: Depending on the hint, the value is either UTF-8 or Latin1.
     int hint;
     char value[1024];
@@ -1018,9 +1102,7 @@ static ERL_NIF_TERM nif_window_hint_string(ErlNifEnv* env, int argc, const ERL_N
 
 static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    if (argc != 3) {
-        return enif_make_badarg(env);
-    }
+    (void)argc;
 
     int width, height;
     char title[256];
@@ -1078,6 +1160,8 @@ static ERL_NIF_TERM nif_create_window(ErlNifEnv* env, int argc, const ERL_NIF_TE
 
 static ERL_NIF_TERM glfw_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1095,6 +1179,8 @@ static ERL_NIF_TERM nif_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM nif_window_should_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     GLFWWindowResource* window_resource;
@@ -1114,6 +1200,8 @@ static ERL_NIF_TERM nif_window_should_close(ErlNifEnv* env, int argc, const ERL_
 
 static ERL_NIF_TERM nif_set_window_should_close(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     GLFWWindowResource* window_resource;
@@ -1137,6 +1225,8 @@ static ERL_NIF_TERM nif_set_window_should_close(ErlNifEnv* env, int argc, const 
 
 static ERL_NIF_TERM glfw_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1157,6 +1247,8 @@ static ERL_NIF_TERM nif_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1179,11 +1271,16 @@ static ERL_NIF_TERM nif_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF
 
 static ERL_NIF_TERM nif_set_window_icon(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+    (void)argv;
+
     return enif_make_int(env, 42);
 }
 
 static ERL_NIF_TERM glfw_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1207,6 +1304,8 @@ static ERL_NIF_TERM nif_window_position(ErlNifEnv* env, int argc, const ERL_NIF_
 
 static ERL_NIF_TERM glfw_set_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1235,6 +1334,8 @@ static ERL_NIF_TERM nif_set_window_position(ErlNifEnv* env, int argc, const ERL_
 
 static ERL_NIF_TERM glfw_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1258,6 +1359,8 @@ static ERL_NIF_TERM nif_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_set_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1286,6 +1389,8 @@ static ERL_NIF_TERM nif_set_window_size(ErlNifEnv* env, int argc, const ERL_NIF_
 
 static ERL_NIF_TERM glfw_set_window_size_limits(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1311,6 +1416,8 @@ static ERL_NIF_TERM nif_set_window_size_limits(ErlNifEnv* env, int argc, const E
 
 static ERL_NIF_TERM glfw_set_window_aspect_ratio(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1333,6 +1440,8 @@ static ERL_NIF_TERM nif_set_window_aspect_ratio(ErlNifEnv* env, int argc, const 
 
 static ERL_NIF_TERM glfw_window_frame_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1358,6 +1467,8 @@ static ERL_NIF_TERM nif_window_frame_size(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM glfw_window_content_scale(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1381,6 +1492,8 @@ static ERL_NIF_TERM nif_window_content_scale(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM glfw_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1398,6 +1511,8 @@ static ERL_NIF_TERM nif_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_set_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1420,6 +1535,8 @@ static ERL_NIF_TERM nif_set_window_opacity(ErlNifEnv* env, int argc, const ERL_N
 
 static ERL_NIF_TERM glfw_iconify_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1437,6 +1554,8 @@ static ERL_NIF_TERM nif_iconify_window(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_restore_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1454,6 +1573,8 @@ static ERL_NIF_TERM nif_restore_window(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_maximize_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1471,6 +1592,8 @@ static ERL_NIF_TERM nif_maximize_window(ErlNifEnv* env, int argc, const ERL_NIF_
 
 static ERL_NIF_TERM glfw_show_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1488,6 +1611,8 @@ static ERL_NIF_TERM nif_show_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_hide_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1505,6 +1630,8 @@ static ERL_NIF_TERM nif_hide_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_focus_window(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1522,6 +1649,8 @@ static ERL_NIF_TERM nif_focus_window(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_request_window_attention(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1539,6 +1668,8 @@ static ERL_NIF_TERM nif_request_window_attention(ErlNifEnv* env, int argc, const
 
 static ERL_NIF_TERM glfw_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1567,6 +1698,8 @@ static ERL_NIF_TERM nif_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_set_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1602,6 +1735,8 @@ static ERL_NIF_TERM nif_set_window_monitor(ErlNifEnv* env, int argc, const ERL_N
 
 static ERL_NIF_TERM glfw_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1632,6 +1767,8 @@ static ERL_NIF_TERM nif_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TE
 
 static ERL_NIF_TERM glfw_set_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1677,6 +1814,8 @@ void window_position_callback(GLFWwindow* window, int xpos, int ypos) {
 
 static ERL_NIF_TERM nif_window_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1687,6 +1826,8 @@ static ERL_NIF_TERM nif_window_position_handler(ErlNifEnv* env, int argc, const 
 
 static ERL_NIF_TERM glfw_set_window_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1730,6 +1871,8 @@ void window_size_callback(GLFWwindow* window, int width, int height) {
 
 static ERL_NIF_TERM nif_window_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1740,6 +1883,8 @@ static ERL_NIF_TERM nif_window_size_handler(ErlNifEnv* env, int argc, const ERL_
 
 static ERL_NIF_TERM glfw_set_window_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1776,6 +1921,8 @@ void window_close_callback(GLFWwindow* window) {
 
 static ERL_NIF_TERM nif_window_close_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1786,6 +1933,8 @@ static ERL_NIF_TERM nif_window_close_handler(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM glfw_set_window_close_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1822,6 +1971,8 @@ void window_refresh_callback(GLFWwindow* window) {
 
 static ERL_NIF_TERM nif_window_refresh_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1832,6 +1983,8 @@ static ERL_NIF_TERM nif_window_refresh_handler(ErlNifEnv* env, int argc, const E
 
 static ERL_NIF_TERM glfw_set_window_refresh_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1869,6 +2022,8 @@ void window_focus_callback(GLFWwindow* window, int focused) {
 
 static ERL_NIF_TERM nif_window_focus_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1879,6 +2034,8 @@ static ERL_NIF_TERM nif_window_focus_handler(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM glfw_set_window_focus_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1916,6 +2073,8 @@ void window_iconify_callback(GLFWwindow* window, int iconified) {
 
 static ERL_NIF_TERM nif_window_iconify_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1926,6 +2085,8 @@ static ERL_NIF_TERM nif_window_iconify_handler(ErlNifEnv* env, int argc, const E
 
 static ERL_NIF_TERM glfw_set_window_iconify_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1963,6 +2124,8 @@ void window_maximize_callback(GLFWwindow* window, int maximized) {
 
 static ERL_NIF_TERM nif_window_maximize_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -1973,6 +2136,8 @@ static ERL_NIF_TERM nif_window_maximize_handler(ErlNifEnv* env, int argc, const 
 
 static ERL_NIF_TERM glfw_set_window_maximize_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2016,6 +2181,8 @@ void window_content_scale_callback(GLFWwindow* window, float xscale, float yscal
 
 static ERL_NIF_TERM nif_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2026,6 +2193,8 @@ static ERL_NIF_TERM nif_window_content_scale_handler(ErlNifEnv* env, int argc, c
 
 static ERL_NIF_TERM glfw_set_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2050,6 +2219,10 @@ static ERL_NIF_TERM nif_set_window_content_scale_handler(ErlNifEnv* env, int arg
 
 static ERL_NIF_TERM glfw_poll_events(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     glfwPollEvents();
     return atom_ok;
 }
@@ -2061,6 +2234,10 @@ static ERL_NIF_TERM nif_poll_events(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     glfwPostEmptyEvent();
     return atom_ok;
 }
@@ -2072,6 +2249,8 @@ static ERL_NIF_TERM nif_post_empty_event(ErlNifEnv* env, int argc, const ERL_NIF
 
 static ERL_NIF_TERM glfw_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2094,6 +2273,8 @@ static ERL_NIF_TERM nif_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ERL_NIF_TERM glfw_set_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2121,6 +2302,8 @@ static ERL_NIF_TERM nif_set_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_create_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int width, height, xhot, yhot;
     ErlNifBinary pix_bin;
     GLFWimage image;
@@ -2162,6 +2345,8 @@ static ERL_NIF_TERM nif_create_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TE
 
 static ERL_NIF_TERM glfw_create_standard_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int shape;
     if (!enif_get_int(env, argv[0], &shape)) {
         return enif_make_badarg(env);
@@ -2192,6 +2377,8 @@ static ERL_NIF_TERM nif_create_standard_cursor(ErlNifEnv* env, int argc, const E
 
 static ERL_NIF_TERM glfw_destroy_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWcursor** cursor;
     if (!enif_get_resource(env, argv[0], glfw_cursor_resource_type, (void**) &cursor)) {
         return enif_make_badarg(env);
@@ -2208,6 +2395,8 @@ static ERL_NIF_TERM nif_destroy_cursor(ErlNifEnv* env, int argc, const ERL_NIF_T
 
 static ERL_NIF_TERM glfw_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2243,6 +2432,10 @@ static ERL_NIF_TERM nif_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ERL_NIF_TERM glfw_raw_mouse_motion_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     int result = glfwRawMouseMotionSupported();
     if (result == GLFW_TRUE) {
         return atom_true;
@@ -2259,6 +2452,8 @@ static ERL_NIF_TERM nif_raw_mouse_motion_supported(ErlNifEnv* env, int argc, con
 
 static ERL_NIF_TERM glfw_key_name_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // The input is a key code that is not GLFW_KEY_UNKNOWN.
     int key;
     if (!enif_get_int(env, argv[0], &key)) {
@@ -2280,6 +2475,8 @@ static ERL_NIF_TERM nif_key_name_key(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_key_name_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int scancode;
     if (!enif_get_int(env, argv[0], &scancode)) {
         return enif_make_badarg(env);
@@ -2300,6 +2497,8 @@ static ERL_NIF_TERM nif_key_name_scancode(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM glfw_key_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int key;
     if (!enif_get_int(env, argv[0], &key)) {
         return enif_make_badarg(env);
@@ -2316,6 +2515,8 @@ static ERL_NIF_TERM nif_key_scancode(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2346,6 +2547,8 @@ static ERL_NIF_TERM nif_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 static ERL_NIF_TERM glfw_mouse_button(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2376,6 +2579,8 @@ static ERL_NIF_TERM nif_mouse_button(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWwindow** window;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
         return enif_make_badarg(env);
@@ -2398,6 +2603,8 @@ static ERL_NIF_TERM nif_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_
 
 static ERL_NIF_TERM glfw_set_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWwindow** window;
     double xpos, ypos;
 
@@ -2448,6 +2655,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 static ERL_NIF_TERM nif_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2458,6 +2667,8 @@ static ERL_NIF_TERM nif_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 
 static ERL_NIF_TERM glfw_set_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2497,6 +2708,8 @@ void char_callback(GLFWwindow *window, unsigned int codepoint) {
 
 static ERL_NIF_TERM nif_character_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2506,6 +2719,8 @@ static ERL_NIF_TERM nif_character_handler(ErlNifEnv* env, int argc, const ERL_NI
 }
 static ERL_NIF_TERM glfw_set_character_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2546,6 +2761,8 @@ void char_mods_callback(GLFWwindow *window, unsigned int codepoint, int mods) {
 
 static ERL_NIF_TERM nif_character_mods_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2555,6 +2772,8 @@ static ERL_NIF_TERM nif_character_mods_handler(ErlNifEnv* env, int argc, const E
 }
 static ERL_NIF_TERM glfw_set_character_mods_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2602,6 +2821,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 
 static ERL_NIF_TERM nif_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2611,6 +2832,8 @@ static ERL_NIF_TERM nif_mouse_button_handler(ErlNifEnv* env, int argc, const ERL
 }
 static ERL_NIF_TERM glfw_set_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2655,6 +2878,8 @@ void cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
 
 static ERL_NIF_TERM nif_cursor_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2664,6 +2889,8 @@ static ERL_NIF_TERM nif_cursor_position_handler(ErlNifEnv* env, int argc, const 
 }
 static ERL_NIF_TERM glfw_set_cursor_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2701,6 +2928,8 @@ void cursor_enter_callback(GLFWwindow *window, int entered) {
 
 static ERL_NIF_TERM nif_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2710,6 +2939,8 @@ static ERL_NIF_TERM nif_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL
 }
 static ERL_NIF_TERM glfw_set_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2754,6 +2985,8 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
 
 static ERL_NIF_TERM nif_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2763,6 +2996,8 @@ static ERL_NIF_TERM nif_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_T
 }
 static ERL_NIF_TERM glfw_set_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2785,11 +3020,16 @@ static ERL_NIF_TERM nif_set_scroll_handler(ErlNifEnv* env, int argc, const ERL_N
 }
 
 void drop_callback(GLFWwindow *window, int path_count, const char *paths[]) {
+    (void)window;
+    (void)path_count;
+    (void)paths;
     // XXX
 }
 
 static ERL_NIF_TERM nif_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -2800,6 +3040,10 @@ static ERL_NIF_TERM nif_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_set_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     return atom_true;
 }
 
@@ -2810,6 +3054,8 @@ static ERL_NIF_TERM nif_set_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF
 
 static ERL_NIF_TERM glfw_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int joy;
     if (!enif_get_int(env, argv[0], &joy)) {
         return enif_make_badarg(env);
@@ -2831,6 +3077,8 @@ static ERL_NIF_TERM nif_joystick_present(ErlNifEnv* env, int argc, const ERL_NIF
 
 static ERL_NIF_TERM glfw_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -2862,6 +3110,8 @@ static ERL_NIF_TERM nif_joystick_axes_raw(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM glfw_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -2896,6 +3146,8 @@ static ERL_NIF_TERM nif_joystick_buttons_raw(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM glfw_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -2925,6 +3177,8 @@ static ERL_NIF_TERM nif_joystick_hats_raw(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM glfw_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -2945,6 +3199,8 @@ static ERL_NIF_TERM nif_joystick_name_raw(ErlNifEnv* env, int argc, const ERL_NI
 
 static ERL_NIF_TERM glfw_joystick_guid_raw(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -2976,11 +3232,18 @@ void joystick_callback(int jid, int event) {
 
 static ERL_NIF_TERM nif_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+    (void)argv;
+
     return glfw_joystick_handler;
 }
 
 static ERL_NIF_TERM glfw_set_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)env;
+    (void)argc;
+
     enif_clear_env(glfw_joystick_handler_env);
 
     int is_undefined = enif_is_identical(argv[1], atom_undefined);
@@ -3002,6 +3265,8 @@ static ERL_NIF_TERM nif_set_joystick_handler(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM glfw_joystick_is_gamepad(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int joy;
     if (!enif_get_int(env, argv[0], &joy)) {
         return enif_make_badarg(env);
@@ -3023,6 +3288,8 @@ static ERL_NIF_TERM nif_joystick_is_gamepad(ErlNifEnv* env, int argc, const ERL_
 
 static ERL_NIF_TERM glfw_update_gamepad_mappings(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     // Most SDL mappings are under 4KB.
     char mapping[4096];
     if (!enif_get_string(env, argv[0], mapping, sizeof(mapping), ERL_NIF_LATIN1)) {
@@ -3040,6 +3307,8 @@ static ERL_NIF_TERM nif_update_gamepad_mappings(ErlNifEnv* env, int argc, const 
 
 static ERL_NIF_TERM glfw_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -3064,6 +3333,8 @@ static ERL_NIF_TERM nif_gamepad_name(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
 static ERL_NIF_TERM glfw_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     int jid;
     if (!enif_get_int(env, argv[0], &jid)) {
         return enif_make_badarg(env);
@@ -3116,6 +3387,8 @@ static ERL_NIF_TERM nif_gamepad_state(ErlNifEnv* env, int argc, const ERL_NIF_TE
 
 static ERL_NIF_TERM glfw_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     if (enif_is_identical(argv[0], atom_undefined)) {
         const char* string = glfwGetClipboardString(NULL);
         if (string == NULL) {
@@ -3152,6 +3425,8 @@ static ERL_NIF_TERM nif_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF
 
 static ERL_NIF_TERM glfw_set_clipboard_string(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     char string[1024];  // XXXX
     if (!enif_get_string(env, argv[1], string, sizeof(string), ERL_NIF_UTF8)) {
         return enif_make_badarg(env);
@@ -3179,6 +3454,8 @@ static ERL_NIF_TERM nif_set_clipboard_string(ErlNifEnv* env, int argc, const ERL
 
 static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argc;
+
     GLFWWindowResource* window_resource;
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
@@ -3206,144 +3483,144 @@ static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NI
 }
 
 static ErlNifFunc nif_functions[] = {
-    {"init_hint_raw", 2, nif_init_hint},
-    {"init", 0, nif_init_},
-    {"terminate", 0, nif_terminate},
-    {"version", 0, nif_version},
-    {"version_string", 0, nif_version_string},
-    {"get_error_raw", 0, nif_get_error},
-    {"error_handler", 0, nif_error_handler},
-    {"set_error_handler", 1, nif_set_error_handler},
-    {"platform_raw", 0, nif_platform},
-    {"platform_supported_raw", 1, nif_platform_supported},
+    {"init_hint_raw", 2, nif_init_hint, 0},
+    {"init", 0, nif_init_, 0},
+    {"terminate", 0, nif_terminate, 0},
+    {"version", 0, nif_version, 0},
+    {"version_string", 0, nif_version_string, 0},
+    {"get_error_raw", 0, nif_get_error, 0},
+    {"error_handler", 0, nif_error_handler, 0},
+    {"set_error_handler", 1, nif_set_error_handler, 0},
+    {"platform_raw", 0, nif_platform, 0},
+    {"platform_supported_raw", 1, nif_platform_supported, 0},
 
-    {"monitors", 0, nif_monitors},
-    {"primary_monitor", 0, nif_primary_monitor},
-    {"monitor_position", 1, nif_monitor_position},
-    {"monitor_work_area", 1, nif_monitor_work_area},
-    {"monitor_physical_size", 1, nif_monitor_physical_size},
-    {"monitor_content_scale", 1, nif_monitor_content_scale},
-    {"monitor_name", 1, nif_monitor_name},
-    {"monitor_handler", 0, nif_monitor_handler},
-    {"monitor_set_handler", 1, nif_monitor_set_handler},
-    {"video_modes", 1, nif_video_modes},
-    {"video_mode", 1, nif_video_mode},
-    {"set_gamma", 2, nif_set_gamma},
-    {"gamma_ramp", 1, nif_gamma_ramp},
-    {"set_gamma_ramp", 2, nif_set_gamma_ramp},
+    {"monitors", 0, nif_monitors, 0},
+    {"primary_monitor", 0, nif_primary_monitor, 0},
+    {"monitor_position", 1, nif_monitor_position, 0},
+    {"monitor_work_area", 1, nif_monitor_work_area, 0},
+    {"monitor_physical_size", 1, nif_monitor_physical_size, 0},
+    {"monitor_content_scale", 1, nif_monitor_content_scale, 0},
+    {"monitor_name", 1, nif_monitor_name, 0},
+    {"monitor_handler", 0, nif_monitor_handler, 0},
+    {"monitor_set_handler", 1, nif_monitor_set_handler, 0},
+    {"video_modes", 1, nif_video_modes, 0},
+    {"video_mode", 1, nif_video_mode, 0},
+    {"set_gamma", 2, nif_set_gamma, 0},
+    {"gamma_ramp", 1, nif_gamma_ramp, 0},
+    {"set_gamma_ramp", 2, nif_set_gamma_ramp, 0},
 
-    {"default_window_hints", 0, nif_default_window_hints},
-    {"window_hint_raw", 2, nif_window_hint},
-    {"window_hint_string_raw", 2, nif_window_hint_string},
+    {"default_window_hints", 0, nif_default_window_hints, 0},
+    {"window_hint_raw", 2, nif_window_hint, 0},
+    {"window_hint_string_raw", 2, nif_window_hint_string, 0},
 
-    {"create_window", 3, nif_create_window},
-    {"destroy_window", 1, nif_destroy_window},
-    {"window_should_close", 1, nif_window_should_close},
-    {"set_window_should_close", 2, nif_set_window_should_close},
-    {"window_title", 1, nif_window_title},
-    {"set_window_title", 2, nif_set_window_title},
-    {"set_window_icon", 2, nif_set_window_icon},
-    {"window_position", 1, nif_window_position},
-    {"set_window_position", 2, nif_set_window_position},
-    {"window_size", 1, nif_window_size},
-    {"set_window_size", 2, nif_set_window_size},
-    {"set_window_size_limits_raw", 5, nif_set_window_size_limits},
-    {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio},
-    {"window_frame_size", 1, nif_window_frame_size},
-    {"window_content_scale", 1, nif_window_content_scale},
-    {"window_opacity", 1, nif_window_opacity},
-    {"set_window_opacity", 2, nif_set_window_opacity},
-    {"iconify_window", 1, nif_iconify_window},
-    {"restore_window", 1, nif_restore_window},
-    {"maximize_window", 1, nif_maximize_window},
-    {"show_window", 1, nif_show_window},
-    {"hide_window", 1, nif_hide_window},
-    {"focus_window", 1, nif_focus_window},
-    {"request_window_attention", 1, nif_request_window_attention},
+    {"create_window", 3, nif_create_window, 0},
+    {"destroy_window", 1, nif_destroy_window, 0},
+    {"window_should_close", 1, nif_window_should_close, 0},
+    {"set_window_should_close", 2, nif_set_window_should_close, 0},
+    {"window_title", 1, nif_window_title, 0},
+    {"set_window_title", 2, nif_set_window_title, 0},
+    {"set_window_icon", 2, nif_set_window_icon, 0},
+    {"window_position", 1, nif_window_position, 0},
+    {"set_window_position", 2, nif_set_window_position, 0},
+    {"window_size", 1, nif_window_size, 0},
+    {"set_window_size", 2, nif_set_window_size, 0},
+    {"set_window_size_limits_raw", 5, nif_set_window_size_limits, 0},
+    {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio, 0},
+    {"window_frame_size", 1, nif_window_frame_size, 0},
+    {"window_content_scale", 1, nif_window_content_scale, 0},
+    {"window_opacity", 1, nif_window_opacity, 0},
+    {"set_window_opacity", 2, nif_set_window_opacity, 0},
+    {"iconify_window", 1, nif_iconify_window, 0},
+    {"restore_window", 1, nif_restore_window, 0},
+    {"maximize_window", 1, nif_maximize_window, 0},
+    {"show_window", 1, nif_show_window, 0},
+    {"hide_window", 1, nif_hide_window, 0},
+    {"focus_window", 1, nif_focus_window, 0},
+    {"request_window_attention", 1, nif_request_window_attention, 0},
 
-    {"window_monitor", 1, nif_window_monitor},
-    {"set_window_monitor_raw", 7, nif_set_window_monitor},
+    {"window_monitor", 1, nif_window_monitor, 0},
+    {"set_window_monitor_raw", 7, nif_set_window_monitor, 0},
 
-    {"window_attrib_raw", 2, nif_window_attrib},
-    {"set_window_attrib_raw", 3, nif_set_window_attrib},
+    {"window_attrib_raw", 2, nif_window_attrib, 0},
+    {"set_window_attrib_raw", 3, nif_set_window_attrib, 0},
 
-    {"window_position_handler", 1, nif_window_position_handler},
-    {"set_window_position_handler", 2, nif_set_window_position_handler},
-    {"window_size_handler", 1, nif_window_size_handler},
-    {"set_window_size_handler", 2, nif_set_window_size_handler},
-    {"window_close_handler", 1, nif_window_close_handler},
-    {"set_window_close_handler", 2, nif_set_window_close_handler},
-    {"window_refresh_handler", 1, nif_window_refresh_handler},
-    {"set_window_refresh_handler", 2, nif_set_window_refresh_handler},
-    {"window_focus_handler", 1, nif_window_focus_handler},
-    {"set_window_focus_handler", 2, nif_set_window_focus_handler},
-    {"window_iconify_handler", 1, nif_window_iconify_handler},
-    {"set_window_iconify_handler", 2, nif_set_window_iconify_handler},
-    {"window_maximize_handler", 1, nif_window_maximize_handler},
-    {"set_window_maximize_handler", 2, nif_set_window_maximize_handler},
-    {"window_content_scale_handler", 1, nif_window_content_scale_handler},
-    {"set_window_content_scale_handler", 2, nif_set_window_content_scale_handler},
+    {"window_position_handler", 1, nif_window_position_handler, 0},
+    {"set_window_position_handler", 2, nif_set_window_position_handler, 0},
+    {"window_size_handler", 1, nif_window_size_handler, 0},
+    {"set_window_size_handler", 2, nif_set_window_size_handler, 0},
+    {"window_close_handler", 1, nif_window_close_handler, 0},
+    {"set_window_close_handler", 2, nif_set_window_close_handler, 0},
+    {"window_refresh_handler", 1, nif_window_refresh_handler, 0},
+    {"set_window_refresh_handler", 2, nif_set_window_refresh_handler, 0},
+    {"window_focus_handler", 1, nif_window_focus_handler, 0},
+    {"set_window_focus_handler", 2, nif_set_window_focus_handler, 0},
+    {"window_iconify_handler", 1, nif_window_iconify_handler, 0},
+    {"set_window_iconify_handler", 2, nif_set_window_iconify_handler, 0},
+    {"window_maximize_handler", 1, nif_window_maximize_handler, 0},
+    {"set_window_maximize_handler", 2, nif_set_window_maximize_handler, 0},
+    {"window_content_scale_handler", 1, nif_window_content_scale_handler, 0},
+    {"set_window_content_scale_handler", 2, nif_set_window_content_scale_handler, 0},
 
-    {"poll_events", 0, nif_poll_events},
-    {"post_empty_event", 0, nif_post_empty_event},
+    {"poll_events", 0, nif_poll_events, 0},
+    {"post_empty_event", 0, nif_post_empty_event, 0},
 
-    {"input_mode_raw", 2, nif_input_mode},
-    {"set_input_mode_raw", 3, nif_set_input_mode},
+    {"input_mode_raw", 2, nif_input_mode, 0},
+    {"set_input_mode_raw", 3, nif_set_input_mode, 0},
 
-    {"create_cursor_raw", 5, nif_create_cursor},
-    {"create_standard_cursor_raw", 1, nif_create_standard_cursor},
-    {"destroy_cursor", 1, nif_destroy_cursor},
-    {"set_cursor", 2, nif_set_cursor},
+    {"create_cursor_raw", 5, nif_create_cursor, 0},
+    {"create_standard_cursor_raw", 1, nif_create_standard_cursor, 0},
+    {"destroy_cursor", 1, nif_destroy_cursor, 0},
+    {"set_cursor", 2, nif_set_cursor, 0},
 
-    {"raw_mouse_motion_supported", 0, nif_raw_mouse_motion_supported},
-    {"key_name_key", 1, nif_key_name_key},
-    {"key_name_scancode", 1, nif_key_name_scancode},
-    {"key_scancode_raw", 1, nif_key_scancode},
-    {"key_raw", 2, nif_key},
-    {"mouse_button_raw", 2, nif_mouse_button},
+    {"raw_mouse_motion_supported", 0, nif_raw_mouse_motion_supported, 0},
+    {"key_name_key", 1, nif_key_name_key, 0},
+    {"key_name_scancode", 1, nif_key_name_scancode, 0},
+    {"key_scancode_raw", 1, nif_key_scancode, 0},
+    {"key_raw", 2, nif_key, 0},
+    {"mouse_button_raw", 2, nif_mouse_button, 0},
 
-    {"cursor_position", 1, nif_cursor_position},
-    {"set_cursor_position_raw", 3, nif_set_cursor_position},
+    {"cursor_position", 1, nif_cursor_position, 0},
+    {"set_cursor_position_raw", 3, nif_set_cursor_position, 0},
 
-    {"key_handler", 1, nif_key_handler},
-    {"set_key_handler", 2, nif_set_key_handler},
-    {"char_handler", 1, nif_character_handler},
-    {"set_char_handler", 2, nif_set_character_handler},
-    {"char_mods_handler", 1, nif_character_mods_handler},
-    {"set_char_mods_handler", 2, nif_set_character_mods_handler},
-    {"mouse_button_handler", 1, nif_mouse_button_handler},
-    {"set_mouse_button_handler", 2, nif_set_mouse_button_handler},
-    {"cursor_position_handler", 1, nif_cursor_position_handler},
-    {"set_cursor_position_handler", 2, nif_set_cursor_position_handler},
-    {"cursor_enter_handler", 1, nif_cursor_enter_handler},
-    {"set_cursor_enter_handler", 2, nif_set_cursor_enter_handler},
-    {"scroll_handler", 1, nif_scroll_handler},
-    {"set_scroll_handler", 2, nif_set_scroll_handler},
-    {"drop_handler", 1, nif_drop_handler},
-    {"set_drop_handler", 2, nif_set_drop_handler},
+    {"key_handler", 1, nif_key_handler, 0},
+    {"set_key_handler", 2, nif_set_key_handler, 0},
+    {"char_handler", 1, nif_character_handler, 0},
+    {"set_char_handler", 2, nif_set_character_handler, 0},
+    {"char_mods_handler", 1, nif_character_mods_handler, 0},
+    {"set_char_mods_handler", 2, nif_set_character_mods_handler, 0},
+    {"mouse_button_handler", 1, nif_mouse_button_handler, 0},
+    {"set_mouse_button_handler", 2, nif_set_mouse_button_handler, 0},
+    {"cursor_position_handler", 1, nif_cursor_position_handler, 0},
+    {"set_cursor_position_handler", 2, nif_set_cursor_position_handler, 0},
+    {"cursor_enter_handler", 1, nif_cursor_enter_handler, 0},
+    {"set_cursor_enter_handler", 2, nif_set_cursor_enter_handler, 0},
+    {"scroll_handler", 1, nif_scroll_handler, 0},
+    {"set_scroll_handler", 2, nif_set_scroll_handler, 0},
+    {"drop_handler", 1, nif_drop_handler, 0},
+    {"set_drop_handler", 2, nif_set_drop_handler, 0},
 
-    {"joystick_present_raw", 1, nif_joystick_present},
+    {"joystick_present_raw", 1, nif_joystick_present, 0},
 
-    {"joystick_axes_raw", 1, nif_joystick_axes_raw},
-    {"joystick_buttons_raw", 1, nif_joystick_buttons_raw},
-    {"joystick_hats_raw", 1, nif_joystick_hats_raw},
+    {"joystick_axes_raw", 1, nif_joystick_axes_raw, 0},
+    {"joystick_buttons_raw", 1, nif_joystick_buttons_raw, 0},
+    {"joystick_hats_raw", 1, nif_joystick_hats_raw, 0},
 
-    {"joystick_name_raw", 1, nif_joystick_name_raw},
-    {"joystick_guid_raw", 1, nif_joystick_guid_raw},
+    {"joystick_name_raw", 1, nif_joystick_name_raw, 0},
+    {"joystick_guid_raw", 1, nif_joystick_guid_raw, 0},
 
-    {"joystick_handler", 0, nif_joystick_handler},
-    {"set_joystick_handler", 1, nif_set_joystick_handler},
+    {"joystick_handler", 0, nif_joystick_handler, 0},
+    {"set_joystick_handler", 1, nif_set_joystick_handler, 0},
 
-    {"joystick_is_gamepad_raw", 1, nif_joystick_is_gamepad},
-    {"update_gamepad_mappings", 1, nif_update_gamepad_mappings},
+    {"joystick_is_gamepad_raw", 1, nif_joystick_is_gamepad, 0},
+    {"update_gamepad_mappings", 1, nif_update_gamepad_mappings, 0},
 
-    {"gamepad_name_raw", 1, nif_gamepad_name},
-    {"gamepad_state_raw", 1, nif_gamepad_state},
+    {"gamepad_name_raw", 1, nif_gamepad_name, 0},
+    {"gamepad_state_raw", 1, nif_gamepad_state, 0},
 
-    {"clipboard_string", 1, nif_clipboard_string},
-    {"set_clipboard_string", 2, nif_set_clipboard_string},
+    {"clipboard_string", 1, nif_clipboard_string, 0},
+    {"set_clipboard_string", 2, nif_set_clipboard_string, 0},
 
-    {"window_egl_handle", 1, nif_window_egl_handle}
+    {"window_egl_handle", 1, nif_window_egl_handle, 0}
 };
 
 ERL_NIF_INIT(
