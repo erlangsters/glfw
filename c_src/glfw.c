@@ -13,6 +13,8 @@
 #include <erl_nif.h>
 #include <EGL/egl.h>
 #include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
 
 typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
 get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
