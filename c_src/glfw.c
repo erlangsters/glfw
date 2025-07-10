@@ -30,7 +30,7 @@ static pthread_cond_t command_done = PTHREAD_COND_INITIALIZER;
 static ERL_NIF_TERM (*command_function)(ErlNifEnv*, int, const ERL_NIF_TERM[]) = NULL;
 static ErlNifEnv* command_args_1 = NULL;
 static int command_args_2 = 0;
-static ERL_NIF_TERM** command_args_3 = NULL;
+static const ERL_NIF_TERM* command_args_3 = NULL;
 static ERL_NIF_TERM command_result;
 
 static int command_finished = 0;
@@ -156,7 +156,7 @@ void* commands_executor_function(void* arg) {
         command_result = command_function(
             command_args_1,
             command_args_2,
-            (const ERL_NIF_TERM**)command_args_3
+            command_args_3
         );
 
         command_function = NULL;
@@ -473,7 +473,7 @@ static ERL_NIF_TERM nif_get_error(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 }
 
 void error_callback(int error_code, const char *description) {
-    ERL_NIF_TERM code_term;
+    ERL_NIF_TERM code_term = atom_undefined;
     switch(error_code) {
         case GLFW_NOT_INITIALIZED:
             code_term = enif_make_atom(glfw_error_handler_env, "not_initialized");
@@ -2639,6 +2639,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         action_term = atom_release;
     } else if (action == GLFW_REPEAT) {
         action_term = atom_repeat;
+    } else {
+        action_term = atom_undefined;
     }
     ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
 
@@ -2806,6 +2808,8 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         action_term = atom_press;
     } else if (action == GLFW_RELEASE) {
         action_term = atom_release;
+    } else {
+        action_term = atom_undefined;
     }
     ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
 
