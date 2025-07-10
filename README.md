@@ -139,3 +139,23 @@ functions and types are mapped.
 
 Additionally, the test suite in this repository serves as a useful reference
 for practical examples of GLFW functions in action.
+
+## Test demos
+
+It's hard to put GLFW under automated unit tests since it's heavily stateful
+and requires a graphical environment which is hard to emulate in Github
+runners.
+
+However, this binding comes with a limited set of unit tests that should
+already indicate a great deal whether GLFW works on your system.
+
+- `rebar3 eunit -m glfw_test` - Test the initialization-related functions of the API
+- `rebar3 eunit -m glfw_monitor_test` - Test the monitor-related functions of the API
+
+Additionally, it comes with interactive mini "test demos" that can be used to
+quickly test various part of the binding on your system.
+
+- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
+- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
+- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
+- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad

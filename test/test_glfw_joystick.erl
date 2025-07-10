@@ -1,10 +1,20 @@
+%%
+%% A GLFW demo for testing joystick/gamepad functionalities.
+%%
+%% It starts with printing out the information about connected joysticks. Then
+%% it listens for joystick/gamepad connection and disconnection events. When a
+%% joystick is connected, it prints out its information.
+%%
+%% Whenever joystick is also a gamepad, it will also print out the information
+%% specific to the gamepad.
+%%
 -module(test_glfw_joystick).
 -export([run/0]).
 
 -include_lib("glfw/include/glfw.hrl").
 
 run() ->
-    io:format("GLFW Joystick/Gamepad Test Demo~n"),
+    io:format("GLFW Joystick/Gamepad - Test Demo~n"),
     glfw:init(),
     test_error_handler:setup(),
 

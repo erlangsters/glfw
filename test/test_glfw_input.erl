@@ -1,0 +1,2 @@
+-module(test_glfw_input).
+-export([]).
