@@ -17,3 +17,19 @@ jobs:
           erlang-version: 28
           install-rebar3: true
       - run: rebar3 compile
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install glfw
+      - id: angle
+        uses: erlangsters/setup-angle@v1
+      - uses: erlangsters/setup-erlang@v1
+        with:
+          erlang-version: 28
+          install-rebar3: true
+      - run: |
+          export ANGLE_INCLUDE_DIR="${{ steps.angle.outputs.angle-location }}/include"
+          export ANGLE_LIB_DIR="${{ steps.angle.outputs.angle-location }}/lib"
+          rebar3 compile
