@@ -68,7 +68,6 @@ document every aspect of it.
 -export_type([error_description/0]).
 
 -export_type([monitor/0]).
--export_type([monitor_event/0]).
 
 -export_type([window_hint_type/0]).
 -export_type([window_hint_value/0]).
@@ -882,8 +881,6 @@ To be written.
 -type window() :: reference().
 -type cursor() :: reference().
 
--type monitor_event() :: connected | disconnected.
-
 -type size_limits() :: {
     Width :: integer() | dont_care,
     Height :: integer() | dont_care
@@ -1300,7 +1297,7 @@ that you are using the minimum required version.
     since => "1.0"
 }).
 -spec version() ->
-    {Major :: integer(), Minor :: integer(), Revision ::integer}.
+    {Major :: integer(), Minor :: integer(), Revision ::integer()}.
 version() ->
     erlang:nif_error(nif_library_not_loaded).
 
@@ -1781,7 +1778,7 @@ hint.
     return => "GLFW_TRUE if successful, or GLFW_FALSE if an error occurred.",
     since => "3.0"
 }).
--spec set_gamma(monitor(), float()) -> ok | not_ok.
+-spec set_gamma(monitor(), float()) -> ok.
 set_gamma(_Monitor, _Gamma) ->
     erlang:nif_error(nif_library_not_loaded).
 
@@ -1848,7 +1845,7 @@ hint.
     },
     since => "3.0"
 }).
--spec set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok | not_ok.
+-spec set_gamma_ramp(monitor(), #glfw_gamma_ramp{}) -> ok.
 set_gamma_ramp(_Monitor, _Ramp) ->
     erlang:nif_error(nif_library_not_loaded).
 
