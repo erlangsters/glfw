@@ -1,7 +1,11 @@
 # GLFW binding for the BEAM
 
-:construction: It's still in development and a first beta version will be
-available shortly. The master branch will be rewound!
+> [!WARNING]
+> :construction: It's still in development and a first beta version will be
+> available shortly. The master branch will be rewound!
+
+> [!IMPORTANT]
+> This binding will not work on macOS.
 
 [![Erlangsters Repository](https://img.shields.io/badge/erlangsters-glfw-%23a90432)](https://github.com/erlangsters/glfw)
 ![Supported Erlang/OTP Versions](https://img.shields.io/badge/erlang%2Fotp-28-%23a90432)
