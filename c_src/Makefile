@@ -13,8 +13,20 @@ else ifeq ($(UNAME_SYS), Linux)
 endif
 
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lei -lglfw
+LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lei
 LDFLAGS += -shared
+
+ifeq ($(UNAME_SYS), Darwin)
+	CFLAGS += -I $(ANGLE_INCLUDE_DIR)
+	LDLIBS += -L $(ANGLE_LIB_DIR)
+endif
+
+ifeq ($(UNAME_SYS), Darwin)
+	CFLAGS += $(shell pkg-config --cflags glfw3)
+	LDLIBS += $(shell pkg-config --libs glfw3)
+else ifeq ($(UNAME_SYS), Linux)
+	LDLIBS += -lglfw
+endif
 
 SOURCES = glfw.c
 OBJECTS = $(SOURCES:.c=.o)
