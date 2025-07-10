@@ -13,7 +13,15 @@
 #include <erl_nif.h>
 #include <EGL/egl.h>
 #include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_X11
+#if defined(_WIN32)
+    #define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(__APPLE__)
+    #define GLFW_EXPOSE_NATIVE_COCOA
+#elif defined(__linux__)
+    #define GLFW_EXPOSE_NATIVE_X11
+#else
+    #error "Unsupported platform"
+#endif
 #include <GLFW/glfw3native.h>
 
 typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
@@ -3468,7 +3476,13 @@ static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NI
     }
     GLFWwindow* window = window_resource->window;
 
+#if defined(_WIN32)
+    EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetWin32Window(window);
+#elif defined(__APPLE__)
+    EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetCocoaWindow(window);
+#elif defined(__linux__)
     EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetX11Window(window);
+#endif
 
     // Allocate and create the resource
     void* egl_window_resource = enif_alloc_resource(egl_window_resource_type, sizeof(EGLNativeWindowType));
