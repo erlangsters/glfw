@@ -7,8 +7,10 @@
 //
 // Written by Jonathan De Wachter <jonathan.dewachter@byteplug.io>, January 2025
 //
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
-#include <pthread.h>
 #include <dlfcn.h>
 #include <erl_nif.h>
 #include <EGL/egl.h>
@@ -23,6 +25,7 @@
     #error "Unsupported platform"
 #endif
 #include <GLFW/glfw3native.h>
+#include "command_executor.h"
 
 typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
 get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
@@ -30,18 +33,7 @@ get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
 static void* egl_nif_lib_handle = NULL;
 static ErlNifResourceType* egl_window_resource_type;
 
-static pthread_t commands_executor;
-static pthread_mutex_t command_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t command_ready = PTHREAD_COND_INITIALIZER;
-static pthread_cond_t command_done = PTHREAD_COND_INITIALIZER;
-
-static ERL_NIF_TERM (*command_function)(ErlNifEnv*, int, const ERL_NIF_TERM[]) = NULL;
-static ErlNifEnv* command_args_1 = NULL;
-static int command_args_2 = 0;
-static const ERL_NIF_TERM* command_args_3 = NULL;
-static ERL_NIF_TERM command_result;
-
-static int command_finished = 0;
+static CommandExecutor command_executor;
 
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
@@ -148,59 +140,21 @@ typedef struct {
 static ErlNifEnv* glfw_joystick_handler_env = NULL;
 static ERL_NIF_TERM glfw_joystick_handler;
 
-// The function of the thread that executes "NIF commands". It just waits for a
-// command to be ready, executes it and signals that the command is done (while
-// making the result available).
-void* commands_executor_function(void* arg) {
-    (void)arg;
-
-    // XXX: Improve the implementation. For now it does the job.
-    while (1) {
-        pthread_mutex_lock(&command_mutex);
-        while (command_function == NULL) {
-            pthread_cond_wait(&command_ready, &command_mutex);
-        }
-
-        command_result = command_function(
-            command_args_1,
-            command_args_2,
-            command_args_3
-        );
-
-        command_function = NULL;
-        command_finished = 1;
-        pthread_cond_signal(&command_done);
-        pthread_mutex_unlock(&command_mutex);
-    }
-
-    return NULL;
-}
-
-// It executes a "NIF command". It schedules the command to be executed by the
-// commands executor thread, waits for the command to be executed and returns
-// the result of the command.
 ERL_NIF_TERM execute_command(
     ERL_NIF_TERM (*function)(ErlNifEnv*, int, const ERL_NIF_TERM[]),
     ErlNifEnv* env,
     int argc,
     const ERL_NIF_TERM argv[]
 ) {
-    pthread_mutex_lock(&command_mutex);
-    command_function = function;
-    command_args_1 = env;
-    command_args_2 = argc;
-    command_args_3 = argv;
-    command_finished = 0;
-
-    pthread_cond_signal(&command_ready);
-
-    while (!command_finished) {
-        pthread_cond_wait(&command_done, &command_mutex);
-    }
-
-    ERL_NIF_TERM result = command_result;
-    pthread_mutex_unlock(&command_mutex);
-
+    ERL_NIF_TERM result;
+    command_executor_execute(
+        &command_executor,
+        function,
+        env,
+        argc,
+        argv,
+        &result
+    );
     return result;
 }
 
@@ -352,9 +306,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     glfw_joystick_handler_env = enif_alloc_env();
     glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, atom_undefined);
 
-    // Start the "NIF commands" executor thread.
-    if (pthread_create(&commands_executor, NULL, commands_executor_function, NULL) != 0) {
-        fprintf(stderr, "failed to create the commands executor thread\n");
+    if (!command_executor_init(&command_executor)) {
+        fprintf(stderr, "failed to initialize the command executor\n");
         return -1;
     }
 
@@ -365,6 +318,10 @@ static void nif_module_unload(ErlNifEnv* caller_env, void* priv_data)
 {
     (void)caller_env;
     (void)priv_data;
+
+    if(!command_executor_destroy(&command_executor)) {
+        fprintf(stderr, "failed to destroy the command executor\n");
+    }
 
     enif_free_env(glfw_error_handler_env);
     enif_free_env(glfw_joystick_handler_env);
