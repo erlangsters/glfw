@@ -28,7 +28,7 @@ else ifeq ($(UNAME_SYS), Linux)
 	LDLIBS += -lglfw
 endif
 
-SOURCES = glfw.c
+SOURCES = command_executor.c glfw.c
 OBJECTS = $(SOURCES:.c=.o)
 TARGET = ../priv/beam-glfw.so
 
