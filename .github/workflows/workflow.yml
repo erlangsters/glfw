@@ -30,8 +30,8 @@ jobs:
           install-rebar3: true
       - id: angle
         uses: erlangsters/setup-angle@v1
-      - run: vcpkg install glfw3
       - run: |
+          vcpkg install
           export ANGLE_INCLUDE_DIR="${{ steps.angle.outputs.angle-location }}/include"
           export ANGLE_LIB_DIR="${{ steps.angle.outputs.angle-location }}/lib"
           rebar3 compile
@@ -46,9 +46,8 @@ jobs:
           install-rebar3: true
       - id: angle
         uses: erlangsters/setup-angle@v1
-      - run: vcpkg install glfw3
       - run: |
-          vcpkg install glfw3
+          vcpkg install
           $angleLocation = "${{ steps.angle.outputs.angle-location }}"
           $env:ANGLE_INCLUDE_DIR = "$angleLocation\include"
           $env:ANGLE_LIB_DIR = "$angleLocation\lib"
