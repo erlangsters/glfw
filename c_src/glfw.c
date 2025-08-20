@@ -11,7 +11,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <dlfcn.h>
+#if defined(_WIN32)
+    #include <windows.h>
+#else
+    #include <dlfcn.h>
+#endif
 #include <erl_nif.h>
 #include <EGL/egl.h>
 #include <GLFW/glfw3.h>
@@ -177,13 +181,27 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 {
     (void)priv_data;
 
-    char beam_egl_so_path[1024];
-    if (!enif_get_string(env, arg, beam_egl_so_path, sizeof(beam_egl_so_path), ERL_NIF_LATIN1)) {
+    char beam_egl_nif_path[1024];
+    if (!enif_get_string(env, arg, beam_egl_nif_path, sizeof(beam_egl_nif_path), ERL_NIF_LATIN1)) {
         fprintf(stderr, "failed to read EGL binding library path from argument\n");
         return -1;
     }
 
-    egl_nif_lib_handle = dlopen(beam_egl_so_path, RTLD_NOW | RTLD_GLOBAL);
+#if defined(_WIN32)
+    HINSTANCE egl_nif_lib_handle = LoadLibrary(beam_egl_nif_path);
+    if (!egl_nif_lib_handle) {
+        printf("failed to load beam-egl.dll: %s\n", GetLastError());
+        return -1;
+    }
+
+    get_egl_window_resource_type = (get_egl_window_resource_type_fn)GetProcAddress(egl_nif_lib_handle, "get_egl_window_resource_type");
+    if (!get_egl_window_resource_type) {
+        printf("failed to load symbol get_egl_window_resource_type: %s\n", GetLastError());
+        FreeLibrary(egl_nif_lib_handle);
+        return -1;
+    }
+#else
+    egl_nif_lib_handle = dlopen(beam_egl_nif_path, RTLD_NOW | RTLD_GLOBAL);
     if (!egl_nif_lib_handle) {
         fprintf(stderr, "failed to load beam-egl.so: %s\n", dlerror());
         return -1;
@@ -195,6 +213,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         dlclose(egl_nif_lib_handle);
         return -1;
     }
+#endif
     egl_window_resource_type = get_egl_window_resource_type(env);
 
     atom_ok = enif_make_atom(env, "ok");

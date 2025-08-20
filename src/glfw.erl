@@ -1074,12 +1074,16 @@ To be written.
 init_nif() ->
     % The GLFW NIF module depends on the EGL NIF module, so we compute its
     % location first, then pass it to the GLFW NIF loader.
-    EGLPrivDir = code:priv_dir(egl),
-    EGLNifLocation = filename:join(EGLPrivDir, "beam-egl") ++ ".so",
-    io:format("[glfw] egl NIF location: ~p~n", [EGLNifLocation]),
-
+    EGL_PrivDir = code:priv_dir(egl),
+    EGL_LibName  = "beam-egl",
+    EGL_LibPath = case os:type() of
+        {win32, _} ->
+            filename:join(EGL_PrivDir, EGL_LibName) ++ ".dll";
+        {unix, _} ->
+            filename:join(EGL_PrivDir, EGL_LibName) ++ ".so"
+    end,
     LibName = "beam-glfw",
-    SoName = case code:priv_dir(?MODULE) of
+    LibPath = case code:priv_dir(?MODULE) of
         {error, bad_name} ->
             case filelib:is_dir(filename:join(["..", priv])) of
                 true ->
@@ -1087,11 +1091,10 @@ init_nif() ->
                 _ ->
                     filename:join([priv, LibName])
             end;
-        Dir ->
-            filename:join(Dir, LibName)
+        PrivDir ->
+            filename:join(PrivDir, LibName)
     end,
-    io:format("[glfw] glfw NIF location ~s~n", [SoName]),
-    erlang:load_nif(SoName, EGLNifLocation).
+    erlang:load_nif(LibPath, EGL_LibPath).
 
 -doc """
 Set an init hint.
