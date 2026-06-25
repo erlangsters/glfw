@@ -1,8 +1,9 @@
 # Changelog
 
-This is the changelog of the
-[GLFW](https://github.com/erlangsters/glfw) binding for the BEAM.
+Notable user-facing changes to the Erlangsters [glfw](https://github.com/erlangsters/glfw) repository are documented here.
 
 ## 0.1.0
 
-Initial release.
+### Added
+
+- Initial release.
