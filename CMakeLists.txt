@@ -4,6 +4,10 @@ project(beam_glfw LANGUAGES C)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-incompatible-pointer-types)
+endif()
+
 # We let Rebar3 inform CMake where to find the Erlang/OTP installation.
 # Therefore, it requires the ERLANG_ERTS_DIR and ERL_INTERFACE_DIR values
 # specified with the -D flags.
