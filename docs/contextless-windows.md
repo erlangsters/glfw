@@ -100,6 +100,22 @@ ok = egl:make_current(Display, Surface, Surface, Context).
 > to the EGL binding. It returns a compatible EGL window handle that will be
 > accepted by the EGL binding.
 
+### Wayland (temporary)
+
+`window_egl_handle/1` currently takes the X11 path. On a Wayland session
+GLFW still creates a Wayland window, then the handle call fails with
+`platform_unavailable` / `"X11: Platform not initialized"`. EGL
+`create_window_surface` then fails, and `beam-graphics`
+`graphics_surface:with_window/3` returns `{aborted, not_ok}`.
+
+Until this binding returns a Wayland `EGLNativeWindowType` (typically a
+`wl_egl_window` from the Wayland surface), apps can force X11/Xwayland:
+
+    env -u WAYLAND_DISPLAY DISPLAY="${DISPLAY:-:0}" ...
+
+`blender/run.sh` uses that workaround. Remove both when the handle is
+platform-correct.
+
 Equipped with all the EGL instances (display, context, and surface), you do not
 need a function like `glfw:window_swap_buffers/1` and all the context-related
 functions.
