@@ -375,6 +375,8 @@ document every aspect of it.
 
 -export([window_egl_handle/1]).
 -nifs([window_egl_handle/1]).
+-export([display_egl_handle/0]).
+-nifs([display_egl_handle/0]).
 
 -on_load(init_nif/0).
 
@@ -4128,6 +4130,21 @@ surface before destroying the window.
 """.
 -spec window_egl_handle(window()) -> term() | error.
 window_egl_handle(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+EGL native display handle.
+
+It returns a native display handle compatible with
+`egl:get_platform_display/3`. On Wayland it wraps `glfwGetWaylandDisplay`.
+On X11 it wraps `glfwGetX11Display`. On Win32 and Cocoa it returns
+`default_display` for ANGLE.
+
+Call it after `init/0`. Pass the handle with the matching EGL platform
+(`wayland` or `x11`), not `glfw:platform/0` values such as `win32`.
+""".
+-spec display_egl_handle() -> default_display | term() | error.
+display_egl_handle() ->
     erlang:nif_error(nif_library_not_loaded).
 
 unpack_dont_care_vector2(Vector2) ->
