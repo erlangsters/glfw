@@ -60,7 +60,7 @@ family-workspace `GLFW-PLAN.md`.
 | --- | --- | --- |
 | Initialization | implemented | `init`, `terminate`, `init_hint`, `version`, `version_string`, `get_error`, error handlers, `platform/0`, `platform_supported/1`. |
 | Window | implemented | Creation, hints, geometry, state, attributes, handlers including `framebuffer_size`, `poll_events`, `post_empty_event`. See planned items below for title getter, icon, and handler correctness. |
-| Monitor | implemented | Query APIs and monitor handler exist. Handle identity is wrong (new resource per call). Gamma is implemented and dangerous. |
+| Monitor | implemented | Query APIs and monitor handler exist. Handles intern by native pointer for the life of `init`. Gamma is implemented and dangerous; default tests only read. |
 | Input | implemented | Modes, keys, mouse, cursor objects, input handlers. Joystick hats are returned as raw integers despite `joystick_hat()`. |
 | Joystick / gamepad | implemented | Presence, axes, buttons, name, GUID, gamepad name/state, mappings, joystick handler. Hats unpacking is planned. |
 | Clipboard | implemented | Fixed 1024-byte setter buffer. Planned to allocate dynamically. |
@@ -75,10 +75,6 @@ patch.
 
 | Item | Slice | Rationale |
 | --- | --- | --- |
-| Monitor handle identity | 4 | `monitors/0` and `primary_monitor/0` mint a new resource every call. The same `GLFWmonitor*` must intern to the same Erlang term for the life of `init`, including the monitor handler. |
-| `terminate` / destroy resource safety | 4 | `glfwTerminate` can free objects that live Erlang terms still point at. Resource destructors are no-ops. Destroy and terminate must poison resources so later calls fail cleanly. |
-| `create_window` / `destroy_window` finish | 4 | Input handler fields are not initialized. Destroy does not clear the native pointer. Title is read as Latin-1 on create and UTF-8 on set. |
-| Handler pid storage | 4 | Some setters `enif_make_copy` the pid term, some store `argv[1]` directly, then `enif_send` casts the term to `ErlNifPid*`. Store a real `ErlNifPid` via `enif_get_local_pid`. |
 | `window_title/1` | 5 | Getter exists upstream and is mapped; the NIF is commented out. |
 | `set_window_icon/2` | 5 | NIF currently returns `42`. Either implement it from `#glfw_image{}` or mark it deferred and stop advertising it. Prefer implement: the type and test already exist. |
 | Unpack `joystick_hats/1` | 5 | Public type is already `joystick_hat()`. The NIF returns integers. |
@@ -129,9 +125,6 @@ Intentionally outside the first public surface.
 Not design questions. Fix them in the slice that owns the family.
 
 - `set_window_icon/2` returns integer `42`. The window test asserts that.
-- `create_window` does not initialize input handler fields on
-  `GLFWWindowResource`.
-- Handler send path casts an `ERL_NIF_TERM` to `ErlNifPid*`.
 - Wayland `window_egl_handle/1` returns a `wl_egl_window`. EGL
   `create_window_surface/4` then fails with `bad_alloc` when the display
   came from `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. That is an `egl-1.5`
@@ -166,10 +159,9 @@ Do not treat those three choices as settled until that review happens.
 These are the surviving `XXX` questions, recorded so they are not lost.
 Source and public-doc `XXX` comments remain until the owning slice lands.
 
-- Pointer lifetime of monitor, window, and cursor resources after
-  `terminate/0` and after native destroy (slice 4).
-- Whether a monitor from `#glfw_monitor{}` must compare equal to the same
-  monitor later returned by `monitors/0` (slice 4: yes, intern by pointer).
+- Monitor, window, and cursor resources intern or stay alive until destroy or
+  `terminate/0`, then later calls raise `badarg`. A monitor from
+  `#glfw_monitor{}` compares equal to the interned handle from `monitors/0`.
 - `framebuffer_size/1` is public. The native callback also stays installed
   for Wayland `wl_egl_window` resize.
 - Whether `egl-1.5` must grow `eglGetPlatformDisplay` after the Wayland

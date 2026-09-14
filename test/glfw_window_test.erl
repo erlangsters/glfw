@@ -121,7 +121,10 @@ glfw_window_test() ->
     ok = glfw:post_empty_event(),
 
     ok = glfw:destroy_window(Window),
+    ?assertError(badarg, glfw:window_size(Window)),
+    ?assertError(badarg, glfw:destroy_window(Window)),
     ok = glfw:terminate(),
+    ?assertError(badarg, glfw:window_size(Window)),
 
     ok.
 
