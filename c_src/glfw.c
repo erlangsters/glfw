@@ -1593,12 +1593,69 @@ static ERL_NIF_TERM nif_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF
     return execute_command(glfw_set_window_title, env, argc, argv);
 }
 
-static ERL_NIF_TERM nif_set_window_icon(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM glfw_set_window_icon(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
-    (void)argv;
 
-    return enif_make_int(env, 42);
+    GLFWWindowResource* window_resource;
+    if (!beam_get_window(env, argv[0], &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    unsigned count;
+    if (!enif_get_list_length(env, argv[1], &count)) {
+        return enif_make_badarg(env);
+    }
+    if (count == 0) {
+        glfwSetWindowIcon(window, 0, NULL);
+        return atom_ok;
+    }
+
+    GLFWimage* images = calloc(count, sizeof(GLFWimage));
+    if (images == NULL) {
+        return atom_error;
+    }
+
+    ERL_NIF_TERM list = argv[1];
+    ERL_NIF_TERM head;
+    ERL_NIF_TERM tail;
+    ERL_NIF_TERM image_tag = enif_make_atom(env, "glfw_image");
+    for (unsigned i = 0; i < count; i++) {
+        int arity;
+        const ERL_NIF_TERM* tuple;
+        ErlNifBinary pixels;
+        int width;
+        int height;
+
+        if (!enif_get_list_cell(env, list, &head, &tail) ||
+            !enif_get_tuple(env, head, &arity, &tuple) ||
+            arity != 4 ||
+            !enif_is_identical(tuple[0], image_tag) ||
+            !enif_get_int(env, tuple[1], &width) ||
+            !enif_get_int(env, tuple[2], &height) ||
+            width < 0 ||
+            height < 0 ||
+            !enif_inspect_binary(env, tuple[3], &pixels) ||
+            pixels.size < (size_t)width * (size_t)height * 4) {
+            free(images);
+            return enif_make_badarg(env);
+        }
+
+        images[i].width = width;
+        images[i].height = height;
+        images[i].pixels = pixels.data;
+        list = tail;
+    }
+
+    glfwSetWindowIcon(window, (int)count, images);
+    free(images);
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_set_window_icon(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_window_icon, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_window_position(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])

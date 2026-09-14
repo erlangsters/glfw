@@ -2219,8 +2219,8 @@ selected images will be rescaled as needed. Good sizes include 16x16, 32x32 and
     },
     since => "3.2"
 }).
--spec set_window_icon(window(), term()) -> ok.
-set_window_icon(_Window, _Icon) ->
+-spec set_window_icon(window(), [#glfw_image{}]) -> ok.
+set_window_icon(_Window, _Images) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
