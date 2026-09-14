@@ -252,6 +252,25 @@ static void beam_handler_send(ErlNifEnv* msg_env, const BeamHandler* handler, ER
     enif_send(NULL, &handler->pid, msg_env, message);
 }
 
+static char* beam_alloc_utf8(ErlNifEnv* env, ERL_NIF_TERM term)
+{
+    unsigned length;
+    if (!enif_get_list_length(env, term, &length)) {
+        return NULL;
+    }
+
+    size_t capacity = (size_t)length * 4 + 1;
+    char* buffer = malloc(capacity);
+    if (buffer == NULL) {
+        return NULL;
+    }
+    if (!enif_get_string(env, term, buffer, (unsigned)capacity, ERL_NIF_UTF8)) {
+        free(buffer);
+        return NULL;
+    }
+    return buffer;
+}
+
 static void beam_unlink_monitor(GLFWMonitorResource* resource)
 {
     GLFWMonitorResource** slot = &interned_monitors;
@@ -1369,19 +1388,18 @@ static ERL_NIF_TERM glfw_window_hint_string(ErlNifEnv* env, int argc, const ERL_
 {
     (void)argc;
 
-    // XXX: Depending on the hint, the value is either UTF-8 or Latin1.
     int hint;
-    char value[1024];
-
     if (!enif_get_int(env, argv[0], &hint)) {
         return enif_make_badarg(env);
     }
 
-    if (!enif_get_string(env, argv[1], value, sizeof(value), ERL_NIF_UTF8)) {
+    char* value = beam_alloc_utf8(env, argv[1]);
+    if (value == NULL) {
         return enif_make_badarg(env);
     }
 
     glfwWindowHintString(hint, value);
+    free(value);
     return atom_ok;
 }
 
@@ -1395,21 +1413,21 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
     (void)argc;
 
     int width, height;
-    char title[256];
-
     if (!enif_get_int(env, argv[0], &width)) {
         return enif_make_badarg(env);
     }
     if (!enif_get_int(env, argv[1], &height)) {
         return enif_make_badarg(env);
     }
-    if (!enif_get_string(env, argv[2], title, sizeof(title), ERL_NIF_UTF8)) {
+    char* title = beam_alloc_utf8(env, argv[2]);
+    if (title == NULL) {
         return enif_make_badarg(env);
     }
 
     // XXX: This will be removed after window hints are implemented.
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(width, height, title, NULL, NULL);
+    free(title);
     if (!window) {
         return atom_no_window;
     }
@@ -1560,12 +1578,13 @@ static ERL_NIF_TERM glfw_set_window_title(ErlNifEnv* env, int argc, const ERL_NI
     }
     GLFWwindow* window = window_resource->window;
 
-    char title[1024];
-    if (!enif_get_string(env, argv[1], title, sizeof(title), ERL_NIF_UTF8)) {
+    char* title = beam_alloc_utf8(env, argv[1]);
+    if (title == NULL) {
         return enif_make_badarg(env);
     }
 
     glfwSetWindowTitle(window, title);
+    free(title);
     return atom_ok;
 }
 
@@ -3867,22 +3886,25 @@ static ERL_NIF_TERM glfw_set_clipboard_string(ErlNifEnv* env, int argc, const ER
 {
     (void)argc;
 
-    char string[1024];  // XXXX
-    if (!enif_get_string(env, argv[1], string, sizeof(string), ERL_NIF_UTF8)) {
+    char* string = beam_alloc_utf8(env, argv[1]);
+    if (string == NULL) {
         return enif_make_badarg(env);
     }
 
     if (enif_is_identical(argv[0], atom_undefined)) {
         glfwSetClipboardString(NULL, string);
+        free(string);
         return atom_ok;
     } else {
         GLFWWindowResource* window_resource;
         if (!beam_get_window(env, argv[0], &window_resource)) {
+            free(string);
             return enif_make_badarg(env);
         }
         GLFWwindow* window = window_resource->window;
 
         glfwSetClipboardString(window, string);
+        free(string);
         return atom_ok;
     }
 }
