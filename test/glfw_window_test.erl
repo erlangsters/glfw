@@ -9,6 +9,7 @@
 %%
 -module(glfw_window_test).
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("glfw/include/glfw.hrl").
 
 glfw_window_test() ->
     no_window = glfw:create_window(800, 600, "Hello, World!"),
@@ -26,7 +27,10 @@ glfw_window_test() ->
     ok = glfw:set_window_title(Window, "Goodbye, World!"),
     "Goodbye, World!" = glfw:window_title(Window),
 
-    42 = glfw:set_window_icon(Window, "icon.png"),
+    ok = glfw:set_window_icon(Window, [
+        #glfw_image{width = 1, height = 1, pixels = <<255, 0, 0, 255>>}
+    ]),
+    ok = glfw:set_window_icon(Window, []),
 
     {X, Y} = glfw:window_position(Window),
     io:format(user, "window position (x: ~p, y: ~p)~n", [X, Y]),

@@ -115,7 +115,7 @@ underlying OpenGL contexts which we do not do with this binding (windows are
 | `glfwGetWindowTitle` | `window_title` | N/A |
 | `glfwSetWindowTitle` | `set_window_title` | N/A |
 
-| `glfwSetWindowIcon` | `set_window_icon`      | XXX: To be implement         |
+| `glfwSetWindowIcon` | `set_window_icon` | `[#glfw_image{}]`. `[]` reverts to the default icon. Wayland and macOS emit `feature_unavailable`. |
 
 | `glfwGetWindowPos` | `window_position` | N/A |
 | `glfwSetWindowPos` | `set_window_position` | N/A |
