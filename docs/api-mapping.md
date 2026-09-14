@@ -43,7 +43,7 @@ Windows are [contextless](contextless-windows.md). OpenGL context, current-conte
 | `glfwGetCurrentContext` | N/A | Use `egl:get_current_context/0`. |
 | `glfwSwapInterval` | N/A | Use `egl:swap_interval/2`. |
 | `glfwSwapBuffers` | N/A | Use `egl:swap_buffers/2`. |
-| `glfwExtensionSupported` | N/A | Use `gl:get_string/1`. The OpenGL bindings do not load extensions. |
+| `glfwExtensionSupported` | N/A | Use the OpenGL binding string query. Those bindings do not load extensions. |
 | `glfwGetProcAddress` | N/A | N/A |
 
 ## Window

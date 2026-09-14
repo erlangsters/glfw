@@ -12,7 +12,7 @@
 - Keep examples and API shaping Erlang-first.
 - Public mapping lives in `docs/api-mapping.md`. Internal status and rationale live in the Binding Surface below. Do not dump the function table into these always-on rules.
 - Keep `XXX` comments in source, tests, and public docs until the owning slice replaces them with a written decision here.
-- Do not run `glfw_monitor_test` or gamma setters without an explicit go-ahead. They can mutate the OS gamma ramp.
+- Do not run gamma setters without an explicit go-ahead. They can mutate the OS gamma ramp. Default `glfw_monitor_test` is read-only.
 
 ## Binding Surface
 
@@ -59,13 +59,13 @@ family-workspace `GLFW-PLAN.md`.
 | Family | Status | Notes |
 | --- | --- | --- |
 | Initialization | implemented | `init`, `terminate`, `init_hint`, `version`, `version_string`, `get_error`, error handlers, `platform/0`, `platform_supported/1`. |
-| Window | implemented | Creation, hints, geometry, state, attributes, handlers including `framebuffer_size`, `poll_events`, `post_empty_event`. See planned items below for title getter, icon, and handler correctness. |
+| Window | implemented | Creation, hints, geometry, state, attributes, title, icon, handlers including `framebuffer_size`, `poll_events`, `post_empty_event`. |
 | Monitor | implemented | Query APIs and monitor handler exist. Handles intern by native pointer for the life of `init`. Gamma is implemented and dangerous; default tests only read. |
-| Input | implemented | Modes, keys, mouse, cursor objects, input handlers. Joystick hats are returned as raw integers despite `joystick_hat()`. |
-| Joystick / gamepad | implemented | Presence, axes, buttons, name, GUID, gamepad name/state, mappings, joystick handler. Hats unpacking is planned. |
-| Clipboard | implemented | Fixed 1024-byte setter buffer. Planned to allocate dynamically. |
+| Input | implemented | Modes, keys, mouse, cursor objects, input handlers. |
+| Joystick / gamepad | implemented | Presence, axes, buttons, hats as `joystick_hat()` atoms, name, GUID, gamepad name/state, mappings, joystick handler. |
+| Clipboard | implemented | UTF-8 strings allocated from the Erlang term. |
 | EGL window handle | implemented | Follows `glfwGetPlatform()`. Wayland builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. X11, Win32, and Cocoa use the platform window handle. |
-| Documentation | planned | Mapping table exists; many `-doc` blocks are still `To be written`. Follow `glm` patterns family by family (slice 6). |
+| Documentation | implemented | Public mapping, extras, README, and missing `-doc` are filled. A later pass owns completeness and consistency of already-written GLFW-paste annotations. |
 | Demos | implemented | Event, window, monitor (read-only), input, and joystick demos. Gamma writes are not in any default demo or eunit path. |
 
 ## Planned For First Release
@@ -75,8 +75,7 @@ patch.
 
 | Item | Slice | Rationale |
 | --- | --- | --- |
-| `dont_care` on size limits and aspect ratio | 6 | Already implemented. Document the slightly wider interface in `docs/api-mapping.md`. |
-| Mods as atom lists | 6 or 7 | `#glfw_key{}.mods` and friends are integers. Graphics-stack bitfields are lists of atoms. Align, but not as a drive-by in an unrelated slice. |
+| Mods as atom lists | 7 | `#glfw_key{}.mods` and friends are integers. Graphics-stack bitfields are lists of atoms. Align, but not as a drive-by in an unrelated slice. |
 
 ## Deferred
 
@@ -121,12 +120,10 @@ Not design questions. Fix them in the slice that owns the family.
   `create_window_surface/4` then fails with `bad_alloc` when the display
   came from `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. That is an `egl-1.5`
   `eglGetPlatformDisplay` follow-up.
-- `poll_events/0` and `post_empty_event/0` `-doc` `see_also` entries point at
-  `wait_events/0` and `wait_events_timeout/1`, which are not implemented.
 - `#glfw_drop{}.paths` is `[string()]`; confirm whether UTF-8 binaries are
   the better shape before freeze.
-- `create_window/3` docs still describe Monitor and Share parameters the
-  function does not take.
+- Long `create_window/3` `-doc` prose still describes C Monitor/Share and
+  context sharing. Metadata matches `/3`. The later docs pass owns the body.
 
 ## Owner Review (slice 2)
 
@@ -148,19 +145,12 @@ Do not treat those three choices as settled until that review happens.
 
 ## Open Questions Owned By Later Slices
 
-These are the surviving `XXX` questions, recorded so they are not lost.
-Source and public-doc `XXX` comments remain until the owning slice lands.
+These are the surviving questions, recorded so they are not lost.
+Source `XXX` comments remain until the owning slice lands.
 
-- Monitor, window, and cursor resources intern or stay alive until destroy or
-  `terminate/0`, then later calls raise `badarg`. A monitor from
-  `#glfw_monitor{}` compares equal to the interned handle from `monitors/0`.
-- `framebuffer_size/1` is public. The native callback also stays installed
-  for Wayland `wl_egl_window` resize.
 - Whether `egl-1.5` must grow `eglGetPlatformDisplay` after the Wayland
   handle is correct (only if display creation then fails).
 - Gamma ramp implementation review, including Wayland's privileged-protocol
   failure mode. Writes stay out of default eunit and demos.
 - `update_gamepad_mappings/1` verification (joystick demo).
-- `window_monitor/1` and `set_window_monitor/7` verification (window demo).
-  `undefined` vs error remains: use `get_error/0`, same as
-  `primary_monitor/0`.
+- Completeness and consistency of already-written GLFW-paste `-doc` bodies.
