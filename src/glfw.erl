@@ -114,7 +114,7 @@ document every aspect of it.
 -export([monitor_content_scale/1]).
 -export([monitor_name/1]).
 -export([monitor_handler/0]).
--export([monitor_set_handler/1]).
+-export([set_monitor_handler/1]).
 -export([video_modes/1]).
 -export([video_mode/1]).
 -export([set_gamma/2]).
@@ -252,7 +252,7 @@ document every aspect of it.
 -nifs([monitor_content_scale/1]).
 -nifs([monitor_name/1]).
 -nifs([monitor_handler/0]).
--nifs([monitor_set_handler/1]).
+-nifs([set_monitor_handler/1]).
 -nifs([video_modes/1]).
 -nifs([video_mode/1]).
 -nifs([set_gamma/2]).
@@ -1686,8 +1686,8 @@ To be written.
 
 To be written.
 """.
--spec monitor_set_handler(undefined | pid()) -> ok.
-monitor_set_handler(_Handler) ->
+-spec set_monitor_handler(undefined | pid()) -> ok.
+set_monitor_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """

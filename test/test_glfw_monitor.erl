@@ -18,7 +18,7 @@ run() ->
 
     print_all_monitors(),
 
-    glfw:monitor_set_handler(spawn(fun monitor_event_handler/0)),
+    glfw:set_monitor_handler(spawn(fun monitor_event_handler/0)),
     io:format("Waiting for monitor events... (press Ctrl+C to exit)~n"),
     poll_events().
 

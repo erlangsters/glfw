@@ -4115,7 +4115,7 @@ static ErlNifFunc nif_functions[] = {
     {"monitor_content_scale", 1, nif_monitor_content_scale, 0},
     {"monitor_name", 1, nif_monitor_name, 0},
     {"monitor_handler", 0, nif_monitor_handler, 0},
-    {"monitor_set_handler", 1, nif_monitor_set_handler, 0},
+    {"set_monitor_handler", 1, nif_monitor_set_handler, 0},
     {"video_modes", 1, nif_video_modes, 0},
     {"video_mode", 1, nif_video_mode, 0},
     {"set_gamma", 2, nif_set_gamma, 0},
