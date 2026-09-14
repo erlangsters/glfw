@@ -1894,18 +1894,20 @@ set_gamma_ramp(_Monitor, _Ramp) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Reset window hints to their defaults.
 
-To be written.
+It restores every window hint to its default value. Hints are not reset
+automatically after `create_window/3`.
 """.
 -spec default_window_hints() -> ok.
 default_window_hints() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set a window hint.
 
-To be written.
+It sets a hint for the next `create_window/3`. String hints are UTF-8. There
+is no `client_api` hint; window creation always forces `GLFW_NO_API`.
 """.
 -spec window_hint(window_hint_type(), window_hint_value()) -> ok.
 window_hint(Hint, Value) when is_list(Value) ->
@@ -2866,18 +2868,22 @@ request_window_attention(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the window's monitor.
 
-To be written.
+It returns the monitor the window is fullscreen on, or `undefined` when the
+window is windowed. `undefined` may also mean an error; use `get_error/0`.
 """.
 -spec window_monitor(window()) -> undefined | monitor().
 window_monitor(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window's monitor.
 
-To be written.
+It places the window fullscreen on `Monitor` with the given position, size,
+and refresh rate, or windowed when `Monitor` is `undefined`. `dont_care`
+leaves the refresh rate unspecified. Fullscreen-at-create is not a
+`create_window/3` argument; call this after creation.
 """.
 -spec set_window_monitor(
     window(),
@@ -2901,9 +2907,9 @@ set_window_monitor_raw(_Window, _Monitor, _X, _Y, _Width, _Height, _RefreshRate)
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return a window attribute.
 
-To be written.
+It returns the current value of the specified window attribute.
 """.
 -spec window_attrib(window(), window_attrib()) -> ok.
 window_attrib(Window, Attrib) ->
@@ -2939,9 +2945,10 @@ window_attrib_raw(_Window, _Attrib) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set a window attribute.
 
-To be written.
+It changes an attribute GLFW allows to be set after creation. Attributes
+that cannot be set still go through this call and may produce a GLFW error.
 """.
 -spec set_window_attrib(window(), window_attrib(), window_attrib_value()) -> ok.
 set_window_attrib(Window, Attrib, Value) ->
@@ -4030,9 +4037,10 @@ joystick_present_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return joystick axes.
 
-To be written.
+It returns the axis values of the specified joystick, or `not_present` when
+that joystick is not connected.
 """.
 -spec joystick_axes(joystick()) -> not_present | [float()].
 joystick_axes(Joystick) ->
@@ -4043,9 +4051,10 @@ joystick_axes_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return joystick buttons.
 
-To be written.
+It returns the button states of the specified joystick, or `not_present`
+when that joystick is not connected.
 """.
 -spec joystick_buttons(joystick()) -> not_present | [release | press].
 joystick_buttons(Joystick) ->
@@ -4056,9 +4065,10 @@ joystick_buttons_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return joystick hats.
 
-To be written.
+It returns hat states as `joystick_hat()` atoms such as `hat_up` and
+`hat_right_up`, or `not_present` when that joystick is not connected.
 """.
 -spec joystick_hats(joystick()) -> not_present | [joystick_hat()].
 joystick_hats(Joystick) ->
@@ -4092,9 +4102,10 @@ from_raw_hat(?GLFW_HAT_LEFT_DOWN) ->
     hat_left_down.
 
 -doc """
-To be written.
+Return the joystick name.
 
-To be written.
+It returns the UTF-8 name of the specified joystick, or `not_present` when
+that joystick is not connected.
 """.
 -spec joystick_name(joystick()) -> not_present | binary().
 joystick_name(Joystick) ->
@@ -4105,9 +4116,10 @@ joystick_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the joystick GUID.
 
-To be written.
+It returns the SDL-compatible GUID of the specified joystick, or
+`not_present` when that joystick is not connected.
 """.
 -spec joystick_guid(joystick()) -> not_present | binary().
 joystick_guid(Joystick) ->
@@ -4139,9 +4151,10 @@ set_joystick_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return whether the joystick has a gamepad mapping.
 
-To be written.
+It returns `true` when the specified joystick is present and has a gamepad
+mapping.
 """.
 -spec joystick_is_gamepad(joystick()) -> boolean().
 joystick_is_gamepad(Joystick) ->
@@ -4152,18 +4165,21 @@ joystick_is_gamepad_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Update gamepad mappings.
 
-To be written.
+It parses the specified ASCII mapping string (or a gamecontrollerdb-style
+block) and updates the internal gamepad mappings. It returns `false` if
+parsing fails.
 """.
 -spec update_gamepad_mappings(string()) -> boolean().
 update_gamepad_mappings(_String) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the gamepad name.
 
-To be written.
+It returns `{ok, Name}` when the joystick is present and has a gamepad
+mapping, otherwise `error`. Use `get_error/0` to distinguish failure reasons.
 """.
 -spec gamepad_name(joystick()) -> {ok, string()} | error.
 gamepad_name(Joystick) ->
@@ -4174,9 +4190,11 @@ gamepad_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the gamepad state.
 
-To be written.
+It returns `{ok, Axes, Buttons}` when the joystick is present and has a
+gamepad mapping, otherwise `error`. Axes are a map of `gamepad_axe()` to
+floats; buttons are a map of `gamepad_button()` to `press` or `release`.
 """.
 -spec gamepad_state(joystick()) ->
     {ok, #{gamepad_axe() => float()}, #{gamepad_button() => press | release}} |
@@ -4190,18 +4208,19 @@ gamepad_state_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the clipboard string.
 
-To be written.
+It returns `{ok, String}` with the UTF-8 clipboard contents, or `error`. The
+window may be `undefined`.
 """.
 -spec clipboard_string(undefined | window()) -> {ok, string()} | error.
 clipboard_string(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the clipboard string.
 
-To be written.
+It copies the UTF-8 string to the clipboard. The window may be `undefined`.
 """.
 -spec set_clipboard_string(undefined | window(), string()) -> ok.
 set_clipboard_string(_Window, _String) ->
