@@ -133,11 +133,33 @@ glfw_window_test() ->
     ok.
 
 probe_egl_window_surface(Handle) ->
-    Display = egl:get_display(default_display),
+    case glfw:platform() of
+        {ok, GlfwPlatform} ->
+            NativeDisplay = glfw:display_egl_handle(),
+            EglPlatform = egl_platform(GlfwPlatform),
+            probe_egl_window_surface(Handle, EglPlatform, NativeDisplay);
+        error ->
+            io:format(user, "glfw platform failed~n", []),
+            ok
+    end.
+
+egl_platform(wayland) -> wayland;
+egl_platform(x11) -> x11;
+egl_platform(win32) -> angle;
+egl_platform(cocoa) -> angle;
+egl_platform(_) -> undefined.
+
+probe_egl_window_surface(_Handle, undefined, _NativeDisplay) ->
+    ok;
+probe_egl_window_surface(_Handle, _EglPlatform, error) ->
+    io:format(user, "glfw display_egl_handle failed~n", []),
+    ok;
+probe_egl_window_surface(Handle, EglPlatform, NativeDisplay) ->
+    Display = egl:get_platform_display(EglPlatform, NativeDisplay, []),
     case Display of
         no_display ->
-            io:format(user, "egl get_display failed~n", []),
-            ok;
+            io:format(user, "egl get_platform_display ~p failed~n", [EglPlatform]),
+            require_wayland_or_x11_surface(EglPlatform);
         _ ->
             case egl:initialize(Display) of
                 {ok, _} ->
@@ -154,19 +176,25 @@ probe_egl_window_surface(Handle) ->
                                 Other ->
                                     io:format(
                                         user,
-                                        "egl create_window_surface ~p error ~p "
-                                        "(egl-1.5 platform display follow-up)~n",
+                                        "egl create_window_surface ~p error ~p~n",
                                         [Other, egl:get_error()]
                                     ),
-                                    ok
+                                    require_wayland_or_x11_surface(EglPlatform)
                             end;
                         Other ->
                             io:format(user, "egl choose_config ~p~n", [Other]),
-                            ok
+                            require_wayland_or_x11_surface(EglPlatform)
                     end;
                 Other ->
                     io:format(user, "egl initialize ~p error ~p~n",
                         [Other, egl:get_error()]),
-                    ok
+                    require_wayland_or_x11_surface(EglPlatform)
             end
     end.
+
+require_wayland_or_x11_surface(wayland) ->
+    erlang:error(egl_window_surface_failed);
+require_wayland_or_x11_surface(x11) ->
+    erlang:error(egl_window_surface_failed);
+require_wayland_or_x11_surface(_) ->
+    ok.
