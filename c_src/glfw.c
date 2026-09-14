@@ -131,38 +131,64 @@ static ErlNifResourceType* glfw_window_resource_type = NULL;
 static ErlNifResourceType* glfw_cursor_resource_type = NULL;
 
 static ErlNifEnv* glfw_error_handler_env = NULL;
-static ERL_NIF_TERM glfw_error_handler;
-
 static ErlNifEnv* glfw_monitor_handler_env = NULL;
-static ERL_NIF_TERM glfw_monitor_handler;
+static ErlNifEnv* glfw_joystick_handler_env = NULL;
 
 typedef struct {
+    int set;
+    ErlNifPid pid;
+} BeamHandler;
+
+static BeamHandler glfw_error_handler;
+static BeamHandler glfw_monitor_handler;
+static BeamHandler glfw_joystick_handler;
+
+typedef struct GLFWMonitorResource {
+    GLFWmonitor* monitor;
+    int alive;
+    struct GLFWMonitorResource* intern_next;
+} GLFWMonitorResource;
+
+typedef struct GLFWCursorResource {
+    GLFWcursor* cursor;
+    int alive;
+    struct GLFWCursorResource* live_next;
+} GLFWCursorResource;
+
+typedef struct GLFWWindowResource {
     ErlNifEnv* env;
     GLFWwindow* window;
+    int alive;
     ERL_NIF_TERM window_term;
-    ERL_NIF_TERM window_position_handler;
-    ERL_NIF_TERM window_size_handler;
-    ERL_NIF_TERM window_close_handler;
-    ERL_NIF_TERM window_refresh_handler;
-    ERL_NIF_TERM window_focus_handler;
-    ERL_NIF_TERM window_iconify_handler;
-    ERL_NIF_TERM window_maximize_handler;
-    ERL_NIF_TERM window_content_scale_handler;
-    ERL_NIF_TERM framebuffer_size_handler;
-    ERL_NIF_TERM key_handler;
-    ERL_NIF_TERM char_handler;
-    ERL_NIF_TERM char_mods_handler;
-    ERL_NIF_TERM mouse_button_handler;
-    ERL_NIF_TERM cursor_position_handler;
-    ERL_NIF_TERM cursor_enter_handler;
-    ERL_NIF_TERM scroll_handler;
-    ERL_NIF_TERM drop_handler;
+    BeamHandler window_position_handler;
+    BeamHandler window_size_handler;
+    BeamHandler window_close_handler;
+    BeamHandler window_refresh_handler;
+    BeamHandler window_focus_handler;
+    BeamHandler window_iconify_handler;
+    BeamHandler window_maximize_handler;
+    BeamHandler window_content_scale_handler;
+    BeamHandler framebuffer_size_handler;
+    BeamHandler key_handler;
+    BeamHandler char_handler;
+    BeamHandler char_mods_handler;
+    BeamHandler mouse_button_handler;
+    BeamHandler cursor_position_handler;
+    BeamHandler cursor_enter_handler;
+    BeamHandler scroll_handler;
+    BeamHandler drop_handler;
 #if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
     struct wl_egl_window* wayland_egl_window;
 #endif
+    struct GLFWWindowResource* live_next;
 } GLFWWindowResource;
 
+static GLFWMonitorResource* interned_monitors = NULL;
+static GLFWWindowResource* live_windows = NULL;
+static GLFWCursorResource* live_cursors = NULL;
+
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+static void monitor_callback(GLFWmonitor* monitor, int event);
 
 #if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
 static void beam_glfw_destroy_wayland_egl_window(GLFWWindowResource* window_resource)
@@ -173,9 +199,6 @@ static void beam_glfw_destroy_wayland_egl_window(GLFWWindowResource* window_reso
     }
 }
 #endif
-
-static ErlNifEnv* glfw_joystick_handler_env = NULL;
-static ERL_NIF_TERM glfw_joystick_handler;
 
 ERL_NIF_TERM execute_command(
     ERL_NIF_TERM (*function)(ErlNifEnv*, int, const ERL_NIF_TERM[]),
@@ -195,23 +218,232 @@ ERL_NIF_TERM execute_command(
     return result;
 }
 
+static void beam_handler_clear(BeamHandler* handler)
+{
+    handler->set = 0;
+}
+
+static int beam_handler_from_term(ErlNifEnv* env, ERL_NIF_TERM term, BeamHandler* handler)
+{
+    if (enif_is_identical(term, atom_undefined)) {
+        handler->set = 0;
+        return 1;
+    }
+    if (!enif_get_local_pid(env, term, &handler->pid)) {
+        return 0;
+    }
+    handler->set = 1;
+    return 1;
+}
+
+static ERL_NIF_TERM beam_handler_to_term(ErlNifEnv* env, const BeamHandler* handler)
+{
+    if (!handler->set) {
+        return atom_undefined;
+    }
+    return enif_make_pid(env, &handler->pid);
+}
+
+static void beam_handler_send(ErlNifEnv* msg_env, const BeamHandler* handler, ERL_NIF_TERM message)
+{
+    if (!handler->set) {
+        return;
+    }
+    enif_send(NULL, &handler->pid, msg_env, message);
+}
+
+static void beam_unlink_monitor(GLFWMonitorResource* resource)
+{
+    GLFWMonitorResource** slot = &interned_monitors;
+    while (*slot != NULL) {
+        if (*slot == resource) {
+            *slot = resource->intern_next;
+            resource->intern_next = NULL;
+            enif_release_resource(resource);
+            return;
+        }
+        slot = &(*slot)->intern_next;
+    }
+}
+
+static void beam_poison_monitor(GLFWMonitorResource* resource)
+{
+    if (!resource->alive) {
+        return;
+    }
+    resource->alive = 0;
+    resource->monitor = NULL;
+    beam_unlink_monitor(resource);
+}
+
+static ERL_NIF_TERM beam_intern_monitor(ErlNifEnv* env, GLFWmonitor* monitor)
+{
+    GLFWMonitorResource* it;
+    for (it = interned_monitors; it != NULL; it = it->intern_next) {
+        if (it->alive && it->monitor == monitor) {
+            return enif_make_resource(env, it);
+        }
+    }
+
+    GLFWMonitorResource* resource = enif_alloc_resource(
+        glfw_monitor_resource_type,
+        sizeof(GLFWMonitorResource)
+    );
+    resource->monitor = monitor;
+    resource->alive = 1;
+    resource->intern_next = interned_monitors;
+    interned_monitors = resource;
+    enif_keep_resource(resource);
+
+    ERL_NIF_TERM term = enif_make_resource(env, resource);
+    enif_release_resource(resource);
+    return term;
+}
+
+static int beam_get_monitor(ErlNifEnv* env, ERL_NIF_TERM term, GLFWMonitorResource** out)
+{
+    GLFWMonitorResource* resource;
+    if (!enif_get_resource(env, term, glfw_monitor_resource_type, (void**)&resource)) {
+        return 0;
+    }
+    if (!resource->alive || resource->monitor == NULL) {
+        return 0;
+    }
+    *out = resource;
+    return 1;
+}
+
+static void beam_unlink_window(GLFWWindowResource* resource)
+{
+    GLFWWindowResource** slot = &live_windows;
+    while (*slot != NULL) {
+        if (*slot == resource) {
+            *slot = resource->live_next;
+            resource->live_next = NULL;
+            enif_release_resource(resource);
+            return;
+        }
+        slot = &(*slot)->live_next;
+    }
+}
+
+static void beam_poison_window(GLFWWindowResource* resource, int destroy_native)
+{
+    if (!resource->alive) {
+        return;
+    }
+    resource->alive = 0;
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    beam_glfw_destroy_wayland_egl_window(resource);
+#endif
+    if (destroy_native && resource->window != NULL) {
+        glfwDestroyWindow(resource->window);
+    }
+    resource->window = NULL;
+    beam_unlink_window(resource);
+}
+
+static int beam_get_window(ErlNifEnv* env, ERL_NIF_TERM term, GLFWWindowResource** out)
+{
+    GLFWWindowResource* resource;
+    if (!enif_get_resource(env, term, glfw_window_resource_type, (void**)&resource)) {
+        return 0;
+    }
+    if (!resource->alive || resource->window == NULL) {
+        return 0;
+    }
+    *out = resource;
+    return 1;
+}
+
+static void beam_unlink_cursor(GLFWCursorResource* resource)
+{
+    GLFWCursorResource** slot = &live_cursors;
+    while (*slot != NULL) {
+        if (*slot == resource) {
+            *slot = resource->live_next;
+            resource->live_next = NULL;
+            enif_release_resource(resource);
+            return;
+        }
+        slot = &(*slot)->live_next;
+    }
+}
+
+static void beam_poison_cursor(GLFWCursorResource* resource, int destroy_native)
+{
+    if (!resource->alive) {
+        return;
+    }
+    resource->alive = 0;
+    if (destroy_native && resource->cursor != NULL) {
+        glfwDestroyCursor(resource->cursor);
+    }
+    resource->cursor = NULL;
+    beam_unlink_cursor(resource);
+}
+
+static int beam_get_cursor(ErlNifEnv* env, ERL_NIF_TERM term, GLFWCursorResource** out)
+{
+    GLFWCursorResource* resource;
+    if (!enif_get_resource(env, term, glfw_cursor_resource_type, (void**)&resource)) {
+        return 0;
+    }
+    if (!resource->alive || resource->cursor == NULL) {
+        return 0;
+    }
+    *out = resource;
+    return 1;
+}
+
+static void beam_poison_all_resources(int destroy_native)
+{
+    while (live_windows != NULL) {
+        beam_poison_window(live_windows, destroy_native);
+    }
+    while (live_cursors != NULL) {
+        beam_poison_cursor(live_cursors, destroy_native);
+    }
+    while (interned_monitors != NULL) {
+        beam_poison_monitor(interned_monitors);
+    }
+}
+
 static void glfw_monitor_resource_dtor(ErlNifEnv* env, void* obj) {
     (void)env;
-    (void)obj;
+    GLFWMonitorResource* resource = obj;
+    if (resource->alive) {
+        resource->alive = 0;
+        resource->monitor = NULL;
+        beam_unlink_monitor(resource);
+    }
 }
 
 static void glfw_window_resource_dtor(ErlNifEnv* env, void* obj) {
     (void)env;
+    GLFWWindowResource* resource = obj;
+    if (resource->alive) {
+        resource->alive = 0;
 #if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
-    beam_glfw_destroy_wayland_egl_window((GLFWWindowResource*)obj);
-#else
-    (void)obj;
+        beam_glfw_destroy_wayland_egl_window(resource);
 #endif
+        resource->window = NULL;
+        beam_unlink_window(resource);
+    }
+    if (resource->env != NULL) {
+        enif_free_env(resource->env);
+        resource->env = NULL;
+    }
 }
 
 static void glfw_cursor_resource_dtor(ErlNifEnv* env, void* obj) {
     (void)env;
-    (void)obj;
+    GLFWCursorResource* resource = obj;
+    if (resource->alive) {
+        resource->alive = 0;
+        resource->cursor = NULL;
+        beam_unlink_cursor(resource);
+    }
 }
 
 static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
@@ -355,13 +587,13 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     }
 
     glfw_error_handler_env = enif_alloc_env();
-    glfw_error_handler = enif_make_copy(glfw_error_handler_env, atom_undefined);
+    beam_handler_clear(&glfw_error_handler);
 
     glfw_monitor_handler_env = enif_alloc_env();
-    glfw_monitor_handler = enif_make_copy(glfw_monitor_handler_env, atom_undefined);
+    beam_handler_clear(&glfw_monitor_handler);
 
     glfw_joystick_handler_env = enif_alloc_env();
-    glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, atom_undefined);
+    beam_handler_clear(&glfw_joystick_handler);
 
     if (!command_executor_init(&command_executor)) {
         fprintf(stderr, "failed to initialize the command executor\n");
@@ -381,6 +613,7 @@ static void nif_module_unload(ErlNifEnv* caller_env, void* priv_data)
     }
 
     enif_free_env(glfw_error_handler_env);
+    enif_free_env(glfw_monitor_handler_env);
     enif_free_env(glfw_joystick_handler_env);
 }
 
@@ -416,6 +649,7 @@ static ERL_NIF_TERM glfw_init_command(ErlNifEnv* env, int argc, const ERL_NIF_TE
     int result = glfwInit();
     if (result == GLFW_TRUE) {
         beam_glfw_initialized = 1;
+        glfwSetMonitorCallback(monitor_callback);
         return atom_true;
     }
     else {
@@ -435,6 +669,7 @@ static ERL_NIF_TERM glfw_terminate_command(ErlNifEnv* env, int argc, const ERL_N
     (void)argc;
     (void)argv;
 
+    beam_poison_all_resources(1);
     glfwTerminate();
     beam_glfw_initialized = 0;
     return atom_ok;
@@ -560,7 +795,7 @@ void error_callback(int error_code, const char *description) {
         description_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&glfw_error_handler, NULL, result);
+    beam_handler_send(glfw_error_handler_env, &glfw_error_handler, result);
 }
 
 static ERL_NIF_TERM nif_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -569,25 +804,21 @@ static ERL_NIF_TERM nif_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TE
     (void)argc;
     (void)argv;
 
-    return glfw_error_handler;
+    return beam_handler_to_term(env, &glfw_error_handler);
 }
 
 static ERL_NIF_TERM glfw_set_error_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    (void)env;
     (void)argc;
 
-    enif_clear_env(glfw_error_handler_env);
-
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetErrorCallback(NULL);
-        glfw_error_handler = enif_make_copy(glfw_error_handler_env, atom_undefined);
-    } else {
-        glfwSetErrorCallback(error_callback);
-        glfw_error_handler = enif_make_copy(glfw_error_handler_env, argv[0]);
+    if (!beam_handler_from_term(env, argv[0], &glfw_error_handler)) {
+        return enif_make_badarg(env);
     }
-
+    if (glfw_error_handler.set) {
+        glfwSetErrorCallback(error_callback);
+    } else {
+        glfwSetErrorCallback(NULL);
+    }
     return atom_ok;
 }
 
@@ -681,13 +912,7 @@ static ERL_NIF_TERM glfw_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     ERL_NIF_TERM list = enif_make_list(env, 0);
 
     for (int i = count - 1; i >= 0; i--) {
-        void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
-        *((GLFWmonitor**)monitor_resource) = monitors[i];
-
-        ERL_NIF_TERM monitor_term = enif_make_resource(env, monitor_resource);
-        enif_release_resource(monitor_resource);
-
-        list = enif_make_list_cell(env, monitor_term, list);
+        list = enif_make_list_cell(env, beam_intern_monitor(env, monitors[i]), list);
     }
 
     return list;
@@ -708,13 +933,7 @@ static ERL_NIF_TERM glfw_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF
         return atom_undefined;
     }
 
-    void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
-    *((GLFWmonitor**)monitor_resource) = monitor;
-
-    ERL_NIF_TERM monitor_ref = enif_make_resource(env, monitor_resource);
-    enif_release_resource(monitor_resource);
-
-    return monitor_ref;
+    return beam_intern_monitor(env, monitor);
 }
 
 static ERL_NIF_TERM nif_primary_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -726,10 +945,11 @@ static ERL_NIF_TERM glfw_monitor_position(ErlNifEnv* env, int argc, const ERL_NI
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     int x, y;
     glfwGetMonitorPos(*monitor, &x, &y);
@@ -750,10 +970,11 @@ static ERL_NIF_TERM glfw_monitor_work_area(ErlNifEnv* env, int argc, const ERL_N
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     int x, y, width, height;
     glfwGetMonitorWorkarea(*monitor, &x, &y, &width, &height);
@@ -776,10 +997,11 @@ static ERL_NIF_TERM glfw_monitor_physical_size(ErlNifEnv* env, int argc, const E
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     int width, height;
     glfwGetMonitorPhysicalSize(*monitor, &width, &height);
@@ -800,10 +1022,11 @@ static ERL_NIF_TERM glfw_monitor_content_scale(ErlNifEnv* env, int argc, const E
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     float x_scale, y_scale;
     glfwGetMonitorContentScale(*monitor, &x_scale, &y_scale);
@@ -824,10 +1047,11 @@ static ERL_NIF_TERM glfw_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TE
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     const char* name = glfwGetMonitorName(*monitor);
     if (name == NULL) {
@@ -841,21 +1065,25 @@ static ERL_NIF_TERM nif_monitor_name(ErlNifEnv* env, int argc, const ERL_NIF_TER
     return execute_command(glfw_monitor_name, env, argc, argv);
 }
 
-void monitor_callback(GLFWmonitor *monitor, int event) {
-    void* monitor_resource = enif_alloc_resource(glfw_monitor_resource_type, sizeof(GLFWmonitor*));
-    *((GLFWmonitor**)monitor_resource) = monitor;
-
-    ERL_NIF_TERM monitor_term = enif_make_resource(glfw_monitor_handler_env, monitor_resource);
-    enif_release_resource(monitor_resource);
-
+static void monitor_callback(GLFWmonitor *monitor, int event) {
+    enif_clear_env(glfw_monitor_handler_env);
+    ERL_NIF_TERM monitor_term = beam_intern_monitor(glfw_monitor_handler_env, monitor);
     ERL_NIF_TERM result = enif_make_tuple3(
         glfw_monitor_handler_env,
         atom_glfw_monitor,
         monitor_term,
         event == GLFW_CONNECTED ? atom_connected : atom_disconnected
     );
-
-    enif_send(NULL, (ErlNifPid*)&glfw_monitor_handler, NULL, result);
+    beam_handler_send(glfw_monitor_handler_env, &glfw_monitor_handler, result);
+    if (event == GLFW_DISCONNECTED) {
+        GLFWMonitorResource* it;
+        for (it = interned_monitors; it != NULL; it = it->intern_next) {
+            if (it->alive && it->monitor == monitor) {
+                beam_poison_monitor(it);
+                break;
+            }
+        }
+    }
 }
 
 static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -864,25 +1092,16 @@ static ERL_NIF_TERM nif_monitor_handler(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
     (void)argv;
 
-    return glfw_monitor_handler;
+    return beam_handler_to_term(env, &glfw_monitor_handler);
 }
 
 static ERL_NIF_TERM glfw_monitor_set_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    (void)env;
     (void)argc;
 
-    enif_clear_env(glfw_monitor_handler_env);
-
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetMonitorCallback(NULL);
-        glfw_monitor_handler = enif_make_copy(glfw_monitor_handler_env, atom_undefined);
-    } else {
-        glfwSetMonitorCallback(monitor_callback);
-        glfw_monitor_handler = enif_make_copy(glfw_monitor_handler_env, argv[0]);
+    if (!beam_handler_from_term(env, argv[0], &glfw_monitor_handler)) {
+        return enif_make_badarg(env);
     }
-
     return atom_ok;
 }
 
@@ -895,10 +1114,11 @@ static ERL_NIF_TERM glfw_video_modes(ErlNifEnv* env, int argc, const ERL_NIF_TER
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     int count;
     const GLFWvidmode* modes = glfwGetVideoModes(*monitor, &count);
@@ -934,10 +1154,11 @@ static ERL_NIF_TERM glfw_video_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     const GLFWvidmode* mode = glfwGetVideoMode(*monitor);
     if (!mode) {
@@ -964,10 +1185,11 @@ static ERL_NIF_TERM glfw_set_gamma(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     double gamma;
     if (!enif_get_double(env, argv[1], &gamma)) {
@@ -987,10 +1209,11 @@ static ERL_NIF_TERM glfw_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 {
     (void)argc;
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     const GLFWgammaramp* ramp = glfwGetGammaRamp(*monitor);
     if (ramp == NULL) {
@@ -1029,10 +1252,11 @@ static ERL_NIF_TERM glfw_set_gamma_ramp(ErlNifEnv* env, int argc, const ERL_NIF_
 
     // XXX: Review implementation.
 
-    GLFWmonitor** monitor;
-    if (!enif_get_resource(env, argv[0], glfw_monitor_resource_type, (void**) &monitor)) {
+    GLFWMonitorResource* monitor_resource;
+    if (!beam_get_monitor(env, argv[0], &monitor_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWmonitor** monitor = &monitor_resource->monitor;
 
     const ERL_NIF_TERM* terms;
     int arity;
@@ -1179,7 +1403,7 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
     if (!enif_get_int(env, argv[1], &height)) {
         return enif_make_badarg(env);
     }
-    if (!enif_get_string(env, argv[2], title, sizeof(title), ERL_NIF_LATIN1)) {
+    if (!enif_get_string(env, argv[2], title, sizeof(title), ERL_NIF_UTF8)) {
         return enif_make_badarg(env);
     }
 
@@ -1196,18 +1420,30 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
     );
     window_resource->env = enif_alloc_env();
     window_resource->window = window;
-    window_resource->window_position_handler = atom_undefined;
-    window_resource->window_size_handler = atom_undefined;
-    window_resource->window_close_handler = atom_undefined;
-    window_resource->window_refresh_handler = atom_undefined;
-    window_resource->window_focus_handler = atom_undefined;
-    window_resource->window_iconify_handler = atom_undefined;
-    window_resource->window_maximize_handler = atom_undefined;
-    window_resource->window_content_scale_handler = atom_undefined;
-    window_resource->framebuffer_size_handler = atom_undefined;
+    window_resource->alive = 1;
+    beam_handler_clear(&window_resource->window_position_handler);
+    beam_handler_clear(&window_resource->window_size_handler);
+    beam_handler_clear(&window_resource->window_close_handler);
+    beam_handler_clear(&window_resource->window_refresh_handler);
+    beam_handler_clear(&window_resource->window_focus_handler);
+    beam_handler_clear(&window_resource->window_iconify_handler);
+    beam_handler_clear(&window_resource->window_maximize_handler);
+    beam_handler_clear(&window_resource->window_content_scale_handler);
+    beam_handler_clear(&window_resource->framebuffer_size_handler);
+    beam_handler_clear(&window_resource->key_handler);
+    beam_handler_clear(&window_resource->char_handler);
+    beam_handler_clear(&window_resource->char_mods_handler);
+    beam_handler_clear(&window_resource->mouse_button_handler);
+    beam_handler_clear(&window_resource->cursor_position_handler);
+    beam_handler_clear(&window_resource->cursor_enter_handler);
+    beam_handler_clear(&window_resource->scroll_handler);
+    beam_handler_clear(&window_resource->drop_handler);
 #if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
     window_resource->wayland_egl_window = NULL;
 #endif
+    window_resource->live_next = live_windows;
+    live_windows = window_resource;
+    enif_keep_resource(window_resource);
 
     glfwSetWindowUserPointer(window, window_resource);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -1234,15 +1470,10 @@ static ERL_NIF_TERM glfw_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
-    GLFWwindow* window = window_resource->window;
-
-#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
-    beam_glfw_destroy_wayland_egl_window(window_resource);
-#endif
-    glfwDestroyWindow(window);
+    beam_poison_window(window_resource, 1);
     return atom_ok;
 }
 
@@ -1258,7 +1489,7 @@ static ERL_NIF_TERM nif_window_should_close(ErlNifEnv* env, int argc, const ERL_
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1279,7 +1510,7 @@ static ERL_NIF_TERM nif_set_window_should_close(ErlNifEnv* env, int argc, const 
     // According to the doc, this function can be called from any thread (no
     // need to use the NIF function executor thread).
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1324,7 +1555,7 @@ static ERL_NIF_TERM glfw_set_window_title(ErlNifEnv* env, int argc, const ERL_NI
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1356,7 +1587,7 @@ static ERL_NIF_TERM glfw_window_position(ErlNifEnv* env, int argc, const ERL_NIF
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1381,7 +1612,7 @@ static ERL_NIF_TERM glfw_set_window_position(ErlNifEnv* env, int argc, const ERL
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1411,7 +1642,7 @@ static ERL_NIF_TERM glfw_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TER
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1436,7 +1667,7 @@ static ERL_NIF_TERM glfw_framebuffer_size(ErlNifEnv* env, int argc, const ERL_NI
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1461,7 +1692,7 @@ static ERL_NIF_TERM glfw_set_window_size(ErlNifEnv* env, int argc, const ERL_NIF
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1491,7 +1722,7 @@ static ERL_NIF_TERM glfw_set_window_size_limits(ErlNifEnv* env, int argc, const 
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1518,7 +1749,7 @@ static ERL_NIF_TERM glfw_set_window_aspect_ratio(ErlNifEnv* env, int argc, const
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1542,7 +1773,7 @@ static ERL_NIF_TERM glfw_window_frame_size(ErlNifEnv* env, int argc, const ERL_N
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1569,7 +1800,7 @@ static ERL_NIF_TERM glfw_window_content_scale(ErlNifEnv* env, int argc, const ER
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1594,7 +1825,7 @@ static ERL_NIF_TERM glfw_window_opacity(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1613,7 +1844,7 @@ static ERL_NIF_TERM glfw_set_window_opacity(ErlNifEnv* env, int argc, const ERL_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1637,7 +1868,7 @@ static ERL_NIF_TERM glfw_iconify_window(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1656,7 +1887,7 @@ static ERL_NIF_TERM glfw_restore_window(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1675,7 +1906,7 @@ static ERL_NIF_TERM glfw_maximize_window(ErlNifEnv* env, int argc, const ERL_NIF
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1694,7 +1925,7 @@ static ERL_NIF_TERM glfw_show_window(ErlNifEnv* env, int argc, const ERL_NIF_TER
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1713,7 +1944,7 @@ static ERL_NIF_TERM glfw_hide_window(ErlNifEnv* env, int argc, const ERL_NIF_TER
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1732,7 +1963,7 @@ static ERL_NIF_TERM glfw_focus_window(ErlNifEnv* env, int argc, const ERL_NIF_TE
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1751,7 +1982,7 @@ static ERL_NIF_TERM glfw_request_window_attention(ErlNifEnv* env, int argc, cons
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1770,7 +2001,7 @@ static ERL_NIF_TERM glfw_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1779,15 +2010,7 @@ static ERL_NIF_TERM glfw_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_
     if (monitor == NULL) {
         return atom_undefined;
     }
-
-    GLFWmonitor** monitor_resource = enif_alloc_resource(
-        glfw_monitor_resource_type,
-        sizeof(GLFWmonitor*)
-    );
-    *monitor_resource = monitor;
-    ERL_NIF_TERM monitor_term = enif_make_resource(env, monitor_resource);
-    enif_release_resource(monitor_resource);
-    return monitor_term;
+    return beam_intern_monitor(env, monitor);
 }
 
 static ERL_NIF_TERM nif_window_monitor(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1800,18 +2023,18 @@ static ERL_NIF_TERM glfw_set_window_monitor(ErlNifEnv* env, int argc, const ERL_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
     GLFWmonitor* monitor_ptr = NULL;
     if (!enif_is_identical(argv[1], atom_undefined)) {
-        GLFWmonitor** monitor;
-        if (!enif_get_resource(env, argv[1], glfw_monitor_resource_type, (void**) &monitor)) {
+        GLFWMonitorResource* monitor_resource;
+        if (!beam_get_monitor(env, argv[1], &monitor_resource)) {
             return enif_make_badarg(env);
         }
-        monitor_ptr = *monitor;
+        monitor_ptr = monitor_resource->monitor;
     }
 
     int xpos, ypos, width, height, refresh_rate;
@@ -1837,7 +2060,7 @@ static ERL_NIF_TERM glfw_window_attrib(ErlNifEnv* env, int argc, const ERL_NIF_T
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1869,7 +2092,7 @@ static ERL_NIF_TERM glfw_set_window_attrib(ErlNifEnv* env, int argc, const ERL_N
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -1908,7 +2131,7 @@ void window_position_callback(GLFWwindow* window, int xpos, int ypos) {
         inner_result
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_position_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_position_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1916,11 +2139,11 @@ static ERL_NIF_TERM nif_window_position_handler(ErlNifEnv* env, int argc, const 
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_position_handler;
+    return beam_handler_to_term(env, &window_resource->window_position_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1928,18 +2151,19 @@ static ERL_NIF_TERM glfw_set_window_position_handler(ErlNifEnv* env, int argc, c
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowPosCallback(window, NULL);
-    } else {
-        glfwSetWindowPosCallback(window, window_position_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_position_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_position_handler = enif_make_copy(env, argv[1]);
+    if (window_resource->window_position_handler.set) {
+        glfwSetWindowPosCallback(window, window_position_callback);
+    } else {
+        glfwSetWindowPosCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -1965,7 +2189,7 @@ void window_size_callback(GLFWwindow* window, int width, int height) {
         inner_result
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_size_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_size_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1973,11 +2197,11 @@ static ERL_NIF_TERM nif_window_size_handler(ErlNifEnv* env, int argc, const ERL_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_size_handler;
+    return beam_handler_to_term(env, &window_resource->window_size_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -1985,18 +2209,19 @@ static ERL_NIF_TERM glfw_set_window_size_handler(ErlNifEnv* env, int argc, const
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowSizeCallback(window, NULL);
-    } else {
-        glfwSetWindowSizeCallback(window, window_size_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_size_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_size_handler = argv[1];
+    if (window_resource->window_size_handler.set) {
+        glfwSetWindowSizeCallback(window, window_size_callback);
+    } else {
+        glfwSetWindowSizeCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2015,7 +2240,7 @@ void window_close_callback(GLFWwindow* window) {
         window_resource->window_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_close_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_close_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_close_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2023,11 +2248,11 @@ static ERL_NIF_TERM nif_window_close_handler(ErlNifEnv* env, int argc, const ERL
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_close_handler;
+    return beam_handler_to_term(env, &window_resource->window_close_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_close_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2035,18 +2260,19 @@ static ERL_NIF_TERM glfw_set_window_close_handler(ErlNifEnv* env, int argc, cons
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowCloseCallback(window, NULL);
-    } else {
-        glfwSetWindowCloseCallback(window, window_close_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_close_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_close_handler = argv[1];
+    if (window_resource->window_close_handler.set) {
+        glfwSetWindowCloseCallback(window, window_close_callback);
+    } else {
+        glfwSetWindowCloseCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2065,7 +2291,7 @@ void window_refresh_callback(GLFWwindow* window) {
         window_resource->window_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_refresh_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_refresh_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_refresh_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2073,11 +2299,11 @@ static ERL_NIF_TERM nif_window_refresh_handler(ErlNifEnv* env, int argc, const E
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_refresh_handler;
+    return beam_handler_to_term(env, &window_resource->window_refresh_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_refresh_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2085,18 +2311,19 @@ static ERL_NIF_TERM glfw_set_window_refresh_handler(ErlNifEnv* env, int argc, co
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowRefreshCallback(window, NULL);
-    } else {
-        glfwSetWindowRefreshCallback(window, window_refresh_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_refresh_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_refresh_handler = argv[1];
+    if (window_resource->window_refresh_handler.set) {
+        glfwSetWindowRefreshCallback(window, window_refresh_callback);
+    } else {
+        glfwSetWindowRefreshCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2116,7 +2343,7 @@ void window_focus_callback(GLFWwindow* window, int focused) {
         focused ? atom_true : atom_false
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_focus_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_focus_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_focus_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2124,11 +2351,11 @@ static ERL_NIF_TERM nif_window_focus_handler(ErlNifEnv* env, int argc, const ERL
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_focus_handler;
+    return beam_handler_to_term(env, &window_resource->window_focus_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_focus_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2136,18 +2363,19 @@ static ERL_NIF_TERM glfw_set_window_focus_handler(ErlNifEnv* env, int argc, cons
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowFocusCallback(window, NULL);
-    } else {
-        glfwSetWindowFocusCallback(window, window_focus_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_focus_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_focus_handler = argv[1];
+    if (window_resource->window_focus_handler.set) {
+        glfwSetWindowFocusCallback(window, window_focus_callback);
+    } else {
+        glfwSetWindowFocusCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2167,7 +2395,7 @@ void window_iconify_callback(GLFWwindow* window, int iconified) {
         iconified ? atom_true : atom_false
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_iconify_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_iconify_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_iconify_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2175,11 +2403,11 @@ static ERL_NIF_TERM nif_window_iconify_handler(ErlNifEnv* env, int argc, const E
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_iconify_handler;
+    return beam_handler_to_term(env, &window_resource->window_iconify_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_iconify_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2187,18 +2415,19 @@ static ERL_NIF_TERM glfw_set_window_iconify_handler(ErlNifEnv* env, int argc, co
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowIconifyCallback(window, NULL);
-    } else {
-        glfwSetWindowIconifyCallback(window, window_iconify_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_iconify_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_iconify_handler = argv[1];
+    if (window_resource->window_iconify_handler.set) {
+        glfwSetWindowIconifyCallback(window, window_iconify_callback);
+    } else {
+        glfwSetWindowIconifyCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2218,7 +2447,7 @@ void window_maximize_callback(GLFWwindow* window, int maximized) {
         maximized ? atom_true : atom_false
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_maximize_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_maximize_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_maximize_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2226,11 +2455,11 @@ static ERL_NIF_TERM nif_window_maximize_handler(ErlNifEnv* env, int argc, const 
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_maximize_handler;
+    return beam_handler_to_term(env, &window_resource->window_maximize_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_maximize_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2238,18 +2467,19 @@ static ERL_NIF_TERM glfw_set_window_maximize_handler(ErlNifEnv* env, int argc, c
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowMaximizeCallback(window, NULL);
-    } else {
-        glfwSetWindowMaximizeCallback(window, window_maximize_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_maximize_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_maximize_handler = argv[1];
+    if (window_resource->window_maximize_handler.set) {
+        glfwSetWindowMaximizeCallback(window, window_maximize_callback);
+    } else {
+        glfwSetWindowMaximizeCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2275,7 +2505,7 @@ void window_content_scale_callback(GLFWwindow* window, float xscale, float yscal
         inner_result
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->window_content_scale_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->window_content_scale_handler, result);
 }
 
 static ERL_NIF_TERM nif_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2283,11 +2513,11 @@ static ERL_NIF_TERM nif_window_content_scale_handler(ErlNifEnv* env, int argc, c
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->window_content_scale_handler;
+    return beam_handler_to_term(env, &window_resource->window_content_scale_handler);
 }
 
 static ERL_NIF_TERM glfw_set_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2295,18 +2525,19 @@ static ERL_NIF_TERM glfw_set_window_content_scale_handler(ErlNifEnv* env, int ar
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetWindowContentScaleCallback(window, NULL);
-    } else {
-        glfwSetWindowContentScaleCallback(window, window_content_scale_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->window_content_scale_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->window_content_scale_handler = argv[1];
+    if (window_resource->window_content_scale_handler.set) {
+        glfwSetWindowContentScaleCallback(window, window_content_scale_callback);
+    } else {
+        glfwSetWindowContentScaleCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2325,7 +2556,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     }
 #endif
 
-    if (enif_is_identical(window_resource->framebuffer_size_handler, atom_undefined)) {
+    if (!window_resource->alive || !window_resource->framebuffer_size_handler.set) {
         return;
     }
 
@@ -2342,7 +2573,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
         inner_result
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->framebuffer_size_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->framebuffer_size_handler, result);
 }
 
 static ERL_NIF_TERM nif_framebuffer_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2350,11 +2581,11 @@ static ERL_NIF_TERM nif_framebuffer_size_handler(ErlNifEnv* env, int argc, const
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->framebuffer_size_handler;
+    return beam_handler_to_term(env, &window_resource->framebuffer_size_handler);
 }
 
 static ERL_NIF_TERM glfw_set_framebuffer_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2362,13 +2593,15 @@ static ERL_NIF_TERM glfw_set_framebuffer_size_handler(ErlNifEnv* env, int argc, 
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
     // The GLFW framebuffer-size callback stays installed for Wayland
     // wl_egl_window resize. Clearing the handler only stops BEAM messages.
-    window_resource->framebuffer_size_handler = enif_make_copy(env, argv[1]);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->framebuffer_size_handler)) {
+        return enif_make_badarg(env);
+    }
     return atom_ok;
 }
 
@@ -2412,7 +2645,7 @@ static ERL_NIF_TERM glfw_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -2436,7 +2669,7 @@ static ERL_NIF_TERM glfw_set_input_mode(ErlNifEnv* env, int argc, const ERL_NIF_
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -2485,8 +2718,15 @@ static ERL_NIF_TERM glfw_create_cursor(ErlNifEnv* env, int argc, const ERL_NIF_T
         return atom_error;
     }
 
-    void* cursor_resource = enif_alloc_resource(glfw_cursor_resource_type, sizeof(GLFWcursor*));
-    *((GLFWcursor**)cursor_resource) = cursor;
+    GLFWCursorResource* cursor_resource = enif_alloc_resource(
+        glfw_cursor_resource_type,
+        sizeof(GLFWCursorResource)
+    );
+    cursor_resource->cursor = cursor;
+    cursor_resource->alive = 1;
+    cursor_resource->live_next = live_cursors;
+    live_cursors = cursor_resource;
+    enif_keep_resource(cursor_resource);
 
     ERL_NIF_TERM cursor_ref = enif_make_resource(env, cursor_resource);
     enif_release_resource(cursor_resource);
@@ -2517,8 +2757,15 @@ static ERL_NIF_TERM glfw_create_standard_cursor(ErlNifEnv* env, int argc, const 
         return atom_error;
     }
 
-    void* cursor_resource = enif_alloc_resource(glfw_cursor_resource_type, sizeof(GLFWcursor*));
-    *((GLFWcursor**)cursor_resource) = cursor;
+    GLFWCursorResource* cursor_resource = enif_alloc_resource(
+        glfw_cursor_resource_type,
+        sizeof(GLFWCursorResource)
+    );
+    cursor_resource->cursor = cursor;
+    cursor_resource->alive = 1;
+    cursor_resource->live_next = live_cursors;
+    live_cursors = cursor_resource;
+    enif_keep_resource(cursor_resource);
 
     ERL_NIF_TERM cursor_ref = enif_make_resource(env, cursor_resource);
     enif_release_resource(cursor_resource);
@@ -2539,12 +2786,11 @@ static ERL_NIF_TERM glfw_destroy_cursor(ErlNifEnv* env, int argc, const ERL_NIF_
 {
     (void)argc;
 
-    GLFWcursor** cursor;
-    if (!enif_get_resource(env, argv[0], glfw_cursor_resource_type, (void**) &cursor)) {
+    GLFWCursorResource* cursor_resource;
+    if (!beam_get_cursor(env, argv[0], &cursor_resource)) {
         return enif_make_badarg(env);
     }
-
-    glfwDestroyCursor(*cursor);
+    beam_poison_cursor(cursor_resource, 1);
     return atom_ok;
 }
 
@@ -2558,7 +2804,7 @@ static ERL_NIF_TERM glfw_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -2574,11 +2820,11 @@ static ERL_NIF_TERM glfw_set_cursor(ErlNifEnv* env, int argc, const ERL_NIF_TERM
             return enif_make_badarg(env);
         }
     } else {
-        GLFWcursor** cursor;
-        if (!enif_get_resource(env, argv[1], glfw_cursor_resource_type, (void**) &cursor)) {
+        GLFWCursorResource* cursor_resource;
+        if (!beam_get_cursor(env, argv[1], &cursor_resource)) {
             return enif_make_badarg(env);
         }
-        cursor_value = *cursor;
+        cursor_value = cursor_resource->cursor;
     }
 
     glfwSetCursor(window, cursor_value);
@@ -2678,7 +2924,7 @@ static ERL_NIF_TERM glfw_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -2710,7 +2956,7 @@ static ERL_NIF_TERM glfw_mouse_button(ErlNifEnv* env, int argc, const ERL_NIF_TE
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
@@ -2741,13 +2987,14 @@ static ERL_NIF_TERM glfw_cursor_position(ErlNifEnv* env, int argc, const ERL_NIF
 {
     (void)argc;
 
-    GLFWwindow** window;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+    GLFWWindowResource* window_resource;
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
+    GLFWwindow* window = window_resource->window;
 
     double xpos, ypos;
-    glfwGetCursorPos(*window, &xpos, &ypos);
+    glfwGetCursorPos(window, &xpos, &ypos);
 
     return enif_make_tuple2(
         env,
@@ -2765,17 +3012,17 @@ static ERL_NIF_TERM glfw_set_cursor_position(ErlNifEnv* env, int argc, const ERL
 {
     (void)argc;
 
-    GLFWwindow** window;
+    GLFWWindowResource* window_resource;
     double xpos, ypos;
 
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     if (!enif_get_double(env, argv[1], &xpos) || !enif_get_double(env, argv[2], &ypos)) {
         return enif_make_badarg(env);
     }
 
-    glfwSetCursorPos(*window, xpos, ypos);
+    glfwSetCursorPos(window_resource->window, xpos, ypos);
     return atom_ok;
 }
 
@@ -2812,7 +3059,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         mods_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->key_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->key_handler, result);
 }
 
 static ERL_NIF_TERM nif_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2820,11 +3067,11 @@ static ERL_NIF_TERM nif_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->key_handler;
+    return beam_handler_to_term(env, &window_resource->key_handler);
 }
 
 static ERL_NIF_TERM glfw_set_key_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2832,18 +3079,19 @@ static ERL_NIF_TERM glfw_set_key_handler(ErlNifEnv* env, int argc, const ERL_NIF
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetKeyCallback(window, NULL);
-    } else {
-        glfwSetKeyCallback(window, key_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->key_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->key_handler = argv[1];
+    if (window_resource->key_handler.set) {
+        glfwSetKeyCallback(window, key_callback);
+    } else {
+        glfwSetKeyCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2865,7 +3113,7 @@ void char_callback(GLFWwindow *window, unsigned int codepoint) {
         codepoint_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->char_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->char_handler, result);
 }
 
 static ERL_NIF_TERM nif_character_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2873,29 +3121,30 @@ static ERL_NIF_TERM nif_character_handler(ErlNifEnv* env, int argc, const ERL_NI
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->char_handler;
+    return beam_handler_to_term(env, &window_resource->char_handler);
 }
 static ERL_NIF_TERM glfw_set_character_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetCharCallback(window, NULL);
-    } else {
-        glfwSetCharCallback(window, char_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->char_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->char_handler = argv[1];
+    if (window_resource->char_handler.set) {
+        glfwSetCharCallback(window, char_callback);
+    } else {
+        glfwSetCharCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2918,7 +3167,7 @@ void char_mods_callback(GLFWwindow *window, unsigned int codepoint, int mods) {
         mods_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->char_mods_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->char_mods_handler, result);
 }
 
 static ERL_NIF_TERM nif_character_mods_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2926,29 +3175,30 @@ static ERL_NIF_TERM nif_character_mods_handler(ErlNifEnv* env, int argc, const E
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->char_mods_handler;
+    return beam_handler_to_term(env, &window_resource->char_mods_handler);
 }
 static ERL_NIF_TERM glfw_set_character_mods_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetCharModsCallback(window, NULL);
-    } else {
-        glfwSetCharModsCallback(window, char_mods_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->char_mods_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->char_mods_handler = argv[1];
+    if (window_resource->char_mods_handler.set) {
+        glfwSetCharModsCallback(window, char_mods_callback);
+    } else {
+        glfwSetCharModsCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -2980,7 +3230,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         mods_term
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->mouse_button_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->mouse_button_handler, result);
 }
 
 static ERL_NIF_TERM nif_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2988,29 +3238,30 @@ static ERL_NIF_TERM nif_mouse_button_handler(ErlNifEnv* env, int argc, const ERL
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->mouse_button_handler;
+    return beam_handler_to_term(env, &window_resource->mouse_button_handler);
 }
 static ERL_NIF_TERM glfw_set_mouse_button_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetMouseButtonCallback(window, NULL);
-    } else {
-        glfwSetMouseButtonCallback(window, mouse_button_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->mouse_button_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->mouse_button_handler = argv[1];
+    if (window_resource->mouse_button_handler.set) {
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+    } else {
+        glfwSetMouseButtonCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -3037,7 +3288,7 @@ void cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
         inner_result
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->cursor_position_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->cursor_position_handler, result);
 }
 
 static ERL_NIF_TERM nif_cursor_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3045,29 +3296,30 @@ static ERL_NIF_TERM nif_cursor_position_handler(ErlNifEnv* env, int argc, const 
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->cursor_position_handler;
+    return beam_handler_to_term(env, &window_resource->cursor_position_handler);
 }
 static ERL_NIF_TERM glfw_set_cursor_position_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetCursorPosCallback(window, NULL);
-    } else {
-        glfwSetCursorPosCallback(window, cursor_position_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->cursor_position_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->cursor_position_handler = argv[1];
+    if (window_resource->cursor_position_handler.set) {
+        glfwSetCursorPosCallback(window, cursor_position_callback);
+    } else {
+        glfwSetCursorPosCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -3087,7 +3339,7 @@ void cursor_enter_callback(GLFWwindow *window, int entered) {
         entered ? atom_true : atom_false
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->cursor_enter_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->cursor_enter_handler, result);
 }
 
 static ERL_NIF_TERM nif_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3095,29 +3347,30 @@ static ERL_NIF_TERM nif_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->cursor_enter_handler;
+    return beam_handler_to_term(env, &window_resource->cursor_enter_handler);
 }
 static ERL_NIF_TERM glfw_set_cursor_enter_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetCursorEnterCallback(window, NULL);
-    } else {
-        glfwSetCursorEnterCallback(window, cursor_enter_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->cursor_enter_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->cursor_enter_handler = argv[1];
+    if (window_resource->cursor_enter_handler.set) {
+        glfwSetCursorEnterCallback(window, cursor_enter_callback);
+    } else {
+        glfwSetCursorEnterCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -3144,7 +3397,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
         inner_result
     );
 
-    enif_send(NULL, (ErlNifPid*)&window_resource->scroll_handler, NULL, result);
+    beam_handler_send(window_resource->env, &window_resource->scroll_handler, result);
 }
 
 static ERL_NIF_TERM nif_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3152,29 +3405,30 @@ static ERL_NIF_TERM nif_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_T
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->scroll_handler;
+    return beam_handler_to_term(env, &window_resource->scroll_handler);
 }
 static ERL_NIF_TERM glfw_set_scroll_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
     GLFWwindow* window = window_resource->window;
 
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetScrollCallback(window, NULL);
-    } else {
-        glfwSetScrollCallback(window, scroll_callback);
+    if (!beam_handler_from_term(env, argv[1], &window_resource->scroll_handler)) {
+        return enif_make_badarg(env);
     }
-    window_resource->scroll_handler = argv[1];
+    if (window_resource->scroll_handler.set) {
+        glfwSetScrollCallback(window, scroll_callback);
+    } else {
+        glfwSetScrollCallback(window, NULL);
+    }
 
     return atom_ok;
 }
@@ -3184,10 +3438,26 @@ static ERL_NIF_TERM nif_set_scroll_handler(ErlNifEnv* env, int argc, const ERL_N
 }
 
 void drop_callback(GLFWwindow *window, int path_count, const char *paths[]) {
-    (void)window;
-    (void)path_count;
-    (void)paths;
-    // XXX
+    GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
+    if (!window_resource->alive || !window_resource->drop_handler.set) {
+        return;
+    }
+
+    ERL_NIF_TERM list = enif_make_list(window_resource->env, 0);
+    for (int i = path_count - 1; i >= 0; i--) {
+        list = enif_make_list_cell(
+            window_resource->env,
+            enif_make_string(window_resource->env, paths[i], ERL_NIF_UTF8),
+            list
+        );
+    }
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        atom_glfw_drop,
+        window_resource->window_term,
+        list
+    );
+    beam_handler_send(window_resource->env, &window_resource->drop_handler, result);
 }
 
 static ERL_NIF_TERM nif_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3195,20 +3465,31 @@ static ERL_NIF_TERM nif_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TER
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 
-    return window_resource->drop_handler;
+    return beam_handler_to_term(env, &window_resource->drop_handler);
 }
 
 static ERL_NIF_TERM glfw_set_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    (void)env;
     (void)argc;
-    (void)argv;
 
-    return atom_true;
+    GLFWWindowResource* window_resource;
+    if (!beam_get_window(env, argv[0], &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+    if (!beam_handler_from_term(env, argv[1], &window_resource->drop_handler)) {
+        return enif_make_badarg(env);
+    }
+    if (window_resource->drop_handler.set) {
+        glfwSetDropCallback(window, drop_callback);
+    } else {
+        glfwSetDropCallback(window, NULL);
+    }
+    return atom_ok;
 }
 
 static ERL_NIF_TERM nif_set_drop_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3391,34 +3672,29 @@ void joystick_callback(int jid, int event) {
         event == GLFW_CONNECTED ? atom_connected : atom_disconnected
     );
 
-    enif_send(NULL, (ErlNifPid*)&glfw_joystick_handler, NULL, result);
+    beam_handler_send(glfw_joystick_handler_env, &glfw_joystick_handler, result);
 }
 
 static ERL_NIF_TERM nif_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    (void)env;
     (void)argc;
     (void)argv;
 
-    return glfw_joystick_handler;
+    return beam_handler_to_term(env, &glfw_joystick_handler);
 }
 
 static ERL_NIF_TERM glfw_set_joystick_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    (void)env;
     (void)argc;
 
-    enif_clear_env(glfw_joystick_handler_env);
-
-    int is_undefined = enif_is_identical(argv[1], atom_undefined);
-    if(is_undefined) {
-        glfwSetJoystickCallback(NULL);
-        glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, atom_undefined);
-    } else {
-        glfwSetJoystickCallback(joystick_callback);
-        glfw_joystick_handler = enif_make_copy(glfw_joystick_handler_env, argv[0]);
+    if (!beam_handler_from_term(env, argv[0], &glfw_joystick_handler)) {
+        return enif_make_badarg(env);
     }
-
+    if (glfw_joystick_handler.set) {
+        glfwSetJoystickCallback(joystick_callback);
+    } else {
+        glfwSetJoystickCallback(NULL);
+    }
     return atom_ok;
 }
 
@@ -3565,7 +3841,7 @@ static ERL_NIF_TERM glfw_clipboard_string(ErlNifEnv* env, int argc, const ERL_NI
         );
     } else {
         GLFWWindowResource* window_resource;
-        if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        if (!beam_get_window(env, argv[0], &window_resource)) {
             return enif_make_badarg(env);
         }
         GLFWwindow* window = window_resource->window;
@@ -3601,7 +3877,7 @@ static ERL_NIF_TERM glfw_set_clipboard_string(ErlNifEnv* env, int argc, const ER
         return atom_ok;
     } else {
         GLFWWindowResource* window_resource;
-        if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        if (!beam_get_window(env, argv[0], &window_resource)) {
             return enif_make_badarg(env);
         }
         GLFWwindow* window = window_resource->window;
@@ -3713,7 +3989,7 @@ static ERL_NIF_TERM glfw_window_egl_handle(ErlNifEnv* env, int argc, const ERL_N
     (void)argc;
 
     GLFWWindowResource* window_resource;
-    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+    if (!beam_get_window(env, argv[0], &window_resource)) {
         return enif_make_badarg(env);
     }
 

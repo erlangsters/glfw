@@ -57,6 +57,7 @@ glfw_cursor_test() ->
     glfw:destroy_cursor(Cursor4),
     glfw:destroy_cursor(Cursor5),
     glfw:destroy_cursor(Cursor6),
+    ?assertError(badarg, glfw:destroy_cursor(Cursor6)),
     % glfw:destroy_cursor(Cursor7),
     % glfw:destroy_cursor(Cursor8),
     % glfw:destroy_cursor(Cursor9),

@@ -22,6 +22,9 @@ glfw_monitor_test() ->
 
     Monitor = glfw:primary_monitor(),
     ?assert(erlang:is_reference(Monitor)),
+    Monitor = glfw:primary_monitor(),
+    [Primary | _] = glfw:monitors(),
+    Monitor = Primary,
 
     {X1, Y1} = glfw:monitor_position(Monitor),
     io:format(user, "monitor position (x: ~p, y)~p~n", [X1, Y1]),
