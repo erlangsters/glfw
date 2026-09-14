@@ -55,6 +55,17 @@ egl:swap_interval(Display, 1).
 
 `window_egl_handle/1` follows the platform selected at `init/0`. On Wayland it builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. On X11, Win32, and Cocoa it is the platform window handle.
 
-Creating an EGL window surface still goes through `egl:get_display(default_display)`, which uses `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. On a Wayland session that handle is accepted by GLFW, then `egl:create_window_surface/4` can fail with `bad_alloc`. That is an `egl-1.5` follow-up (`eglGetPlatformDisplay` is not implemented there). Until EGL can open a Wayland display, apps can still force X11/Xwayland:
+The EGL display must share GLFW's window-system connection. Use
+`display_egl_handle/0` with `egl:get_platform_display/3`:
 
-    env -u WAYLAND_DISPLAY DISPLAY="${DISPLAY:-:0}" ...
+```erlang
+{ok, wayland} = glfw:platform(),
+NativeDisplay = glfw:display_egl_handle(),
+Display = egl:get_platform_display(wayland, NativeDisplay, []),
+{ok, _} = egl:initialize(Display),
+WindowHandle = glfw:window_egl_handle(Window),
+{ok, Surface} = egl:create_window_surface(Display, Config, WindowHandle, []).
+```
+
+`egl:get_display(default_display)` still exists for pbuffer and ANGLE. On
+Wayland it does not compose with GLFW window surfaces.

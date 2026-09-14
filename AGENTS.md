@@ -64,15 +64,14 @@ family-workspace `GLFW-PLAN.md`.
 | Input | implemented | Modes, keys, mouse, cursor objects, input handlers. Handler `#glfw_key{}.key` and `#glfw_mouse_button{}.button` are atoms. `mods` is `[mod()]`. |
 | Joystick / gamepad | implemented | Presence, axes, buttons, hats as `joystick_hat()` atoms, name, GUID, gamepad name/state, mappings, joystick handler. |
 | Clipboard | implemented | UTF-8 strings allocated from the Erlang term. |
-| EGL window handle | implemented | Follows `glfwGetPlatform()`. Wayland builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. X11, Win32, and Cocoa use the platform window handle. |
+| EGL window handle | implemented | Follows `glfwGetPlatform()`. Wayland builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. X11, Win32, and Cocoa use the platform window handle. `display_egl_handle/0` wraps the native display for `egl:get_platform_display/3`. |
 | Documentation | implemented | Public mapping, extras, README, and missing `-doc` are filled. A later pass owns completeness and consistency of already-written GLFW-paste annotations. |
 | Demos | implemented | Event, window, monitor (read-only), input, and joystick demos. Gamma writes are not in any default demo or eunit path. |
 
 ## Planned For First Release
 
 The advertised first-release mapping is implemented. Remaining work is the
-slice 2 owner review, the `egl-1.5` Wayland display follow-up, and items
-already listed as deferred.
+slice 2 owner review and items already listed as deferred.
 
 ## Deferred
 
@@ -113,10 +112,6 @@ Intentionally outside the first public surface.
 
 Not design questions. Fix them in the slice that owns the family.
 
-- Wayland `window_egl_handle/1` returns a `wl_egl_window`. EGL
-  `create_window_surface/4` then fails with `bad_alloc` when the display
-  came from `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. That is an `egl-1.5`
-  `eglGetPlatformDisplay` follow-up.
 - `#glfw_drop{}.paths` is `[string()]`; confirm whether UTF-8 binaries are
   the better shape before freeze.
 - Long `create_window/3` `-doc` prose still describes C Monitor/Share and
@@ -145,8 +140,6 @@ Do not treat those three choices as settled until that review happens.
 These are the surviving questions, recorded so they are not lost.
 Source `XXX` comments remain until the owning slice lands.
 
-- Whether `egl-1.5` must grow `eglGetPlatformDisplay` after the Wayland
-  handle is correct (only if display creation then fails).
 - Gamma ramp implementation review, including Wayland's privileged-protocol
   failure mode. Writes stay out of default eunit and demos.
 - `update_gamepad_mappings/1` verification (joystick demo).

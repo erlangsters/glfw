@@ -180,7 +180,8 @@ Windows are [contextless](contextless-windows.md). OpenGL context, current-conte
 
 | GLFW | Binding | Notes |
 | --- | --- | --- |
-| *(none)* | `window_egl_handle/1` | The only public native-handle bridge. See [contextless windows](contextless-windows.md). |
+| *(none)* | `window_egl_handle/1` | Native window handle for `egl:create_window_surface/4`. See [contextless windows](contextless-windows.md). |
+| *(none)* | `display_egl_handle/0` | Native display handle for `egl:get_platform_display/3`. Wayland and X11 wrap GLFW's connection. Win32/Cocoa return `default_display`. |
 
 ## Vulkan
 
