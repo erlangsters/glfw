@@ -95,6 +95,16 @@ static ERL_NIF_TERM atom_glfw_drop;
 
 static ERL_NIF_TERM atom_glfw_joystick;
 
+static ERL_NIF_TERM atom_key_unknown;
+static ERL_NIF_TERM atom_keys[GLFW_KEY_LAST + 1];
+static ERL_NIF_TERM atom_mouse_buttons[GLFW_MOUSE_BUTTON_LAST + 1];
+static ERL_NIF_TERM atom_mod_shift;
+static ERL_NIF_TERM atom_mod_control;
+static ERL_NIF_TERM atom_mod_alt;
+static ERL_NIF_TERM atom_mod_super;
+static ERL_NIF_TERM atom_mod_caps_lock;
+static ERL_NIF_TERM atom_mod_num_lock;
+
 static ERL_NIF_TERM atom_press;
 static ERL_NIF_TERM atom_release;
 
@@ -250,6 +260,193 @@ static void beam_handler_send(ErlNifEnv* msg_env, const BeamHandler* handler, ER
         return;
     }
     enif_send(NULL, &handler->pid, msg_env, message);
+}
+
+static ERL_NIF_TERM beam_key_from_int(int key)
+{
+    if (key < 0 || key > GLFW_KEY_LAST) {
+        return atom_key_unknown;
+    }
+    return atom_keys[key];
+}
+
+static ERL_NIF_TERM beam_mouse_button_from_int(int button)
+{
+    if (button < 0 || button > GLFW_MOUSE_BUTTON_LAST) {
+        return atom_undefined;
+    }
+    return atom_mouse_buttons[button];
+}
+
+static ERL_NIF_TERM beam_mods_from_int(ErlNifEnv* env, int mods)
+{
+    ERL_NIF_TERM list = enif_make_list(env, 0);
+    if (mods & GLFW_MOD_NUM_LOCK) {
+        list = enif_make_list_cell(env, atom_mod_num_lock, list);
+    }
+    if (mods & GLFW_MOD_CAPS_LOCK) {
+        list = enif_make_list_cell(env, atom_mod_caps_lock, list);
+    }
+    if (mods & GLFW_MOD_SUPER) {
+        list = enif_make_list_cell(env, atom_mod_super, list);
+    }
+    if (mods & GLFW_MOD_ALT) {
+        list = enif_make_list_cell(env, atom_mod_alt, list);
+    }
+    if (mods & GLFW_MOD_CONTROL) {
+        list = enif_make_list_cell(env, atom_mod_control, list);
+    }
+    if (mods & GLFW_MOD_SHIFT) {
+        list = enif_make_list_cell(env, atom_mod_shift, list);
+    }
+    return list;
+}
+
+static void beam_init_input_atoms(ErlNifEnv* env)
+{
+    int i;
+
+    atom_key_unknown = enif_make_atom(env, "key_unknown");
+    for (i = 0; i <= GLFW_KEY_LAST; i++) {
+        atom_keys[i] = atom_key_unknown;
+    }
+
+    atom_keys[GLFW_KEY_SPACE] = enif_make_atom(env, "key_space");
+    atom_keys[GLFW_KEY_APOSTROPHE] = enif_make_atom(env, "key_apostrophe");
+    atom_keys[GLFW_KEY_COMMA] = enif_make_atom(env, "key_comma");
+    atom_keys[GLFW_KEY_MINUS] = enif_make_atom(env, "key_minus");
+    atom_keys[GLFW_KEY_PERIOD] = enif_make_atom(env, "key_period");
+    atom_keys[GLFW_KEY_SLASH] = enif_make_atom(env, "key_slash");
+    atom_keys[GLFW_KEY_0] = enif_make_atom(env, "key_0");
+    atom_keys[GLFW_KEY_1] = enif_make_atom(env, "key_1");
+    atom_keys[GLFW_KEY_2] = enif_make_atom(env, "key_2");
+    atom_keys[GLFW_KEY_3] = enif_make_atom(env, "key_3");
+    atom_keys[GLFW_KEY_4] = enif_make_atom(env, "key_4");
+    atom_keys[GLFW_KEY_5] = enif_make_atom(env, "key_5");
+    atom_keys[GLFW_KEY_6] = enif_make_atom(env, "key_6");
+    atom_keys[GLFW_KEY_7] = enif_make_atom(env, "key_7");
+    atom_keys[GLFW_KEY_8] = enif_make_atom(env, "key_8");
+    atom_keys[GLFW_KEY_9] = enif_make_atom(env, "key_9");
+    atom_keys[GLFW_KEY_SEMICOLON] = enif_make_atom(env, "key_semicolon");
+    atom_keys[GLFW_KEY_EQUAL] = enif_make_atom(env, "key_equal");
+    atom_keys[GLFW_KEY_A] = enif_make_atom(env, "key_a");
+    atom_keys[GLFW_KEY_B] = enif_make_atom(env, "key_b");
+    atom_keys[GLFW_KEY_C] = enif_make_atom(env, "key_c");
+    atom_keys[GLFW_KEY_D] = enif_make_atom(env, "key_d");
+    atom_keys[GLFW_KEY_E] = enif_make_atom(env, "key_e");
+    atom_keys[GLFW_KEY_F] = enif_make_atom(env, "key_f");
+    atom_keys[GLFW_KEY_G] = enif_make_atom(env, "key_g");
+    atom_keys[GLFW_KEY_H] = enif_make_atom(env, "key_h");
+    atom_keys[GLFW_KEY_I] = enif_make_atom(env, "key_i");
+    atom_keys[GLFW_KEY_J] = enif_make_atom(env, "key_j");
+    atom_keys[GLFW_KEY_K] = enif_make_atom(env, "key_k");
+    atom_keys[GLFW_KEY_L] = enif_make_atom(env, "key_l");
+    atom_keys[GLFW_KEY_M] = enif_make_atom(env, "key_m");
+    atom_keys[GLFW_KEY_N] = enif_make_atom(env, "key_n");
+    atom_keys[GLFW_KEY_O] = enif_make_atom(env, "key_o");
+    atom_keys[GLFW_KEY_P] = enif_make_atom(env, "key_p");
+    atom_keys[GLFW_KEY_Q] = enif_make_atom(env, "key_q");
+    atom_keys[GLFW_KEY_R] = enif_make_atom(env, "key_r");
+    atom_keys[GLFW_KEY_S] = enif_make_atom(env, "key_s");
+    atom_keys[GLFW_KEY_T] = enif_make_atom(env, "key_t");
+    atom_keys[GLFW_KEY_U] = enif_make_atom(env, "key_u");
+    atom_keys[GLFW_KEY_V] = enif_make_atom(env, "key_v");
+    atom_keys[GLFW_KEY_W] = enif_make_atom(env, "key_w");
+    atom_keys[GLFW_KEY_X] = enif_make_atom(env, "key_x");
+    atom_keys[GLFW_KEY_Y] = enif_make_atom(env, "key_y");
+    atom_keys[GLFW_KEY_Z] = enif_make_atom(env, "key_z");
+    atom_keys[GLFW_KEY_LEFT_BRACKET] = enif_make_atom(env, "key_left_bracket");
+    atom_keys[GLFW_KEY_BACKSLASH] = enif_make_atom(env, "key_backslash");
+    atom_keys[GLFW_KEY_RIGHT_BRACKET] = enif_make_atom(env, "key_right_bracket");
+    atom_keys[GLFW_KEY_GRAVE_ACCENT] = enif_make_atom(env, "key_grave_accent");
+    atom_keys[GLFW_KEY_WORLD_1] = enif_make_atom(env, "key_world_1");
+    atom_keys[GLFW_KEY_WORLD_2] = enif_make_atom(env, "key_world_2");
+    atom_keys[GLFW_KEY_ESCAPE] = enif_make_atom(env, "key_escape");
+    atom_keys[GLFW_KEY_ENTER] = enif_make_atom(env, "key_enter");
+    atom_keys[GLFW_KEY_TAB] = enif_make_atom(env, "key_tab");
+    atom_keys[GLFW_KEY_BACKSPACE] = enif_make_atom(env, "key_backspace");
+    atom_keys[GLFW_KEY_INSERT] = enif_make_atom(env, "key_insert");
+    atom_keys[GLFW_KEY_DELETE] = enif_make_atom(env, "key_delete");
+    atom_keys[GLFW_KEY_RIGHT] = enif_make_atom(env, "key_right");
+    atom_keys[GLFW_KEY_LEFT] = enif_make_atom(env, "key_left");
+    atom_keys[GLFW_KEY_DOWN] = enif_make_atom(env, "key_down");
+    atom_keys[GLFW_KEY_UP] = enif_make_atom(env, "key_up");
+    atom_keys[GLFW_KEY_PAGE_UP] = enif_make_atom(env, "key_page_up");
+    atom_keys[GLFW_KEY_PAGE_DOWN] = enif_make_atom(env, "key_page_down");
+    atom_keys[GLFW_KEY_HOME] = enif_make_atom(env, "key_home");
+    atom_keys[GLFW_KEY_END] = enif_make_atom(env, "key_end");
+    atom_keys[GLFW_KEY_CAPS_LOCK] = enif_make_atom(env, "key_caps_lock");
+    atom_keys[GLFW_KEY_SCROLL_LOCK] = enif_make_atom(env, "key_scroll_lock");
+    atom_keys[GLFW_KEY_NUM_LOCK] = enif_make_atom(env, "key_num_lock");
+    atom_keys[GLFW_KEY_PRINT_SCREEN] = enif_make_atom(env, "key_print_screen");
+    atom_keys[GLFW_KEY_PAUSE] = enif_make_atom(env, "key_pause");
+    atom_keys[GLFW_KEY_F1] = enif_make_atom(env, "key_f1");
+    atom_keys[GLFW_KEY_F2] = enif_make_atom(env, "key_f2");
+    atom_keys[GLFW_KEY_F3] = enif_make_atom(env, "key_f3");
+    atom_keys[GLFW_KEY_F4] = enif_make_atom(env, "key_f4");
+    atom_keys[GLFW_KEY_F5] = enif_make_atom(env, "key_f5");
+    atom_keys[GLFW_KEY_F6] = enif_make_atom(env, "key_f6");
+    atom_keys[GLFW_KEY_F7] = enif_make_atom(env, "key_f7");
+    atom_keys[GLFW_KEY_F8] = enif_make_atom(env, "key_f8");
+    atom_keys[GLFW_KEY_F9] = enif_make_atom(env, "key_f9");
+    atom_keys[GLFW_KEY_F10] = enif_make_atom(env, "key_f10");
+    atom_keys[GLFW_KEY_F11] = enif_make_atom(env, "key_f11");
+    atom_keys[GLFW_KEY_F12] = enif_make_atom(env, "key_f12");
+    atom_keys[GLFW_KEY_F13] = enif_make_atom(env, "key_f13");
+    atom_keys[GLFW_KEY_F14] = enif_make_atom(env, "key_f14");
+    atom_keys[GLFW_KEY_F15] = enif_make_atom(env, "key_f15");
+    atom_keys[GLFW_KEY_F16] = enif_make_atom(env, "key_f16");
+    atom_keys[GLFW_KEY_F17] = enif_make_atom(env, "key_f17");
+    atom_keys[GLFW_KEY_F18] = enif_make_atom(env, "key_f18");
+    atom_keys[GLFW_KEY_F19] = enif_make_atom(env, "key_f19");
+    atom_keys[GLFW_KEY_F20] = enif_make_atom(env, "key_f20");
+    atom_keys[GLFW_KEY_F21] = enif_make_atom(env, "key_f21");
+    atom_keys[GLFW_KEY_F22] = enif_make_atom(env, "key_f22");
+    atom_keys[GLFW_KEY_F23] = enif_make_atom(env, "key_f23");
+    atom_keys[GLFW_KEY_F24] = enif_make_atom(env, "key_f24");
+    atom_keys[GLFW_KEY_F25] = enif_make_atom(env, "key_f25");
+    atom_keys[GLFW_KEY_KP_0] = enif_make_atom(env, "key_kp_0");
+    atom_keys[GLFW_KEY_KP_1] = enif_make_atom(env, "key_kp_1");
+    atom_keys[GLFW_KEY_KP_2] = enif_make_atom(env, "key_kp_2");
+    atom_keys[GLFW_KEY_KP_3] = enif_make_atom(env, "key_kp_3");
+    atom_keys[GLFW_KEY_KP_4] = enif_make_atom(env, "key_kp_4");
+    atom_keys[GLFW_KEY_KP_5] = enif_make_atom(env, "key_kp_5");
+    atom_keys[GLFW_KEY_KP_6] = enif_make_atom(env, "key_kp_6");
+    atom_keys[GLFW_KEY_KP_7] = enif_make_atom(env, "key_kp_7");
+    atom_keys[GLFW_KEY_KP_8] = enif_make_atom(env, "key_kp_8");
+    atom_keys[GLFW_KEY_KP_9] = enif_make_atom(env, "key_kp_9");
+    atom_keys[GLFW_KEY_KP_DECIMAL] = enif_make_atom(env, "key_kp_decimal");
+    atom_keys[GLFW_KEY_KP_DIVIDE] = enif_make_atom(env, "key_kp_divide");
+    atom_keys[GLFW_KEY_KP_MULTIPLY] = enif_make_atom(env, "key_kp_multiply");
+    atom_keys[GLFW_KEY_KP_SUBTRACT] = enif_make_atom(env, "key_kp_subtract");
+    atom_keys[GLFW_KEY_KP_ADD] = enif_make_atom(env, "key_kp_add");
+    atom_keys[GLFW_KEY_KP_ENTER] = enif_make_atom(env, "key_kp_enter");
+    atom_keys[GLFW_KEY_KP_EQUAL] = enif_make_atom(env, "key_kp_equal");
+    atom_keys[GLFW_KEY_LEFT_SHIFT] = enif_make_atom(env, "key_left_shift");
+    atom_keys[GLFW_KEY_LEFT_CONTROL] = enif_make_atom(env, "key_left_control");
+    atom_keys[GLFW_KEY_LEFT_ALT] = enif_make_atom(env, "key_left_alt");
+    atom_keys[GLFW_KEY_LEFT_SUPER] = enif_make_atom(env, "key_left_super");
+    atom_keys[GLFW_KEY_RIGHT_SHIFT] = enif_make_atom(env, "key_right_shift");
+    atom_keys[GLFW_KEY_RIGHT_CONTROL] = enif_make_atom(env, "key_right_control");
+    atom_keys[GLFW_KEY_RIGHT_ALT] = enif_make_atom(env, "key_right_alt");
+    atom_keys[GLFW_KEY_RIGHT_SUPER] = enif_make_atom(env, "key_right_super");
+    atom_keys[GLFW_KEY_MENU] = enif_make_atom(env, "key_menu");
+
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_1] = enif_make_atom(env, "mouse_button_1");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_2] = enif_make_atom(env, "mouse_button_2");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_3] = enif_make_atom(env, "mouse_button_3");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_4] = enif_make_atom(env, "mouse_button_4");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_5] = enif_make_atom(env, "mouse_button_5");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_6] = enif_make_atom(env, "mouse_button_6");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_7] = enif_make_atom(env, "mouse_button_7");
+    atom_mouse_buttons[GLFW_MOUSE_BUTTON_8] = enif_make_atom(env, "mouse_button_8");
+
+    atom_mod_shift = enif_make_atom(env, "shift");
+    atom_mod_control = enif_make_atom(env, "control");
+    atom_mod_alt = enif_make_atom(env, "alt");
+    atom_mod_super = enif_make_atom(env, "super");
+    atom_mod_caps_lock = enif_make_atom(env, "caps_lock");
+    atom_mod_num_lock = enif_make_atom(env, "num_lock");
 }
 
 static char* beam_alloc_utf8(ErlNifEnv* env, ERL_NIF_TERM term)
@@ -588,6 +785,8 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_button_dpad_right = enif_make_atom(env, "button_dpad_right");
     atom_button_dpad_down = enif_make_atom(env, "button_dpad_down");
     atom_button_dpad_left = enif_make_atom(env, "button_dpad_left");
+
+    beam_init_input_atoms(env);
 
     glfw_monitor_resource_type = enif_open_resource_type(env, NULL, "glfw_monitor", glfw_monitor_resource_dtor, ERL_NIF_RT_CREATE, NULL);
     if (glfw_monitor_resource_type == NULL) {
@@ -3111,7 +3310,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM key_term = enif_make_int(window_resource->env, key);
+    ERL_NIF_TERM key_term = beam_key_from_int(key);
     ERL_NIF_TERM scancode_term = enif_make_int(window_resource->env, scancode);
     ERL_NIF_TERM action_term;
     if (action == GLFW_PRESS) {
@@ -3123,7 +3322,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     } else {
         action_term = atom_undefined;
     }
-    ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
+    ERL_NIF_TERM mods_term = beam_mods_from_int(window_resource->env, mods);
 
     ERL_NIF_TERM result = enif_make_tuple6(
         window_resource->env,
@@ -3233,7 +3432,7 @@ void char_mods_callback(GLFWwindow *window, unsigned int codepoint, int mods) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
     ERL_NIF_TERM codepoint_term = enif_make_uint(window_resource->env, codepoint);
-    ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
+    ERL_NIF_TERM mods_term = beam_mods_from_int(window_resource->env, mods);
 
     ERL_NIF_TERM result = enif_make_tuple4(
         window_resource->env,
@@ -3286,7 +3485,7 @@ static ERL_NIF_TERM nif_set_character_mods_handler(ErlNifEnv* env, int argc, con
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
     GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
 
-    ERL_NIF_TERM button_term = enif_make_int(window_resource->env, button);
+    ERL_NIF_TERM button_term = beam_mouse_button_from_int(button);
     ERL_NIF_TERM action_term;
     if (action == GLFW_PRESS) {
         action_term = atom_press;
@@ -3295,7 +3494,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     } else {
         action_term = atom_undefined;
     }
-    ERL_NIF_TERM mods_term = enif_make_int(window_resource->env, mods);
+    ERL_NIF_TERM mods_term = beam_mods_from_int(window_resource->env, mods);
 
     ERL_NIF_TERM result = enif_make_tuple5(
         window_resource->env,
