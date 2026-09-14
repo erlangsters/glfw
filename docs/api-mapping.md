@@ -105,9 +105,9 @@ underlying OpenGL contexts which we do not do with this binding (windows are
 | GLFW | Binding | Notes |
 |----- | ------- | ----- |
 | `glfwDefaultWindowHints` | `default_window_hints` | N/A |
-| `glfwWindowHint` | `window_hint` | XXX: Double-check UTF8/Latin1 conversation (per hint). |
+| `glfwWindowHint` | `window_hint` | String hints (`cocoa_frame_name`, `wayland_app_id`, `x11_instance_name`, `x11_class_name`) are UTF-8. There is no `client_api` hint; see `create_window`. |
 | `glfwWindowHintString` | `window_hint` | Use `window_hint/2` instead. |
-| `glfwCreateWindow` | `create_window` | XXX: Implementation to be finalized. |
+| `glfwCreateWindow` | `create_window` | Always forces `GLFW_CLIENT_API = GLFW_NO_API` after user hints. That is the contextless invariant. |
 | `glfwDestroyWindow` | `destroy_window` | XXX: Implementation to be finalized. |
 | `glfwWindowShouldClose` | `window_should_close` | N/A |
 | `glfwSetWindowShouldClose` | `set_window_should_close` | N/A |
