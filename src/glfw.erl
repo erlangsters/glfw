@@ -51,8 +51,8 @@ receive
 end.
 ```
 
-For more example code, the demo tests and test suites in the repository are
-good place, to find example. xxx
+For more example code, the test demos and test suites in the repository are
+a good place to start.
 
 If you're confused about the API and how a GLFW feature translates in this
 binding, consult the [API mapping](docs/api-mapping.md) document, which
@@ -673,6 +673,7 @@ document every aspect of it.
 -define(GLFW_FEATURE_UNIMPLEMENTED, 16#0001000D).
 -define(GLFW_PLATFORM_UNAVAILABLE,  16#0001000E).
 
+-doc "Window-system platforms GLFW can select at initialization.".
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -doc "The valid values of the `joystick_hat_buttons` init hint.".
@@ -732,6 +733,7 @@ The valid values for each init hint.
     init_hint_way_libdecor()
 .
 
+-doc "GLFW error codes returned by `get_error/0` and `#glfw_error{}`.".
 -type error_code() ::
     not_initialized |
     no_current_context |
@@ -748,8 +750,10 @@ The valid values for each init hint.
     feature_unimplemented |
     platform_unavailable
 .
+-doc "UTF-8 error description, or `undefined` when GLFW reports none.".
 -type error_description() :: undefined | string().
 
+-doc "An interned connected monitor. Later calls raise `badarg` after `terminate/0`.".
 -type monitor() :: reference().
 
 -type window_hint_resizable() :: boolean().
@@ -779,9 +783,34 @@ The valid values for each init hint.
 -doc """
 The available window hints.
 
-| Hint                    | Note                               | Values                               |
-|-------------------------|------------------------------------|--------------------------------------|
-| `foobar`                | To be written.      | `window_hint_foobar_value()`         |
+There is no `client_api` hint. `create_window/3` always forces
+`GLFW_CLIENT_API = GLFW_NO_API`. String hints are UTF-8.
+
+| Hint | Note | Values |
+| ---- | ---- | ------ |
+| `resizable` | Whether the window is resizable. | `boolean()` |
+| `visible` | Whether the window is created visible. | `boolean()` |
+| `decorated` | Whether the window has decorations. | `boolean()` |
+| `focused` | Whether the window is given input focus on creation. | `boolean()` |
+| `auto_iconify` | Whether fullscreen windows iconify on focus loss. | `boolean()` |
+| `floating` | Whether the window is floating. | `boolean()` |
+| `maximized` | Whether the window is created maximized. | `boolean()` |
+| `center_cursor` | Whether the cursor is centered on fullscreen creation. | `boolean()` |
+| `transparent_framebuffer` | Whether the framebuffer is transparent. | `boolean()` |
+| `focus_on_show` | Whether showing the window gives it input focus. | `boolean()` |
+| `scale_to_monitor` | Whether the window content is scaled to the monitor. | `boolean()` |
+| `scale_framebuffer` | Whether the framebuffer is scaled. | `boolean()` |
+| `mouse_passthrough` | Whether mouse events pass through the window. | `boolean()` |
+| `position_x` | Initial x position, or `any_position`. | `any_position \| integer()` |
+| `position_y` | Initial y position, or `any_position`. | `any_position \| integer()` |
+| `refresh_rate` | Fullscreen refresh rate, or `dont_care`. | `dont_care \| integer()` |
+| `win32_keyboard_menu` | Win32-specific. | `boolean()` |
+| `win32_showdefault` | Win32-specific. | `boolean()` |
+| `cocoa_frame_name` | macOS frame autosave name. | `string()` |
+| `cocoa_graphics_switching` | macOS-specific. | `boolean()` |
+| `wayland_app_id` | Wayland app id. | `string()` |
+| `x11_instance_name` | X11 `WM_CLASS` instance. | `string()` |
+| `x11_class_name` | X11 `WM_CLASS` class. | `string()` |
 """.
 -type window_hint_type() ::
     resizable |
@@ -808,6 +837,7 @@ The available window hints.
     x11_instance_name |
     x11_class_name
 .
+-doc "The valid values for each window hint.".
 -type window_hint_value() ::
     window_hint_resizable() |
     window_hint_visible() |
@@ -848,9 +878,7 @@ The available window hints.
 -type window_attrib_mouse_passthrough() :: boolean().
 -type window_attrib_doublebuffer() :: boolean().
 
--doc """
-To be written.
-""".
+-doc "Window attributes that can be queried or, when GLFW allows it, set.".
 -type window_attrib() ::
     iconified |
     maximized |
@@ -866,9 +894,7 @@ To be written.
     doublebuffer
 .
 
--doc """
-To be written.
-""".
+-doc "The value of a window attribute. Every current attribute is a `boolean()`.".
 -type window_attrib_value() ::
     window_attrib_focused() |
     window_attrib_iconified() |
@@ -884,19 +910,33 @@ To be written.
     window_attrib_mouse_passthrough() |
     window_attrib_doublebuffer()
 .
+-doc "A window resource. Later calls raise `badarg` after destroy or `terminate/0`.".
 -type window() :: reference().
+-doc "A cursor resource. Later calls raise `badarg` after destroy or `terminate/0`.".
 -type cursor() :: reference().
 
+-doc """
+Minimum or maximum window content size.
+
+`dont_care` disables that bound, either for the whole pair or for one
+component.
+""".
 -type size_limits() :: {
     Width :: integer() | dont_care,
     Height :: integer() | dont_care
 } | dont_care.
+-doc """
+Required window aspect ratio.
+
+`dont_care` disables the constraint, either for the whole pair or for one
+component.
+""".
 -type aspect_ratio() :: {
     Numerator :: integer() | dont_care,
     Denominator :: integer() | dont_care
 } | dont_care.
 
--doc "To be written.".
+-doc "Input modes that can be queried or set on a window.".
 -type input_mode() ::
     cursor |
     sticky_keys |
@@ -911,7 +951,7 @@ To be written.
 -type lock_key_mods() :: boolean().
 -type raw_mouse_motion() :: boolean().
 
--doc "To be written.".
+-doc "The value of an input mode. Cursor modes are atoms; the others are booleans.".
 -type input_mode_value() ::
     cursor_mode() |
     sticky_keys() |
@@ -997,7 +1037,7 @@ To be written.
     key_right_super |
     key_menu
 .
--doc "To be written.".
+-doc "Platform-specific keyboard scancode.".
 -type scancode() :: integer().
 
 -doc "Mouse button IDs.".
