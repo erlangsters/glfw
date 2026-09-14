@@ -128,7 +128,7 @@ document every aspect of it.
 
 -export([window_should_close/1]).
 -export([set_window_should_close/2]).
-% -export([window_title/1]).
+-export([window_title/1]).
 -export([set_window_title/2]).
 -export([set_window_icon/2]).
 -export([window_position/1]).
@@ -266,7 +266,7 @@ document every aspect of it.
 -nifs([destroy_window/1]).
 -nifs([window_should_close/1]).
 -nifs([set_window_should_close/2]).
-% -nifs([window_title/1]).
+-nifs([window_title/1]).
 -nifs([set_window_title/2]).
 -nifs([set_window_icon/2]).
 -nifs([window_position/1]).
@@ -2142,36 +2142,15 @@ should be closed.
 set_window_should_close(_Window, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
-% -doc """
-% Return the window title.
+-doc """
+Return the window title.
 
-% It returns the window title, encoded as UTF-8, of the specified window. This is
-% the title set previously by glfwCreateWindow or glfwSetWindowTitle.
-
-% > #### Possible Errors {: .error}
-% >
-% > - GLFW_NOT_INITIALIZED
-
-% > #### Remarks {: .neutral}
-% >
-% > The returned title is currently a copy of the title last set by
-% > glfwCreateWindow or glfwSetWindowTitle. It does not include any additional
-% > text which may be appended by the platform or another program.
-
-% Pointer lifetime
-%     The returned string is allocated and freed by GLFW. You should not free it yourself. It is valid until the next call to glfwGetWindowTitle or glfwSetWindowTitle, or until the library is terminated.
-
-% """.
-% -doc(#{
-%     parameters => #{
-%         "Window" => "The window to query."
-%     },
-%     return => "The UTF-8 encoded window title, or NULL if an error occurred.",
-%     see_also => {glfw, set_window_title, 2}
-% }).
-% -spec window_title(window()) -> undefined | string().
-% window_title(_Window) ->
-%     erlang:nif_error(nif_library_not_loaded).
+It returns the UTF-8 window title last set by `create_window/3` or
+`set_window_title/2`, or `undefined` if GLFW reports none.
+""".
+-spec window_title(window()) -> undefined | string().
+window_title(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
 
 -doc """
 Set the window title.
