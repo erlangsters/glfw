@@ -3859,7 +3859,7 @@ receive
 end.
 ```
 
-The `mods` field is an integer. `key` is a `key()` atom, not a position.
+The `mods` field is `[mod()]`. `key` is a `key()` atom, not a position.
 """.
 -spec set_key_handler(window(), undefined | pid()) -> ok.
 set_key_handler(_Window, _Handler) ->
@@ -3899,7 +3899,7 @@ char_mods_handler(_Handler) ->
 Set the character-with-modifiers handler.
 
 It registers a process that receives `#glfw_char_mods{}` events when a
-Unicode character is typed. The `mods` field is an integer. Pass `undefined`
+Unicode character is typed. The `mods` field is `[mod()]`. Pass `undefined`
 to stop receiving those events.
 """.
 -spec set_char_mods_handler(window(), undefined | pid()) -> ok.
@@ -3920,7 +3920,7 @@ mouse_button_handler(_Handler) ->
 Set the mouse button handler.
 
 It registers a process that receives `#glfw_mouse_button{}` events when a
-mouse button is pressed or released. The `mods` field is an integer. Pass
+mouse button is pressed or released. The `mods` field is `[mod()]`. Pass
 `undefined` to stop receiving those events.
 """.
 -spec set_mouse_button_handler(window(), undefined | pid()) -> ok.

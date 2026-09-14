@@ -7,6 +7,7 @@ The public module is `glfw`. Event records live in `glfw.hrl`.
 ## Mapping rules
 
 - GLFW enums become atoms whenever a closed set exists. For instance, `input_mode()` is `cursor | sticky_keys | sticky_mouse_buttons | lock_key_mods | raw_mouse_motion`.
+- GLFW bitfields become lists of atoms. Modifier bits are `[mod()]` such as `[shift, control]`. No modifiers is `[]`.
 - An integer that GLFW documents as only `GLFW_TRUE` or `GLFW_FALSE` becomes `boolean()`.
 - Success and failure follow the C failure shape. `{ok, Result}` and `error` when GLFW has more than one failure reason that the binding cannot distinguish (for example `gamepad_name/1`). A specific atom when there is only one failure reason (for example `joystick_buttons/1` returns `not_present | [press | release]`).
 - GLFW `Pos` becomes `position`. `glfwSetCursorPosCallback` is `set_cursor_position_handler/2`.
@@ -135,16 +136,16 @@ Windows are [contextless](contextless-windows.md). OpenGL context, current-conte
 | `glfwCreateStandardCursor` | `create_standard_cursor/1` | Some shapes emit `cursor_unavailable` on some platforms. |
 | `glfwDestroyCursor` | `destroy_cursor/1` | Poisons the cursor resource. |
 | `glfwSetCursor` | `set_cursor/2` | `default` restores the regular cursor. |
-| `glfwSetKeyCallback` | `key_handler/1` and `set_key_handler/2` | `#glfw_key{}`. `mods` is an integer. |
+| `glfwSetKeyCallback` | `key_handler/1` and `set_key_handler/2` | `#glfw_key{}`. `key` is a `key()` atom (`key_unknown` when GLFW has no token). `mods` is `[mod()]`. |
 | `glfwSetCharCallback` | `char_handler/1` and `set_char_handler/2` | `#glfw_char{}`. |
-| `glfwSetCharModsCallback` | `char_mods_handler/1` and `set_char_mods_handler/2` | `#glfw_char_mods{}`. `mods` is an integer. |
-| `glfwSetMouseButtonCallback` | `mouse_button_handler/1` and `set_mouse_button_handler/2` | `#glfw_mouse_button{}`. `mods` is an integer. |
+| `glfwSetCharModsCallback` | `char_mods_handler/1` and `set_char_mods_handler/2` | `#glfw_char_mods{}`. `mods` is `[mod()]`. |
+| `glfwSetMouseButtonCallback` | `mouse_button_handler/1` and `set_mouse_button_handler/2` | `#glfw_mouse_button{}`. `button` is `mouse_button_1` … `mouse_button_8`. `mods` is `[mod()]`. |
 | `glfwSetCursorPosCallback` | `cursor_position_handler/1` and `set_cursor_position_handler/2` | `#glfw_cursor_position{}`. |
 | `glfwSetCursorEnterCallback` | `cursor_enter_handler/1` and `set_cursor_enter_handler/2` | `#glfw_cursor_enter{}`. |
 | `glfwSetScrollCallback` | `scroll_handler/1` and `set_scroll_handler/2` | `#glfw_scroll{}`. |
 | `glfwSetDropCallback` | `drop_handler/1` and `set_drop_handler/2` | `#glfw_drop{}`. `paths` is `[string()]`. |
 
-Modifier bits in `#glfw_key{}`, `#glfw_char_mods{}`, and `#glfw_mouse_button{}` are integers. Lists of atoms are a later mapping change, not part of this surface.
+`caps_lock` and `num_lock` only appear in `mods` when the `lock_key_mods` input mode is enabled. That is GLFW’s rule.
 
 ## Joystick and gamepad
 
