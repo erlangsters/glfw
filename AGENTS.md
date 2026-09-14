@@ -61,7 +61,7 @@ family-workspace `GLFW-PLAN.md`.
 | Initialization | implemented | `init`, `terminate`, `init_hint`, `version`, `version_string`, `get_error`, error handlers, `platform/0`, `platform_supported/1`. |
 | Window | implemented | Creation, hints, geometry, state, attributes, title, icon, handlers including `framebuffer_size`, `poll_events`, `post_empty_event`. |
 | Monitor | implemented | Query APIs and monitor handler exist. Handles intern by native pointer for the life of `init`. Gamma is implemented and dangerous; default tests only read. |
-| Input | implemented | Modes, keys, mouse, cursor objects, input handlers. |
+| Input | implemented | Modes, keys, mouse, cursor objects, input handlers. Handler `#glfw_key{}.key` and `#glfw_mouse_button{}.button` are atoms. `mods` is `[mod()]`. |
 | Joystick / gamepad | implemented | Presence, axes, buttons, hats as `joystick_hat()` atoms, name, GUID, gamepad name/state, mappings, joystick handler. |
 | Clipboard | implemented | UTF-8 strings allocated from the Erlang term. |
 | EGL window handle | implemented | Follows `glfwGetPlatform()`. Wayland builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. X11, Win32, and Cocoa use the platform window handle. |
@@ -70,12 +70,9 @@ family-workspace `GLFW-PLAN.md`.
 
 ## Planned For First Release
 
-These are owed before calling the binding finished. They are not a single
-patch.
-
-| Item | Slice | Rationale |
-| --- | --- | --- |
-| Mods as atom lists | 7 | `#glfw_key{}.mods` and friends are integers. Graphics-stack bitfields are lists of atoms. Align, but not as a drive-by in an unrelated slice. |
+The advertised first-release mapping is implemented. Remaining work is the
+slice 2 owner review, the `egl-1.5` Wayland display follow-up, and items
+already listed as deferred.
 
 ## Deferred
 
