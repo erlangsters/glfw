@@ -39,8 +39,9 @@ run() ->
     glfw:set_scroll_handler(Window, Handler),
     glfw:set_drop_handler(Window, Handler),
 
-    io:format("Printing window events... (press Ctrl+C to exit)~n"),
+    io:format("Printing window events... (close the window to exit)~n"),
     loop_window(Window),
+    glfw:destroy_window(Window),
     glfw:terminate().
 
 loop_window(Window) ->

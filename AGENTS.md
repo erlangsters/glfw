@@ -66,7 +66,7 @@ family-workspace `GLFW-PLAN.md`.
 | Clipboard | implemented | Fixed 1024-byte setter buffer. Planned to allocate dynamically. |
 | EGL window handle | implemented | Follows `glfwGetPlatform()`. Wayland builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. X11, Win32, and Cocoa use the platform window handle. |
 | Documentation | planned | Mapping table exists; many `-doc` blocks are still `To be written`. Follow `glm` patterns family by family (slice 6). |
-| Demos | planned | Event and joystick demos run. Window and monitor demos are stubs. Input demo is empty (slice 3). |
+| Demos | implemented | Event, window, monitor (read-only), input, and joystick demos. Gamma writes are not in any default demo or eunit path. |
 
 ## Planned For First Release
 
@@ -75,12 +75,10 @@ patch.
 
 | Item | Slice | Rationale |
 | --- | --- | --- |
-| Interactive demos | 3 | Right assessment tool for a windowing binding. Finish window, monitor (read-only), and input. Keep event and joystick. |
-| Quarantine gamma | 3 | `set_gamma/2` and `set_gamma_ramp/2` stay in the API. They must not run from default eunit or a default demo command. |
 | Monitor handle identity | 4 | `monitors/0` and `primary_monitor/0` mint a new resource every call. The same `GLFWmonitor*` must intern to the same Erlang term for the life of `init`, including the monitor handler. |
 | `terminate` / destroy resource safety | 4 | `glfwTerminate` can free objects that live Erlang terms still point at. Resource destructors are no-ops. Destroy and terminate must poison resources so later calls fail cleanly. |
 | `create_window` / `destroy_window` finish | 4 | Input handler fields are not initialized. Destroy does not clear the native pointer. Title is read as Latin-1 on create and UTF-8 on set. |
-| Handler pid storage | 3 or 4 | Some setters `enif_make_copy` the pid term, some store `argv[1]` directly, then `enif_send` casts the term to `ErlNifPid*`. Store a real `ErlNifPid` via `enif_get_local_pid`. |
+| Handler pid storage | 4 | Some setters `enif_make_copy` the pid term, some store `argv[1]` directly, then `enif_send` casts the term to `ErlNifPid*`. Store a real `ErlNifPid` via `enif_get_local_pid`. |
 | `window_title/1` | 5 | Getter exists upstream and is mapped; the NIF is commented out. |
 | `set_window_icon/2` | 5 | NIF currently returns `42`. Either implement it from `#glfw_image{}` or mark it deferred and stop advertising it. Prefer implement: the type and test already exist. |
 | Unpack `joystick_hats/1` | 5 | Public type is already `joystick_hat()`. The NIF returns integers. |
@@ -177,8 +175,8 @@ Source and public-doc `XXX` comments remain until the owning slice lands.
 - Whether `egl-1.5` must grow `eglGetPlatformDisplay` after the Wayland
   handle is correct (only if display creation then fails).
 - Gamma ramp implementation review, including Wayland's privileged-protocol
-  failure mode (slice 3, opt-in only).
-- `update_gamepad_mappings/1` verification (slice 3, joystick demo).
-- `window_monitor/1` and `set_window_monitor/7` verification (slice 3,
-  window demo). `undefined` vs error remains: use `get_error/0`, same as
+  failure mode. Writes stay out of default eunit and demos.
+- `update_gamepad_mappings/1` verification (joystick demo).
+- `window_monitor/1` and `set_window_monitor/7` verification (window demo).
+  `undefined` vs error remains: use `get_error/0`, same as
   `primary_monitor/0`.

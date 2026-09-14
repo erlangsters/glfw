@@ -136,13 +136,20 @@ runners.
 However, this binding comes with a limited set of unit tests that should
 already indicate a great deal whether GLFW works on your system.
 
-- `rebar3 eunit -m glfw_test` - Test the initialization-related functions of the API
-- `rebar3 eunit -m glfw_monitor_test` - Test the monitor-related functions of the API
+- `rebar3 eunit -m glfw_test` — initialization
+- `rebar3 eunit -m glfw_window_test` — window queries and handlers
+- `rebar3 eunit -m glfw_cursor_test` — cursor objects
+- `rebar3 eunit -m glfw_input_test` — input modes and keys
+- `rebar3 eunit -m glfw_monitor_test` — read-only monitor queries
 
-Additionally, it comes with interactive mini "test demos" that can be used to
-quickly test various part of the binding on your system.
+Monitor eunit does not write gamma ramps. Do not call `glfw:set_gamma/2` or
+`glfw:set_gamma_ramp/2` unless you intend to change the OS display calibration.
 
-- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
-- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
-- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
-- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` - To test Joystick/Gamepad
+Interactive mini "test demos" can be used to quickly test parts of the binding
+on your system:
+
+- `rebar3 as test shell --eval 'test_glfw_event:run().'` — window and input events
+- `rebar3 as test shell --eval 'test_glfw_window:run().'` — window state and mutation
+- `rebar3 as test shell --eval 'test_glfw_monitor:run().'` — read-only monitors
+- `rebar3 as test shell --eval 'test_glfw_input:run().'` — input modes, clipboard, drop
+- `rebar3 as test shell --eval 'test_glfw_joystick:run().'` — joystick and gamepad
