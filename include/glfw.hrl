@@ -77,6 +77,11 @@
     scale :: {X :: float(), Y :: float()}
 }).
 
+-record(glfw_framebuffer_size, {
+    window :: glfw:window(),
+    size :: {Width :: integer(), Height :: integer()}
+}).
+
 -record(glfw_key, {
     window :: glfw:window(),
     key :: glfw:key(),

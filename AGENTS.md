@@ -3,7 +3,7 @@
 - `glfw` is a native binding in the `graphics-stack` family.
 - Treat it as a near-release binding. Prefer focused edits that preserve API mapping, native resource safety, and platform-specific build behavior.
 - Preserve the central positioning of the repository: hand-written GLFW 3.4 binding for the BEAM designed to work with `egl-1.5`.
-- For Linux builds and CI, keep the native dependency story explicit: the repository expects system packages such as `cmake`, `libegl-dev`, and `libglfw3-dev`.
+- For Linux builds and CI, keep the native dependency story explicit: the repository expects system packages such as `cmake`, `libegl-dev`, `libglfw3-dev`, and `libwayland-dev`.
 - Do not assume GLFW itself is vendored. Workflow and setup changes should preserve the current Linux system-package model unless the repository intentionally changes its build strategy.
 - Keep the BEAM-facing event model centered on handlers and message passing rather than C-style callback functions.
 - Preserve the current scope boundaries around contextless windows and the deliberate omission of low-value or off-direction GLFW surface area.
@@ -58,13 +58,13 @@ family-workspace `GLFW-PLAN.md`.
 
 | Family | Status | Notes |
 | --- | --- | --- |
-| Initialization | implemented | `init`, `terminate`, `init_hint`, `version`, `version_string`, `get_error`, error handlers. `platform/0` and `platform_supported/1` are documented and tested but currently commented out; they are planned (slice 2). |
-| Window | implemented | Creation, hints, geometry, state, attributes, handlers, `poll_events`, `post_empty_event`. See planned items below for title getter, icon, framebuffer size, and handler correctness. |
+| Initialization | implemented | `init`, `terminate`, `init_hint`, `version`, `version_string`, `get_error`, error handlers, `platform/0`, `platform_supported/1`. |
+| Window | implemented | Creation, hints, geometry, state, attributes, handlers including `framebuffer_size`, `poll_events`, `post_empty_event`. See planned items below for title getter, icon, and handler correctness. |
 | Monitor | implemented | Query APIs and monitor handler exist. Handle identity is wrong (new resource per call). Gamma is implemented and dangerous. |
 | Input | implemented | Modes, keys, mouse, cursor objects, input handlers. Joystick hats are returned as raw integers despite `joystick_hat()`. |
 | Joystick / gamepad | implemented | Presence, axes, buttons, name, GUID, gamepad name/state, mappings, joystick handler. Hats unpacking is planned. |
 | Clipboard | implemented | Fixed 1024-byte setter buffer. Planned to allocate dynamically. |
-| EGL window handle | planned | Works on X11, Win32, and Cocoa. Linux always takes the X11 path, so Wayland sessions fail. |
+| EGL window handle | implemented | Follows `glfwGetPlatform()`. Wayland builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from the framebuffer-size callback. X11, Win32, and Cocoa use the platform window handle. |
 | Documentation | planned | Mapping table exists; many `-doc` blocks are still `To be written`. Follow `glm` patterns family by family (slice 6). |
 | Demos | planned | Event and joystick demos run. Window and monitor demos are stubs. Input demo is empty (slice 3). |
 
@@ -75,9 +75,6 @@ patch.
 
 | Item | Slice | Rationale |
 | --- | --- | --- |
-| Wayland `window_egl_handle/1` | 2 | Compile-time `#ifdef linux → X11` is wrong. Follow `glfwGetPlatform()`. Wayland needs a `wl_egl_window` created from `glfwGetWaylandWindow` (`wl_surface*`), then resized and destroyed with the window. |
-| `platform/0`, `platform_supported/1` | 2 | Already mapped and tested. Commented out as a GLFW 3.3 workaround. Needed as the runtime switch for the native handle. |
-| `framebuffer_size` and its handler | 2 | Marked N/A today. Wayland almost certainly needs framebuffer size to resize `wl_egl_window`. Slice 2 decides whether this is public or an internal signal. Do not leave the N/A decision standing without that check. |
 | Interactive demos | 3 | Right assessment tool for a windowing binding. Finish window, monitor (read-only), and input. Keep event and joystick. |
 | Quarantine gamma | 3 | `set_gamma/2` and `set_gamma_ramp/2` stay in the API. They must not run from default eunit or a default demo command. |
 | Monitor handle identity | 4 | `monitors/0` and `primary_monitor/0` mint a new resource every call. The same `GLFWmonitor*` must intern to the same Erlang term for the life of `init`, including the monitor handler. |
@@ -137,15 +134,34 @@ Not design questions. Fix them in the slice that owns the family.
 - `create_window` does not initialize input handler fields on
   `GLFWWindowResource`.
 - Handler send path casts an `ERL_NIF_TERM` to `ErlNifPid*`.
-- Linux `window_egl_handle/1` always calls `glfwGetX11Window`.
-- `glfw_test` calls `platform/0` and `platform_supported/1` while those
-  exports are commented out.
+- Wayland `window_egl_handle/1` returns a `wl_egl_window`. EGL
+  `create_window_surface/4` then fails with `bad_alloc` when the display
+  came from `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. That is an `egl-1.5`
+  `eglGetPlatformDisplay` follow-up.
 - `poll_events/0` and `post_empty_event/0` `-doc` `see_also` entries point at
   `wait_events/0` and `wait_events_timeout/1`, which are not implemented.
 - `#glfw_drop{}.paths` is `[string()]`; confirm whether UTF-8 binaries are
   the better shape before freeze.
 - `create_window/3` docs still describe Monitor and Share parameters the
   function does not take.
+
+## Owner Review (slice 2)
+
+The Wayland/X11 handle path, public `framebuffer_size/1`, and restored
+`platform/0` / `platform_supported/1` were landed so this machine can move
+again. They are not frozen.
+
+Jonathan needs to personally review:
+
+- How Linux native support is implemented: CMake symbol probes,
+  `glfwGetPlatform()`, `wl_egl_window` lifetime, and keeping both X11 and
+  Wayland backends in one NIF.
+- Whether `framebuffer_size/1` and its handler should stay public, stay
+  internal to the Wayland EGL handle, or be omitted.
+- Whether `platform/0` and `platform_supported/1` belong on the public
+  surface or should remain internal to the handle path.
+
+Do not treat those three choices as settled until that review happens.
 
 ## Open Questions Owned By Later Slices
 
@@ -156,10 +172,10 @@ Source and public-doc `XXX` comments remain until the owning slice lands.
   `terminate/0` and after native destroy (slice 4).
 - Whether a monitor from `#glfw_monitor{}` must compare equal to the same
   monitor later returned by `monitors/0` (slice 4: yes, intern by pointer).
-- Whether `framebuffer_size` is public or internal once Wayland needs it
-  (slice 2).
+- `framebuffer_size/1` is public. The native callback also stays installed
+  for Wayland `wl_egl_window` resize.
 - Whether `egl-1.5` must grow `eglGetPlatformDisplay` after the Wayland
-  handle is correct (slice 2, only if display creation then fails).
+  handle is correct (only if display creation then fails).
 - Gamma ramp implementation review, including Wayland's privileged-protocol
   failure mode (slice 3, opt-in only).
 - `update_gamepad_mappings/1` verification (slice 3, joystick demo).

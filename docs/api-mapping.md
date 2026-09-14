@@ -123,7 +123,7 @@ underlying OpenGL contexts which we do not do with this binding (windows are
 | `glfwSetWindowSizeLimits` | `set_window_size_limits` | N/A |
 | `glfwSetWindowAspectRatio` | `set_window_aspect_ratio` | N/A |
 | `glfwSetWindowSize` | `set_window_size` | N/A |
-| `glfwGetFramebufferSize` | N/A | N/A XXX: Document why it's N/A |
+| `glfwGetFramebufferSize` | `framebuffer_size` | N/A |
 | `glfwGetWindowFrameSize` | `window_frame_size` | N/A |
 | `glfwGetWindowContentScale` | `window_content_scale` | N/A |
 
@@ -149,7 +149,7 @@ underlying OpenGL contexts which we do not do with this binding (windows are
 | `glfwSetWindowFocusCallback` | `window_focus_handler` and `set_window_focus_handler` | The event is `#glfw_window_focus{}`. |
 | `glfwSetWindowIconifyCallback` | `window_iconify_handler` and `set_window_iconify_handler` | The event is `#glfw_window_iconify{}`. |
 | `glfwSetWindowMaximizeCallback` | `window_maximize_handler` and `set_window_maximize_handler` | The event is `#glfw_window_maximize{}`. |
-| `glfwSetFramebufferSizeCallback` | N/A | N/A XXX: Document why it's N/A |
+| `glfwSetFramebufferSizeCallback` | `framebuffer_size_handler` and `set_framebuffer_size_handler` | The event is `#glfw_framebuffer_size{}`. The native callback stays installed so Wayland can resize the EGL window handle. |
 | `glfwSetWindowContentScaleCallback` | `window_content_scale_handler` and `set_window_content_scale_handler` | `#glfw_window_content_scale{}` |
 | `glfwPollEvents` | `poll_events` | It causes handlers to be sent events. |
 | `glfwWaitEvents` | N/A | Not idiomatic, conflict thread-safety of the binding. Easy to reproduce a similar behavior. |
@@ -250,7 +250,10 @@ Also note that the init hint is not blabla XXX
 
 **Native functions**
 
-All those functions are not implemented as not application.
+Native accessors are not public. `window_egl_handle/1` uses
+`glfwGetWin32Window`, `glfwGetCocoaWindow`, `glfwGetX11Window`, and
+`glfwGetWaylandWindow` internally, and on Wayland creates a `wl_egl_window`
+owned by the window resource.
 
 > Perhaps some of them will be implemented if needs for platform-specific
 bindings arise later.
@@ -289,7 +292,8 @@ change mods to bitfield ? XXX
 default).
   - The `GLFW_X11_XCB_VULKAN_SURFACE` init hint is not implemented.
 
-- the ` 	glfwGetFramebufferSize ` is not implemented
+- `glfwGetFramebufferSize` is `framebuffer_size/1`. The handler is public.
+  The native callback is also kept internally for Wayland EGL handle resize.
 
 - Timer stuff not implemented (see input part)
 

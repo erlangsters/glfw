@@ -103,8 +103,8 @@ document every aspect of it.
 -export([get_error/0]).
 -export([error_handler/0]).
 -export([set_error_handler/1]).
-% -export([platform/0]).
-% -export([platform_supported/1]).
+-export([platform/0]).
+-export([platform_supported/1]).
 
 -export([monitors/0]).
 -export([primary_monitor/0]).
@@ -135,6 +135,7 @@ document every aspect of it.
 -export([set_window_position/2]).
 -export([window_size/1]).
 -export([set_window_size/2]).
+-export([framebuffer_size/1]).
 -export([set_window_size_limits/3]).
 -export([set_window_aspect_ratio/2]).
 -export([window_frame_size/1]).
@@ -171,6 +172,8 @@ document every aspect of it.
 -export([set_window_maximize_handler/2]).
 -export([window_content_scale_handler/1]).
 -export([set_window_content_scale_handler/2]).
+-export([framebuffer_size_handler/1]).
+-export([set_framebuffer_size_handler/2]).
 
 -export([poll_events/0]).
 -export([post_empty_event/0]).
@@ -238,8 +241,8 @@ document every aspect of it.
 -nifs([get_error_raw/0]).
 -nifs([error_handler/0]).
 -nifs([set_error_handler/1]).
-% -nifs([platform_raw/0]).
-% -nifs([platform_supported_raw/1]).
+-nifs([platform_raw/0]).
+-nifs([platform_supported_raw/1]).
 
 -nifs([monitors/0]).
 -nifs([primary_monitor/0]).
@@ -270,6 +273,7 @@ document every aspect of it.
 -nifs([set_window_position/2]).
 -nifs([window_size/1]).
 -nifs([set_window_size/2]).
+-nifs([framebuffer_size/1]).
 -nifs([set_window_size_limits_raw/5]).
 -nifs([set_window_aspect_ratio_raw/3]).
 -nifs([window_frame_size/1]).
@@ -306,6 +310,8 @@ document every aspect of it.
 -nifs([set_window_maximize_handler/2]).
 -nifs([window_content_scale_handler/1]).
 -nifs([set_window_content_scale_handler/2]).
+-nifs([framebuffer_size_handler/1]).
+-nifs([set_framebuffer_size_handler/2]).
 
 -nifs([poll_events/0]).
 -nifs([post_empty_event/0]).
@@ -1401,84 +1407,74 @@ To be written.
 set_error_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
-% -doc """
-% Return the selected platform.
+-doc """
+Return the selected platform.
 
-% It returns the platform that was selected during initialization. The returned
-% value will be one of GLFW_PLATFORM_WIN32, GLFW_PLATFORM_COCOA,
-% GLFW_PLATFORM_WAYLAND, GLFW_PLATFORM_X11 or GLFW_PLATFORM_NULL.
+It returns the window-system platform selected during initialization. The
+value is one of `win32`, `cocoa`, `wayland`, `x11`, or `null`.
 
-% > #### Possible Errors {: .error}
-% >
-% > - GLFW_NOT_INITIALIZED
-% """.
-% -doc(#{
-%     return => "The currently selected platform, or zero if an error occurred.",
-%     see_also => {glfw, platform_supported, 1},
-%     since => "3.4"
-% }).
-% -spec platform() -> {ok, platform()} | error.
-% platform() ->
-%     Value = platform_raw(),
-%     case Value of
-%         0 ->
-%             error;
-%         ?GLFW_PLATFORM_WIN32 ->
-%             {ok, win32};
-%         ?GLFW_PLATFORM_COCOA ->
-%             {ok, cocoa};
-%         ?GLFW_PLATFORM_WAYLAND ->
-%             {ok, wayland};
-%         ?GLFW_PLATFORM_X11 ->
-%             {ok, x11};
-%         ?GLFW_PLATFORM_NULL ->
-%             {ok, null}
-%     end.
+> #### Possible Errors {: .error}
+>
+> - GLFW_NOT_INITIALIZED
+""".
+-doc(#{
+    return => "The currently selected platform, or `error` if GLFW is not initialized.",
+    see_also => {glfw, platform_supported, 1},
+    since => "3.4"
+}).
+-spec platform() -> {ok, platform()} | error.
+platform() ->
+    Value = platform_raw(),
+    case Value of
+        0 ->
+            error;
+        ?GLFW_PLATFORM_WIN32 ->
+            {ok, win32};
+        ?GLFW_PLATFORM_COCOA ->
+            {ok, cocoa};
+        ?GLFW_PLATFORM_WAYLAND ->
+            {ok, wayland};
+        ?GLFW_PLATFORM_X11 ->
+            {ok, x11};
+        ?GLFW_PLATFORM_NULL ->
+            {ok, null}
+    end.
 
-% platform_raw() ->
-%     erlang:nif_error(nif_library_not_loaded).
+platform_raw() ->
+    erlang:nif_error(nif_library_not_loaded).
 
-% -doc """
-% Check if the platform is supported.
+-doc """
+Check whether a platform is supported.
 
-% It returns whether the library was compiled with support for the specified
-% platform. The platform must be one of GLFW_PLATFORM_WIN32, GLFW_PLATFORM_COCOA,
-% GLFW_PLATFORM_WAYLAND, GLFW_PLATFORM_X11 or GLFW_PLATFORM_NULL.
+It returns whether the linked GLFW library was compiled with support for the
+specified platform. It may be called before `init/0`.
+""".
+-doc(#{
+    parameters => #{
+        "Platform" => "The platform to query."
+    },
+    return => "`true` if the platform is supported, otherwise `false`.",
+    see_also => {glfw, platform, 0},
+    since => "3.4"
+}).
+-spec platform_supported(platform()) -> boolean().
+platform_supported(Platform) ->
+    Value = case Platform of
+        win32 ->
+            ?GLFW_PLATFORM_WIN32;
+        cocoa ->
+            ?GLFW_PLATFORM_COCOA;
+        wayland ->
+            ?GLFW_PLATFORM_WAYLAND;
+        x11 ->
+            ?GLFW_PLATFORM_X11;
+        null ->
+            ?GLFW_PLATFORM_NULL
+    end,
+    platform_supported_raw(Value).
 
-% > #### Possible Errors {: .error}
-% >
-% > - GLFW_INVALID_ENUM
-
-% > #### Remarks {: .neutral}
-% >
-% > This function may be called before glfwInit.
-% """.
-% -doc(#{
-%     parameters => #{
-%         "Platform" => "The platform to query."
-%     },
-%     return => "GLFW_TRUE if the platform is supported, or GLFW_FALSE otherwise.",
-%     see_also => {glfw, platform, 0},
-%     since => "3.4"
-% }).
-% -spec platform_supported(platform()) -> boolean().
-% platform_supported(Platform) ->
-%     Value = case Platform of
-%         win32 ->
-%             ?GLFW_PLATFORM_WIN32;
-%         cocoa ->
-%             ?GLFW_PLATFORM_COCOA;
-%         wayland ->
-%             ?GLFW_PLATFORM_WAYLAND;
-%         x11 ->
-%             ?GLFW_PLATFORM_X11;
-%         null ->
-%             ?GLFW_PLATFORM_NULL
-%     end,
-%     platform_supported_raw(Value).
-
-% platform_supported_raw(_Platform) ->
-%     erlang:nif_error(nif_library_not_loaded).
+platform_supported_raw(_Platform) ->
+    erlang:nif_error(nif_library_not_loaded).
 
 -doc"""
 List of connected monitors.
@@ -2343,6 +2339,33 @@ window_size(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
+Return the framebuffer size.
+
+It retrieves the size, in pixels, of the framebuffer of the specified window.
+If you wish to retrieve the size of the window in screen coordinates, see
+`window_size/1`.
+
+> #### Possible Errors {: .error}
+>
+> - GLFW_NOT_INITIALIZED
+> - GLFW_PLATFORM_ERROR
+""".
+-doc(#{
+    parameters => #{
+        "Window" => "The window whose framebuffer size to retrieve."
+    },
+    return => "The width and height of the framebuffer, in pixels.",
+    see_also => [
+        {glfw, window_size, 1},
+        {glfw, set_framebuffer_size_handler, 2}
+    ],
+    since => "3.0"
+}).
+-spec framebuffer_size(window()) -> {Width :: integer(), Height :: integer()}.
+framebuffer_size(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
 Set the window size.
 
 It sets the size, in screen coordinates, of the content area of the specified
@@ -3079,6 +3102,29 @@ To be written.
 """.
 -spec set_window_content_scale_handler(window(), undefined | pid()) -> ok.
 set_window_content_scale_handler(_Window, _Handler) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+Framebuffer size handler.
+
+It returns the process currently registered to receive
+`#glfw_framebuffer_size{}` events for the window, or `undefined`.
+""".
+-spec framebuffer_size_handler(window()) -> undefined | pid().
+framebuffer_size_handler(_Window) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+-doc """
+Set the framebuffer size handler.
+
+It registers a process that receives `#glfw_framebuffer_size{}` events when
+the framebuffer is resized. Pass `undefined` to stop receiving those events.
+
+The native framebuffer-size callback stays installed so Wayland can resize
+the EGL window handle even when no handler is registered.
+""".
+-spec set_framebuffer_size_handler(window(), undefined | pid()) -> ok.
+set_framebuffer_size_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
@@ -4057,6 +4103,17 @@ To be written.
 set_clipboard_string(_Window, _String) ->
     erlang:nif_error(nif_library_not_loaded).
 
+-doc """
+EGL native window handle.
+
+It returns a native window handle compatible with `egl:create_window_surface/4`.
+On Wayland the handle is a `wl_egl_window` owned by the binding for the life
+of the window. On X11, Win32, and Cocoa it is the platform window handle.
+
+The handle becomes invalid when the window is destroyed. Destroy the EGL
+surface before destroying the window.
+""".
+-spec window_egl_handle(window()) -> term() | error.
 window_egl_handle(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 

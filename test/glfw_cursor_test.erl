@@ -62,4 +62,5 @@ glfw_cursor_test() ->
     % glfw:destroy_cursor(Cursor9),
     % glfw:destroy_cursor(Cursor10),
 
+    ok = glfw:terminate(),
     ok.

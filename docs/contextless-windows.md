@@ -58,8 +58,8 @@ EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAt
 glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 GLFWwindow* window = glfwCreateWindow(640, 480, "My Window", NULL, NULL);
 
-// XXX
-EGLNativeWindowType windowHandle = (EGLNativeWindowType)glfwGetX11Window(window);
+// XXX: platform-specific native handle (X11 Window, wl_egl_window, HWND, NSWindow)
+EGLNativeWindowType windowHandle = /* native window handle */;
 EGLSurface surface = eglCreateWindowSurface(display, config, windowHandle, NULL);
 
 eglMakeCurrent(display, surface, surface, context);
@@ -100,21 +100,20 @@ ok = egl:make_current(Display, Surface, Surface, Context).
 > to the EGL binding. It returns a compatible EGL window handle that will be
 > accepted by the EGL binding.
 
-### Wayland (temporary)
+### Wayland
 
-`window_egl_handle/1` currently takes the X11 path. On a Wayland session
-GLFW still creates a Wayland window, then the handle call fails with
-`platform_unavailable` / `"X11: Platform not initialized"`. EGL
-`create_window_surface` then fails, and `beam-graphics`
-`graphics_surface:with_window/3` returns `{aborted, not_ok}`.
+`window_egl_handle/1` follows the platform selected at `init/0`. On Wayland
+it builds a `wl_egl_window` from `glfwGetWaylandWindow` and resizes it from
+the framebuffer-size callback. On X11 it still uses `glfwGetX11Window`.
 
-Until this binding returns a Wayland `EGLNativeWindowType` (typically a
-`wl_egl_window` from the Wayland surface), apps can force X11/Xwayland:
+Creating an EGL window surface still goes through `egl:get_display(default_display)`,
+which uses `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. On this Wayland session that
+handle is accepted by GLFW, then `egl:create_window_surface/4` fails with
+`bad_alloc`. That is an `egl-1.5` follow-up (`eglGetPlatformDisplay` is not
+implemented there). Until EGL can open a Wayland display, apps can still force
+X11/Xwayland:
 
     env -u WAYLAND_DISPLAY DISPLAY="${DISPLAY:-:0}" ...
-
-`blender/run.sh` uses that workaround. Remove both when the handle is
-platform-correct.
 
 Equipped with all the EGL instances (display, context, and surface), you do not
 need a function like `glfw:window_swap_buffers/1` and all the context-related

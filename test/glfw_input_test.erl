@@ -34,6 +34,7 @@ glfw_input_test() ->
     ?assert(erlang:is_boolean(IsPresent)),
 
     ok = glfw:destroy_window(Window),
+    ok = glfw:terminate(),
 
     ok.
 
