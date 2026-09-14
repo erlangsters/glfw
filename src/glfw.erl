@@ -3961,13 +3961,36 @@ To be written.
 
 To be written.
 """.
--spec joystick_hats(joystick()) -> not_present | [integer()].
+-spec joystick_hats(joystick()) -> not_present | [joystick_hat()].
 joystick_hats(Joystick) ->
-    JoystickRaw = to_raw_joystick(Joystick),
-    joystick_hats_raw(JoystickRaw).
+    case joystick_hats_raw(to_raw_joystick(Joystick)) of
+        not_present ->
+            not_present;
+        Hats ->
+            [from_raw_hat(Hat) || Hat <- Hats]
+    end.
 
 joystick_hats_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
+
+from_raw_hat(?GLFW_HAT_CENTERED) ->
+    hat_centered;
+from_raw_hat(?GLFW_HAT_UP) ->
+    hat_up;
+from_raw_hat(?GLFW_HAT_RIGHT) ->
+    hat_right;
+from_raw_hat(?GLFW_HAT_DOWN) ->
+    hat_down;
+from_raw_hat(?GLFW_HAT_LEFT) ->
+    hat_left;
+from_raw_hat(?GLFW_HAT_RIGHT_UP) ->
+    hat_right_up;
+from_raw_hat(?GLFW_HAT_RIGHT_DOWN) ->
+    hat_right_down;
+from_raw_hat(?GLFW_HAT_LEFT_UP) ->
+    hat_left_up;
+from_raw_hat(?GLFW_HAT_LEFT_DOWN) ->
+    hat_left_down.
 
 -doc """
 To be written.

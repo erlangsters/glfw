@@ -214,7 +214,7 @@ XXX: Implementaiton of the window related handler must be checked.
 | `glfwJoystickPresent` | `joystick_present` | N/A |
 | `glfwGetJoystickAxes` | `joystick_axes` | N/A |
 | `glfwGetJoystickButtons` | `joystick_buttons` | N/A |
-| `glfwGetJoystickHats` | `joystick_hats` | XXX: Value must be unpacked |
+| `glfwGetJoystickHats` | `joystick_hats` | `[joystick_hat()]` atoms such as `hat_up` and `hat_right_up`. |
 | `glfwGetJoystickName` | `joystick_name` | N/A |
 | `glfwGetJoystickGUID` | `joystick_guid` | N/A |
 | `glfwSetJoystickUserPointer` | N/A | N/A |
