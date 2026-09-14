@@ -78,4 +78,5 @@ test_init_hint() ->
     ok = glfw:init_hint(wayland_libdecor, wayland_prefer_libdecor),
     ok = glfw:init_hint(wayland_libdecor, wayland_disable_libdecor),
 
+    ok = glfw:init_hint(platform, any),
     ok.

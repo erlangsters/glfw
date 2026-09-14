@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #if defined(_WIN32)
     #include <windows.h>
@@ -23,13 +24,27 @@
     #define GLFW_EXPOSE_NATIVE_WIN32
 #elif defined(__APPLE__)
     #define GLFW_EXPOSE_NATIVE_COCOA
-#elif defined(__linux__)
-    #define GLFW_EXPOSE_NATIVE_X11
 #else
-    #error "Unsupported platform"
+    #if defined(BEAM_GLFW_HAS_NATIVE_X11)
+        #define GLFW_EXPOSE_NATIVE_X11
+    #endif
+    #if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+        #define GLFW_EXPOSE_NATIVE_WAYLAND
+    #endif
 #endif
 #include <GLFW/glfw3native.h>
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    #include <wayland-egl-core.h>
+#endif
 #include "command_executor.h"
+
+#ifndef GLFW_PLATFORM_WIN32
+#define GLFW_PLATFORM_WIN32   0x00060001
+#define GLFW_PLATFORM_COCOA   0x00060002
+#define GLFW_PLATFORM_WAYLAND 0x00060003
+#define GLFW_PLATFORM_X11     0x00060004
+#define GLFW_PLATFORM_NULL    0x00060005
+#endif
 
 typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
 get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
@@ -38,6 +53,7 @@ static void* egl_nif_lib_handle = NULL;
 static ErlNifResourceType* egl_window_resource_type;
 
 static CommandExecutor command_executor;
+static int beam_glfw_initialized = 0;
 
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
@@ -66,6 +82,7 @@ static ERL_NIF_TERM atom_glfw_window_focus;
 static ERL_NIF_TERM atom_glfw_window_iconify;
 static ERL_NIF_TERM atom_glfw_window_maximize;
 static ERL_NIF_TERM atom_glfw_window_content_scale;
+static ERL_NIF_TERM atom_glfw_framebuffer_size;
 
 static ERL_NIF_TERM atom_glfw_key;
 static ERL_NIF_TERM atom_glfw_char;
@@ -131,6 +148,7 @@ typedef struct {
     ERL_NIF_TERM window_iconify_handler;
     ERL_NIF_TERM window_maximize_handler;
     ERL_NIF_TERM window_content_scale_handler;
+    ERL_NIF_TERM framebuffer_size_handler;
     ERL_NIF_TERM key_handler;
     ERL_NIF_TERM char_handler;
     ERL_NIF_TERM char_mods_handler;
@@ -139,7 +157,22 @@ typedef struct {
     ERL_NIF_TERM cursor_enter_handler;
     ERL_NIF_TERM scroll_handler;
     ERL_NIF_TERM drop_handler;
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    struct wl_egl_window* wayland_egl_window;
+#endif
 } GLFWWindowResource;
+
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+static void beam_glfw_destroy_wayland_egl_window(GLFWWindowResource* window_resource)
+{
+    if (window_resource->wayland_egl_window != NULL) {
+        wl_egl_window_destroy(window_resource->wayland_egl_window);
+        window_resource->wayland_egl_window = NULL;
+    }
+}
+#endif
 
 static ErlNifEnv* glfw_joystick_handler_env = NULL;
 static ERL_NIF_TERM glfw_joystick_handler;
@@ -169,7 +202,11 @@ static void glfw_monitor_resource_dtor(ErlNifEnv* env, void* obj) {
 
 static void glfw_window_resource_dtor(ErlNifEnv* env, void* obj) {
     (void)env;
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    beam_glfw_destroy_wayland_egl_window((GLFWWindowResource*)obj);
+#else
     (void)obj;
+#endif
 }
 
 static void glfw_cursor_resource_dtor(ErlNifEnv* env, void* obj) {
@@ -243,6 +280,7 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
     atom_glfw_window_iconify = enif_make_atom(env, "glfw_window_iconify");
     atom_glfw_window_maximize = enif_make_atom(env, "glfw_window_maximize");
     atom_glfw_window_content_scale = enif_make_atom(env, "glfw_window_content_scale");
+    atom_glfw_framebuffer_size = enif_make_atom(env, "glfw_framebuffer_size");
 
     atom_glfw_key = enif_make_atom(env, "glfw_key");
     atom_glfw_char = enif_make_atom(env, "glfw_char");
@@ -377,9 +415,11 @@ static ERL_NIF_TERM glfw_init_command(ErlNifEnv* env, int argc, const ERL_NIF_TE
 
     int result = glfwInit();
     if (result == GLFW_TRUE) {
+        beam_glfw_initialized = 1;
         return atom_true;
     }
     else {
+        beam_glfw_initialized = 0;
         return atom_false;
     }
 }
@@ -396,6 +436,7 @@ static ERL_NIF_TERM glfw_terminate_command(ErlNifEnv* env, int argc, const ERL_N
     (void)argv;
 
     glfwTerminate();
+    beam_glfw_initialized = 0;
     return atom_ok;
 }
 
@@ -555,37 +596,76 @@ static ERL_NIF_TERM nif_set_error_handler(ErlNifEnv* env, int argc, const ERL_NI
     return execute_command(glfw_set_error_handler, env, argc, argv);
 }
 
-// static ERL_NIF_TERM nif_platform(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-// {
-//     (void)env;
-//     (void)argc;
-//     (void)argv;
+static ERL_NIF_TERM nif_platform(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)env;
+    (void)argc;
+    (void)argv;
 
-//     // According to the doc, this function can be called from any thread (no
-//     // need to use the NIF function executor thread).
-//     int platform = glfwGetPlatform();
-//     return enif_make_int(env, platform);
-// }
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+#if defined(BEAM_GLFW_HAS_GET_PLATFORM)
+    int platform = glfwGetPlatform();
+    return enif_make_int(env, platform);
+#else
+    if (!beam_glfw_initialized) {
+        return enif_make_int(env, 0);
+    }
+#if defined(_WIN32)
+    return enif_make_int(env, GLFW_PLATFORM_WIN32);
+#elif defined(__APPLE__)
+    return enif_make_int(env, GLFW_PLATFORM_COCOA);
+#elif defined(BEAM_GLFW_HAS_NATIVE_WAYLAND) && !defined(BEAM_GLFW_HAS_NATIVE_X11)
+    return enif_make_int(env, GLFW_PLATFORM_WAYLAND);
+#else
+    return enif_make_int(env, GLFW_PLATFORM_X11);
+#endif
+#endif
+}
 
-// static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-// {
-//     (void)argc;
+static ERL_NIF_TERM nif_platform_supported(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)argc;
 
-//     // According to the doc, this function can be called from any thread (no
-//     // need to use the NIF function executor thread).
-//     int platform;
-//     if (!enif_get_int(env, argv[0], &platform)) {
-//         return enif_make_badarg(env);
-//     }
+    // According to the doc, this function can be called from any thread (no
+    // need to use the NIF function executor thread).
+    int platform;
+    if (!enif_get_int(env, argv[0], &platform)) {
+        return enif_make_badarg(env);
+    }
 
-//     int supported = glfwPlatformSupported(platform);
-//     if (supported == GLFW_TRUE) {
-//         return atom_true;
-//     }
-//     else {
-//         return atom_false;
-//     }
-// }
+#if defined(BEAM_GLFW_HAS_GET_PLATFORM)
+    int supported = glfwPlatformSupported(platform);
+#else
+    int supported = GLFW_FALSE;
+#if defined(_WIN32)
+    if (platform == GLFW_PLATFORM_WIN32) {
+        supported = GLFW_TRUE;
+    }
+#elif defined(__APPLE__)
+    if (platform == GLFW_PLATFORM_COCOA) {
+        supported = GLFW_TRUE;
+    }
+#else
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    if (platform == GLFW_PLATFORM_WAYLAND) {
+        supported = GLFW_TRUE;
+    }
+#endif
+#if defined(BEAM_GLFW_HAS_NATIVE_X11)
+    if (platform == GLFW_PLATFORM_X11) {
+        supported = GLFW_TRUE;
+    }
+#endif
+#endif
+#endif
+    if (supported == GLFW_TRUE) {
+        return atom_true;
+    }
+    else {
+        return atom_false;
+    }
+}
 
 static ERL_NIF_TERM glfw_monitors(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -1124,8 +1204,13 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
     window_resource->window_iconify_handler = atom_undefined;
     window_resource->window_maximize_handler = atom_undefined;
     window_resource->window_content_scale_handler = atom_undefined;
+    window_resource->framebuffer_size_handler = atom_undefined;
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    window_resource->wayland_egl_window = NULL;
+#endif
 
     glfwSetWindowUserPointer(window, window_resource);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     ERL_NIF_TERM window_term = enif_make_resource(env, window_resource);
     enif_release_resource(window_resource);
@@ -1154,6 +1239,9 @@ static ERL_NIF_TERM glfw_destroy_window(ErlNifEnv* env, int argc, const ERL_NIF_
     }
     GLFWwindow* window = window_resource->window;
 
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    beam_glfw_destroy_wayland_egl_window(window_resource);
+#endif
     glfwDestroyWindow(window);
     return atom_ok;
 }
@@ -1341,6 +1429,31 @@ static ERL_NIF_TERM glfw_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TER
 static ERL_NIF_TERM nif_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     return execute_command(glfw_window_size, env, argc, argv);
+}
+
+static ERL_NIF_TERM glfw_framebuffer_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)argc;
+
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
+
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    return enif_make_tuple2(
+        env,
+        enif_make_int(env, width),
+        enif_make_int(env, height)
+    );
+}
+
+static ERL_NIF_TERM nif_framebuffer_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_framebuffer_size, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_set_window_size(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -2201,6 +2314,67 @@ static ERL_NIF_TERM glfw_set_window_content_scale_handler(ErlNifEnv* env, int ar
 static ERL_NIF_TERM nif_set_window_content_scale_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     return execute_command(glfw_set_window_content_scale_handler, env, argc, argv);
+}
+
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    GLFWWindowResource* window_resource = glfwGetWindowUserPointer(window);
+
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    if (window_resource->wayland_egl_window != NULL) {
+        wl_egl_window_resize(window_resource->wayland_egl_window, width, height, 0, 0);
+    }
+#endif
+
+    if (enif_is_identical(window_resource->framebuffer_size_handler, atom_undefined)) {
+        return;
+    }
+
+    ERL_NIF_TERM inner_result = enif_make_tuple2(
+        window_resource->env,
+        enif_make_int(window_resource->env, width),
+        enif_make_int(window_resource->env, height)
+    );
+
+    ERL_NIF_TERM result = enif_make_tuple3(
+        window_resource->env,
+        atom_glfw_framebuffer_size,
+        window_resource->window_term,
+        inner_result
+    );
+
+    enif_send(NULL, (ErlNifPid*)&window_resource->framebuffer_size_handler, NULL, result);
+}
+
+static ERL_NIF_TERM nif_framebuffer_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)argc;
+
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+
+    return window_resource->framebuffer_size_handler;
+}
+
+static ERL_NIF_TERM glfw_set_framebuffer_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)argc;
+
+    GLFWWindowResource* window_resource;
+    if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
+        return enif_make_badarg(env);
+    }
+
+    // The GLFW framebuffer-size callback stays installed for Wayland
+    // wl_egl_window resize. Clearing the handler only stops BEAM messages.
+    window_resource->framebuffer_size_handler = enif_make_copy(env, argv[1]);
+    return atom_ok;
+}
+
+static ERL_NIF_TERM nif_set_framebuffer_size_handler(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_set_framebuffer_size_handler, env, argc, argv);
 }
 
 static ERL_NIF_TERM glfw_poll_events(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -3442,7 +3616,99 @@ static ERL_NIF_TERM nif_set_clipboard_string(ErlNifEnv* env, int argc, const ERL
     return execute_command(glfw_set_clipboard_string, env, argc, argv);
 }
 
-static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+static EGLNativeWindowType beam_glfw_wayland_egl_handle(GLFWWindowResource* window_resource, int* ok)
+{
+    GLFWwindow* window = window_resource->window;
+    struct wl_surface* surface = glfwGetWaylandWindow(window);
+    if (surface == NULL) {
+        *ok = 0;
+        return 0;
+    }
+    if (window_resource->wayland_egl_window == NULL) {
+        int width = 0;
+        int height = 0;
+        glfwGetFramebufferSize(window, &width, &height);
+        if (width < 1) {
+            width = 1;
+        }
+        if (height < 1) {
+            height = 1;
+        }
+        window_resource->wayland_egl_window = wl_egl_window_create(surface, width, height);
+    }
+    if (window_resource->wayland_egl_window == NULL) {
+        *ok = 0;
+        return 0;
+    }
+    *ok = 1;
+    return (EGLNativeWindowType)(uintptr_t)window_resource->wayland_egl_window;
+}
+#endif
+
+static EGLNativeWindowType beam_glfw_native_window_handle(GLFWWindowResource* window_resource, int* ok)
+{
+    GLFWwindow* window = window_resource->window;
+    *ok = 0;
+
+#if defined(_WIN32)
+    HWND hwnd = glfwGetWin32Window(window);
+    if (hwnd == NULL) {
+        return 0;
+    }
+    *ok = 1;
+    return (EGLNativeWindowType)(uintptr_t)hwnd;
+#elif defined(__APPLE__)
+    void* ns_window = glfwGetCocoaWindow(window);
+    if (ns_window == NULL) {
+        return 0;
+    }
+    *ok = 1;
+    return (EGLNativeWindowType)(uintptr_t)ns_window;
+#else
+#if defined(BEAM_GLFW_HAS_GET_PLATFORM)
+    switch (glfwGetPlatform()) {
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    case GLFW_PLATFORM_WAYLAND:
+        return beam_glfw_wayland_egl_handle(window_resource, ok);
+#endif
+#if defined(BEAM_GLFW_HAS_NATIVE_X11)
+    case GLFW_PLATFORM_X11: {
+        Window x11_window = glfwGetX11Window(window);
+        if (x11_window == None) {
+            return 0;
+        }
+        *ok = 1;
+        return (EGLNativeWindowType)x11_window;
+    }
+#endif
+    default:
+        return 0;
+    }
+#else
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    {
+        EGLNativeWindowType handle = beam_glfw_wayland_egl_handle(window_resource, ok);
+        if (*ok) {
+            return handle;
+        }
+    }
+#endif
+#if defined(BEAM_GLFW_HAS_NATIVE_X11)
+    {
+        Window x11_window = glfwGetX11Window(window);
+        if (x11_window != None) {
+            *ok = 1;
+            return (EGLNativeWindowType)x11_window;
+        }
+    }
+#endif
+    return 0;
+#endif
+#endif
+}
+
+static ERL_NIF_TERM glfw_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;
 
@@ -3450,32 +3716,28 @@ static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NI
     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
         return enif_make_badarg(env);
     }
-    GLFWwindow* window = window_resource->window;
 
-#if defined(_WIN32)
-    EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetWin32Window(window);
-#elif defined(__APPLE__)
-    EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetCocoaWindow(window);
-#elif defined(__linux__)
-    EGLNativeWindowType window_handle = (EGLNativeWindowType)glfwGetX11Window(window);
-#endif
+    int ok = 0;
+    EGLNativeWindowType window_handle = beam_glfw_native_window_handle(window_resource, &ok);
+    if (!ok) {
+        return atom_error;
+    }
 
-    // Allocate and create the resource
     void* egl_window_resource = enif_alloc_resource(egl_window_resource_type, sizeof(EGLNativeWindowType));
     if (!egl_window_resource) {
         return enif_make_atom(env, "allocation_failed");
     }
 
-    // Copy the window handle
     *((EGLNativeWindowType*)egl_window_resource) = window_handle;
 
-    // Create the Erlang term
     ERL_NIF_TERM resource_term = enif_make_resource(env, egl_window_resource);
-
-    // Release our reference to the resource - Erlang GC will handle it from here
     enif_release_resource(egl_window_resource);
-
     return resource_term;
+}
+
+static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_egl_handle, env, argc, argv);
 }
 
 static ErlNifFunc nif_functions[] = {
@@ -3487,8 +3749,8 @@ static ErlNifFunc nif_functions[] = {
     {"get_error_raw", 0, nif_get_error, 0},
     {"error_handler", 0, nif_error_handler, 0},
     {"set_error_handler", 1, nif_set_error_handler, 0},
-    // {"platform_raw", 0, nif_platform, 0},
-    // {"platform_supported_raw", 1, nif_platform_supported, 0},
+    {"platform_raw", 0, nif_platform, 0},
+    {"platform_supported_raw", 1, nif_platform_supported, 0},
 
     {"monitors", 0, nif_monitors, 0},
     {"primary_monitor", 0, nif_primary_monitor, 0},
@@ -3520,6 +3782,7 @@ static ErlNifFunc nif_functions[] = {
     {"set_window_position", 2, nif_set_window_position, 0},
     {"window_size", 1, nif_window_size, 0},
     {"set_window_size", 2, nif_set_window_size, 0},
+    {"framebuffer_size", 1, nif_framebuffer_size, 0},
     {"set_window_size_limits_raw", 5, nif_set_window_size_limits, 0},
     {"set_window_aspect_ratio_raw", 3, nif_set_window_aspect_ratio, 0},
     {"window_frame_size", 1, nif_window_frame_size, 0},
@@ -3556,6 +3819,8 @@ static ErlNifFunc nif_functions[] = {
     {"set_window_maximize_handler", 2, nif_set_window_maximize_handler, 0},
     {"window_content_scale_handler", 1, nif_window_content_scale_handler, 0},
     {"set_window_content_scale_handler", 2, nif_set_window_content_scale_handler, 0},
+    {"framebuffer_size_handler", 1, nif_framebuffer_size_handler, 0},
+    {"set_framebuffer_size_handler", 2, nif_set_framebuffer_size_handler, 0},
 
     {"poll_events", 0, nif_poll_events, 0},
     {"post_empty_event", 0, nif_post_empty_event, 0},

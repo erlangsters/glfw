@@ -5,7 +5,6 @@
 %% print out the events as they occur.
 %%
 %% XXX: Print more info about key name/scancode.
-%% XXX: Perhaps include framebuffer size handler if it's implemented.
 %%
 -module(test_glfw_event).
 -export([run/0]).
@@ -29,7 +28,7 @@ run() ->
     glfw:set_window_iconify_handler(Window, Handler),
     glfw:set_window_maximize_handler(Window, Handler),
     glfw:set_window_content_scale_handler(Window, Handler),
-    % glfw:set_framebuffer_size_handler(Window, Handler),
+    glfw:set_framebuffer_size_handler(Window, Handler),
 
     glfw:set_key_handler(Window, Handler),
     glfw:set_char_handler(Window, Handler),
@@ -73,6 +72,8 @@ event_handler() ->
             io:format("window maximize event (maximized: ~p)~n", [Maximized]);
         #glfw_window_content_scale{window = _Window, scale = {XScale, YScale}} ->
             io:format("window content scale event (scale: ~p)~n", [{XScale, YScale}]);
+        #glfw_framebuffer_size{window = _Window, size = {FbWidth, FbHeight}} ->
+            io:format("framebuffer size event (size: ~p)~n", [{FbWidth, FbHeight}]);
         % #glfw_window_content_scale{} ->
         %     ok;
         #glfw_key{

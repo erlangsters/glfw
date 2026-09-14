@@ -35,6 +35,13 @@ glfw_window_test() ->
 
     {Width, Height} = glfw:window_size(Window),
     io:format(user, "window size (width: ~p, height: ~p)~n", [Width, Height]),
+    {FbWidth, FbHeight} = glfw:framebuffer_size(Window),
+    io:format(user, "framebuffer size (width: ~p, height: ~p)~n", [FbWidth, FbHeight]),
+    ?assert(erlang:is_integer(FbWidth)),
+    ?assert(erlang:is_integer(FbHeight)),
+    Handle = glfw:window_egl_handle(Window),
+    ?assert(Handle =/= error),
+    ok = probe_egl_window_surface(Handle),
     ok = glfw:set_window_size(Window, {1024, 768}),
     % XXX: Check if the size was actually updated.
 
@@ -106,9 +113,53 @@ glfw_window_test() ->
     ok = glfw:set_window_content_scale_handler(Window, Self),
     Self = glfw:window_content_scale_handler(Window),
 
+    undefined = glfw:framebuffer_size_handler(Window),
+    ok = glfw:set_framebuffer_size_handler(Window, Self),
+    Self = glfw:framebuffer_size_handler(Window),
+
     ok = glfw:poll_events(),
     ok = glfw:post_empty_event(),
 
     ok = glfw:destroy_window(Window),
+    ok = glfw:terminate(),
 
     ok.
+
+probe_egl_window_surface(Handle) ->
+    Display = egl:get_display(default_display),
+    case Display of
+        no_display ->
+            io:format(user, "egl get_display failed~n", []),
+            ok;
+        _ ->
+            case egl:initialize(Display) of
+                {ok, _} ->
+                    _ = egl:bind_api(opengl_api),
+                    case egl:choose_config(Display, [
+                        {surface_type, [window_bit]},
+                        {renderable_type, [opengl_bit]}
+                    ]) of
+                        {ok, [Config | _]} ->
+                            case egl:create_window_surface(Display, Config, Handle, []) of
+                                {ok, Surface} ->
+                                    ok = egl:destroy_surface(Display, Surface),
+                                    ok;
+                                Other ->
+                                    io:format(
+                                        user,
+                                        "egl create_window_surface ~p error ~p "
+                                        "(egl-1.5 platform display follow-up)~n",
+                                        [Other, egl:get_error()]
+                                    ),
+                                    ok
+                            end;
+                        Other ->
+                            io:format(user, "egl choose_config ~p~n", [Other]),
+                            ok
+                    end;
+                Other ->
+                    io:format(user, "egl initialize ~p error ~p~n",
+                        [Other, egl:get_error()]),
+                    ok
+            end
+    end.
