@@ -1546,27 +1546,27 @@ static ERL_NIF_TERM nif_set_window_should_close(ErlNifEnv* env, int argc, const 
     return atom_ok;
 }
 
-// static ERL_NIF_TERM glfw_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-// {
-//     (void)argc;
+static ERL_NIF_TERM glfw_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)argc;
 
-//     GLFWWindowResource* window_resource;
-//     if (!enif_get_resource(env, argv[0], glfw_window_resource_type, (void**) &window_resource)) {
-//         return enif_make_badarg(env);
-//     }
-//     GLFWwindow* window = window_resource->window;
+    GLFWWindowResource* window_resource;
+    if (!beam_get_window(env, argv[0], &window_resource)) {
+        return enif_make_badarg(env);
+    }
+    GLFWwindow* window = window_resource->window;
 
-//     const char* title = glfwGetWindowTitle(window);
-//     if (title == NULL) {
-//         return atom_undefined;
-//     }
-//     return enif_make_string(env, title, ERL_NIF_UTF8);
-// }
+    const char* title = glfwGetWindowTitle(window);
+    if (title == NULL) {
+        return atom_undefined;
+    }
+    return enif_make_string(env, title, ERL_NIF_UTF8);
+}
 
-// static ERL_NIF_TERM nif_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-// {
-//     return execute_command(glfw_window_title, env, argc, argv);
-// }
+static ERL_NIF_TERM nif_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_window_title, env, argc, argv);
+}
 
 static ERL_NIF_TERM glfw_set_window_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -4073,7 +4073,7 @@ static ErlNifFunc nif_functions[] = {
     {"destroy_window", 1, nif_destroy_window, 0},
     {"window_should_close", 1, nif_window_should_close, 0},
     {"set_window_should_close", 2, nif_set_window_should_close, 0},
-    // {"window_title", 1, nif_window_title, 0},
+    {"window_title", 1, nif_window_title, 0},
     {"set_window_title", 2, nif_set_window_title, 0},
     {"set_window_icon", 2, nif_set_window_icon, 0},
     {"window_position", 1, nif_window_position, 0},
