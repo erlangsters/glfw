@@ -1379,9 +1379,10 @@ version_string() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return and clear the last error.
 
-To be written.
+It returns `no_error` when no error has occurred since the last call, or
+`{error, Code, Description}` with the error code and UTF-8 description.
 """.
 -spec get_error() ->
     {error, Code :: error_code(), Description :: error_description()} |
@@ -1430,18 +1431,20 @@ get_error_raw() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Error handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_error{}`
+events, or `undefined`.
 """.
 -spec error_handler() -> undefined | pid().
 error_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the error handler.
 
-To be written.
+It registers a process that receives `#glfw_error{}` events. Pass
+`undefined` to stop receiving those events.
 """.
 -spec set_error_handler(undefined | pid()) -> ok.
 set_error_handler(_Handler) ->
@@ -1713,18 +1716,20 @@ monitor_name(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Monitor handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_monitor{}`
+events, or `undefined`.
 """.
 -spec monitor_handler() -> undefined | pid().
 monitor_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the monitor handler.
 
-To be written.
+It registers a process that receives `#glfw_monitor{}` events when a monitor
+is connected or disconnected. Pass `undefined` to stop receiving those events.
 """.
 -spec set_monitor_handler(undefined | pid()) -> ok.
 set_monitor_handler(_Handler) ->
@@ -2980,144 +2985,166 @@ set_window_attrib_raw(_Window, _Attrib, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window position handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_position{}` events for the window, or `undefined`.
 """.
 -spec window_position_handler(window()) -> undefined | pid().
 window_position_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window position handler.
 
-To be written.
+It registers a process that receives `#glfw_window_position{}` events when
+the window is moved. Pass `undefined` to stop receiving those events.
 """.
 -spec set_window_position_handler(window(), undefined | pid()) -> ok.
 set_window_position_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window size handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_size{}` events for the window, or `undefined`.
 """.
 -spec window_size_handler(window()) -> undefined | pid().
 window_size_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window size handler.
 
-To be written.
+It registers a process that receives `#glfw_window_size{}` events when the
+window is resized. Pass `undefined` to stop receiving those events.
 """.
 -spec set_window_size_handler(window(), undefined | pid()) -> ok.
 set_window_size_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window close handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_close{}` events for the window, or `undefined`.
 """.
 -spec window_close_handler(window()) -> undefined | pid().
 window_close_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window close handler.
 
-To be written.
+It registers a process that receives `#glfw_window_close{}` events when the
+user attempts to close the window. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_close_handler(window(), undefined | pid()) -> ok.
 set_window_close_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window refresh handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_refresh{}` events for the window, or `undefined`.
 """.
 -spec window_refresh_handler(window()) -> undefined | pid().
 window_refresh_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window refresh handler.
 
-To be written.
+It registers a process that receives `#glfw_window_refresh{}` events when the
+window contents need to be redrawn. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_refresh_handler(window(), undefined | pid()) -> ok.
 set_window_refresh_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window focus handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_focus{}` events for the window, or `undefined`.
 """.
 -spec window_focus_handler(window()) -> undefined | pid().
 window_focus_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window focus handler.
 
-To be written.
+It registers a process that receives `#glfw_window_focus{}` events when the
+window gains or loses input focus. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_focus_handler(window(), undefined | pid()) -> ok.
 set_window_focus_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window iconify handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_iconify{}` events for the window, or `undefined`.
 """.
 -spec window_iconify_handler(window()) -> undefined | pid().
 window_iconify_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window iconify handler.
 
-To be written.
+It registers a process that receives `#glfw_window_iconify{}` events when the
+window is iconified or restored. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_iconify_handler(window(), undefined | pid()) -> ok.
 set_window_iconify_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window maximize handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_maximize{}` events for the window, or `undefined`.
 """.
 -spec window_maximize_handler(window()) -> undefined | pid().
 window_maximize_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window maximize handler.
 
-To be written.
+It registers a process that receives `#glfw_window_maximize{}` events when
+the window is maximized or restored. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_maximize_handler(window(), undefined | pid()) -> ok.
 set_window_maximize_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window content scale handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_content_scale{}` events for the window, or `undefined`.
 """.
 -spec window_content_scale_handler(window()) -> undefined | pid().
 window_content_scale_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window content scale handler.
 
-To be written.
+It registers a process that receives `#glfw_window_content_scale{}` events
+when the window content scale changes. Pass `undefined` to stop receiving
+those events.
 """.
 -spec set_window_content_scale_handler(window(), undefined | pid()) -> ok.
 set_window_content_scale_handler(_Window, _Handler) ->
@@ -3806,144 +3833,176 @@ set_cursor_position_raw(_Window, _X, _Y) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Key handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_key{}` events
+for the window, or `undefined`.
 """.
 -spec key_handler(window()) -> undefined | pid().
 key_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the key handler.
 
-To be written.
+It registers a process that receives `#glfw_key{}` events when a key is
+pressed, released, or repeated. Pass `undefined` to stop receiving those
+events.
+
+```erlang
+glfw:set_key_handler(Window, self()),
+receive
+    #glfw_key{window = Window, key = Key, action = press} ->
+        Key
+end.
+```
+
+The `mods` field is an integer. `key` is a `key()` atom, not a position.
 """.
 -spec set_key_handler(window(), undefined | pid()) -> ok.
 set_key_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Character handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_char{}` events
+for the window, or `undefined`.
 """.
 -spec char_handler(window()) -> undefined | pid().
 char_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the character handler.
 
-To be written.
+It registers a process that receives `#glfw_char{}` events when a Unicode
+character is typed. Pass `undefined` to stop receiving those events.
 """.
 -spec set_char_handler(window(), undefined | pid()) -> ok.
 set_char_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Character-with-modifiers handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_char_mods{}`
+events for the window, or `undefined`.
 """.
 -spec char_mods_handler(window()) -> undefined | pid().
 char_mods_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the character-with-modifiers handler.
 
-To be written.
+It registers a process that receives `#glfw_char_mods{}` events when a
+Unicode character is typed. The `mods` field is an integer. Pass `undefined`
+to stop receiving those events.
 """.
 -spec set_char_mods_handler(window(), undefined | pid()) -> ok.
 set_char_mods_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Mouse button handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_mouse_button{}` events for the window, or `undefined`.
 """.
 -spec mouse_button_handler(window()) -> undefined | pid().
 mouse_button_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the mouse button handler.
 
-To be written.
+It registers a process that receives `#glfw_mouse_button{}` events when a
+mouse button is pressed or released. The `mods` field is an integer. Pass
+`undefined` to stop receiving those events.
 """.
 -spec set_mouse_button_handler(window(), undefined | pid()) -> ok.
 set_mouse_button_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Cursor position handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_cursor_position{}` events for the window, or `undefined`.
 """.
 -spec cursor_position_handler(window()) -> undefined | pid().
 cursor_position_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the cursor position handler.
 
-To be written.
+It registers a process that receives `#glfw_cursor_position{}` events when
+the cursor moves. Pass `undefined` to stop receiving those events.
 """.
 -spec set_cursor_position_handler(window(), undefined | pid()) -> ok.
 set_cursor_position_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Cursor enter handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_cursor_enter{}` events for the window, or `undefined`.
 """.
 -spec cursor_enter_handler(window()) -> undefined | pid().
 cursor_enter_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the cursor enter handler.
 
-To be written.
+It registers a process that receives `#glfw_cursor_enter{}` events when the
+cursor enters or leaves the window. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_cursor_enter_handler(window(), undefined | pid()) -> ok.
 set_cursor_enter_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Scroll handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_scroll{}`
+events for the window, or `undefined`.
 """.
 -spec scroll_handler(window()) -> undefined | pid().
 scroll_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the scroll handler.
 
-To be written.
+It registers a process that receives `#glfw_scroll{}` events when the
+scroll wheel or trackpad is used. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_scroll_handler(window(), undefined | pid()) -> ok.
 set_scroll_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Drop handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_drop{}` events
+for the window, or `undefined`.
 """.
 -spec drop_handler(window()) -> undefined | pid().
 drop_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the drop handler.
 
-To be written.
+It registers a process that receives `#glfw_drop{}` events when paths are
+dropped onto the window. `paths` is `[string()]`. Pass `undefined` to stop
+receiving those events.
 """.
 -spec set_drop_handler(window(), undefined | pid()) -> ok.
 set_drop_handler(_Window, _Handler) ->
@@ -4059,18 +4118,21 @@ joystick_guid_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Joystick handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_joystick{}`
+events, or `undefined`.
 """.
 -spec joystick_handler() -> undefined | pid().
 joystick_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the joystick handler.
 
-To be written.
+It registers a process that receives `#glfw_joystick{}` events when a
+joystick is connected or disconnected. Pass `undefined` to stop receiving
+those events.
 """.
 -spec set_joystick_handler(undefined | pid()) -> ok.
 set_joystick_handler(_Handler) ->
