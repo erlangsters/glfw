@@ -1,244 +1,189 @@
-# API Mapping
+# API mapping
 
-It's binding of an existing library and therefore knowledge of GLFW itself is
-expected.
+This is a binding of GLFW 3.4. Existing GLFW knowledge still applies. The mapping is small, consistent, and documented here when it is not obvious.
 
-100% of your existing GLFW knowledge is
-transferable with a few notes.
+The public module is `glfw`. Event records live in `glfw.hrl`.
 
+## Mapping rules
 
-## Idiomatic API
+- GLFW enums become atoms whenever a closed set exists. For instance, `input_mode()` is `cursor | sticky_keys | sticky_mouse_buttons | lock_key_mods | raw_mouse_motion`.
+- An integer that GLFW documents as only `GLFW_TRUE` or `GLFW_FALSE` becomes `boolean()`.
+- Success and failure follow the C failure shape. `{ok, Result}` and `error` when GLFW has more than one failure reason that the binding cannot distinguish (for example `gamepad_name/1`). A specific atom when there is only one failure reason (for example `joystick_buttons/1` returns `not_present | [press | release]`).
+- GLFW `Pos` becomes `position`. `glfwSetCursorPosCallback` is `set_cursor_position_handler/2`.
+- A GLFW `Get` prefix is dropped. `glfwGetCursorPos` / `glfwSetCursorPos` become `cursor_position/1` and `set_cursor_position/2`. Exception: `glfwGetError` stays `get_error/0`.
+- C callbacks become handlers. You register a pid; it receives a record such as `#glfw_key{}`. Setters do not return the previously set handler. Use the matching getter. Pass `undefined` to unregister.
+- User pointers, allocators, and proc-address loading are not implemented. Processes and Erlang terms already carry user data.
+- GLFW integer constants are not exported from `glfw.hrl`. Atoms and records are the BEAM-facing surface.
 
-This binding follows a very consistent set of mapping rules.
-All those rules are documented (unless trivial) and when exceptions are made, they're documented
-as well.
-You do not need to really formally understand those rules as most of the times,
-this is to make the API more idiomatic to use in Erlang and Elixir
-Equipped with common sense and the API reference, you will not fight th ebinding.
-
-If there's still ambiguity, contact us.
-
-## Mapping Rules
-
-- GLFW enums are implemented as atoms. Whenver possible. For instance:
-
-```erlang
--type input_mode() ::
-    cursor |
-    sticky_keys |
-    sticky_mouse_buttons |
-    lock_key_mods |
-    raw_mouse_motion
-.
-```
-
-- When function takes or returns an integer which is documented to be only
-`GLFW_TRUE` or `GLFW_FALSE`, it becomes a `boolean()`.
-
-- Use of `{ok, Result}` and `error` when applicable, to denotate success/failure.
-When the error as a value, it becomes `{error, Error}`.
-In getGamepadName() because there can be more than one reason for the error, and we cannot determine it (joysitkc not present, does not have a mapping)
-
-- When the error is specific, it uses different. For instance:
-`not_present | [float()].`
-In getJoystickButtons() because it can only fail if joystick if not present (returns a false)
-
-- All Set/Get XXX UserPointer is not implemented as not application in Erlang. Indeed, it's easy to apss data around.
-
-- GLFW likes `Pos` shortcut. In the binding it's `position`.
-For instance: `glfwSetCursorPosCallback` becomes `set_cursor_position_handler`
-
-- GFLW prefix with Get, this binding removes it.
-For instance: glfwSet/GetCursorPos becomes `cursor_position` and `set_cursor_position`
-Exception: `glfwGetError` remains `get_error` in binding.
-
-- Regarding callback functions. They're implemented as handlers. It uses a record to distinguish the event.
-Note that unlike C, The previously set callback are not returend (or handlers) unlike C api
-Instead there's a getter. For instnace: `key_handler()` to retrive handler.
-
-- Allocator and ProcAddress stuff not implemented
-For instance: glfwInitAllocator and glfwGetProcAddress
-
-
-More NOTES:
-
-- GLFW constants are not present in the glfw.hrl header
-
-## Functions Tables
-
-Here is the list of all GLFW functions, organized into categories, with their
-equivalent. If exceptions where to be made, it's in the notes.
-
-**Initialization**
+## Initialization
 
 | GLFW | Binding | Notes |
-|----- | ------- | ----- |
-| `glfwInit` | `init` | N/A |
-| `glfwTerminate` | `terminate` | XXX: invalid all existing objects ?  |
-| `glfwInitHint` | `init_hint` | Passing an invalid combination of hint/value will be caught before it reaches the NIF function. Also, the `GLFW_X11_XCB_VULKAN_SURFACE` hint in not implemented. |
-| `glfwInitAllocator` | N/A | N/A |
-| `glfwInitVulkanLoader` | N/A | N/A |
-| `glfwGetVersion` | `version` | N/A |
-| `glfwGetVersionString` | `version_string` | N/A |
-| `glfwGetError` | `get_error` | XXX: Rename to `error/0` for consistency? |
-| `glfwSetErrorCallback` | `error_handler` and `set_error_handler` | The event is `#glfw_error{}`. |
-| `glfwGetPlatform` | `platform` | N/A |
-| `glfwPlatformSupported` | `platform_supported` | N/A |
+| --- | --- | --- |
+| `glfwInit` | `init/0` | N/A |
+| `glfwTerminate` | `terminate/0` | Poisons live window, cursor, and monitor resources. Later calls on those terms raise `badarg`. |
+| `glfwInitHint` | `init_hint/2` | Invalid hint/value pairs are rejected in Erlang before the NIF. There is no invented `default` token. `GLFW_X11_XCB_VULKAN_SURFACE` is not implemented. |
+| `glfwInitAllocator` | N/A | C allocator hook. |
+| `glfwInitVulkanLoader` | N/A | Vulkan is out of scope. |
+| `glfwGetVersion` | `version/0` | N/A |
+| `glfwGetVersionString` | `version_string/0` | N/A |
+| `glfwGetError` | `get_error/0` | Not renamed to `error/0`. Returns `no_error` or `{error, error_code(), error_description()}`. |
+| `glfwSetErrorCallback` | `error_handler/0` and `set_error_handler/1` | The event is `#glfw_error{}`. |
+| `glfwGetPlatform` | `platform/0` | N/A |
+| `glfwPlatformSupported` | `platform_supported/1` | N/A |
 
-**Context**
+Monitor, window, and cursor resources intern by native pointer for the life of `init/0`. A monitor from `#glfw_monitor{}` compares equal to the handle from `monitors/0` for the same display.
 
-The only applicable function is `glfwSwapInterval` and therefore is the only
-one that is implemented. The other functions are about operating on the
-underlying OpenGL contexts which we do not do with this binding (windows are
-[contextless](docs/contextless-windows.md)).
+## Context
+
+Windows are [contextless](contextless-windows.md). OpenGL context, current-context, swap, and proc-address operations belong to EGL and the OpenGL bindings. None of the GLFW context functions are implemented.
 
 | GLFW | Binding | Notes |
-|----- | ------- | ----- |
-| `glfwMakeContextCurrent` | N/A | Use `egl:swap_buffers/2` instead. |
-| `glfwGetCurrentContext` | N/A | Use `egl:get_current_context/0` instead. |
-| `glfwSwapInterval` | `swap_interval` | XXX: To be implemented? Not sure. |
-| `glfwExtensionSupported` | N/A | Use `gl:get_string/1` instead. Note that the OpenGL bindings do not support loading extensions. |
+| --- | --- | --- |
+| `glfwMakeContextCurrent` | N/A | Use `egl:make_current/4`. |
+| `glfwGetCurrentContext` | N/A | Use `egl:get_current_context/0`. |
+| `glfwSwapInterval` | N/A | Use `egl:swap_interval/2`. |
+| `glfwSwapBuffers` | N/A | Use `egl:swap_buffers/2`. |
+| `glfwExtensionSupported` | N/A | Use `gl:get_string/1`. The OpenGL bindings do not load extensions. |
 | `glfwGetProcAddress` | N/A | N/A |
 
-**Window**
+## Window
 
 | GLFW | Binding | Notes |
-|----- | ------- | ----- |
-| `glfwDefaultWindowHints` | `default_window_hints` | N/A |
-| `glfwWindowHint` | `window_hint` | String hints (`cocoa_frame_name`, `wayland_app_id`, `x11_instance_name`, `x11_class_name`) are UTF-8. There is no `client_api` hint; see `create_window`. |
-| `glfwWindowHintString` | `window_hint` | Use `window_hint/2` instead. |
-| `glfwCreateWindow` | `create_window` | Always forces `GLFW_CLIENT_API = GLFW_NO_API` after user hints. That is the contextless invariant. |
-| `glfwDestroyWindow` | `destroy_window` | XXX: Implementation to be finalized. |
-| `glfwWindowShouldClose` | `window_should_close` | N/A |
-| `glfwSetWindowShouldClose` | `set_window_should_close` | N/A |
-
-| `glfwGetWindowTitle` | `window_title` | N/A |
-| `glfwSetWindowTitle` | `set_window_title` | N/A |
-
-| `glfwSetWindowIcon` | `set_window_icon` | `[#glfw_image{}]`. `[]` reverts to the default icon. Wayland and macOS emit `feature_unavailable`. |
-
-| `glfwGetWindowPos` | `window_position` | N/A |
-| `glfwSetWindowPos` | `set_window_position` | N/A |
-| `glfwGetWindowSize` | `window_size` | N/A |
-| `glfwSetWindowSizeLimits` | `set_window_size_limits` | N/A |
-| `glfwSetWindowAspectRatio` | `set_window_aspect_ratio` | N/A |
-| `glfwSetWindowSize` | `set_window_size` | N/A |
-| `glfwGetFramebufferSize` | `framebuffer_size` | N/A |
-| `glfwGetWindowFrameSize` | `window_frame_size` | N/A |
-| `glfwGetWindowContentScale` | `window_content_scale` | N/A |
-
-| `glfwGetWindowOpacity` | `window_opacity` | N/A |
-| `glfwSetWindowOpacity` | `set_window_opacity` | N/A |
-| `glfwIconifyWindow` | `iconify_window` | N/A |
-| `glfwRestoreWindow` | `restore_window` | N/A |
-| `glfwMaximizeWindow` | `maximize_window` | N/A |
-| `glfwShowWindow` | `show_window` | N/A |
-| `glfwHideWindow` | `hide_window` | N/A |
-| `glfwFocusWindow` | `focus_window` | N/A |
-| `glfwRequestWindowAttention` | `request_window_attention` | N/A |
-| `glfwGetWindowMonitor` | `window_monitor` | N/A XXX: Verify implementation. |
-| `glfwSetWindowMonitor` | `set_window_monitor` | We can't distinguish between no monitor or error. Therefore a `undefined` return value might mean error. XXX: Verify implementation. |
-| `glfwGetWindowAttrib` | `window_attrib` | N/A |
-| `glfwSetWindowAttrib` | `set_window_attrib` | N/A |
+| --- | --- | --- |
+| `glfwDefaultWindowHints` | `default_window_hints/0` | N/A |
+| `glfwWindowHint` | `window_hint/2` | No `client_api` hint. See `create_window/3`. |
+| `glfwWindowHintString` | `window_hint/2` | String hints (`cocoa_frame_name`, `wayland_app_id`, `x11_instance_name`, `x11_class_name`) are UTF-8. |
+| `glfwCreateWindow` | `create_window/3` | Width, height, and UTF-8 title. No monitor or share arguments. Always forces `GLFW_CLIENT_API = GLFW_NO_API` after user hints. |
+| `glfwDestroyWindow` | `destroy_window/1` | Poisons the window resource. |
+| `glfwWindowShouldClose` | `window_should_close/1` | N/A |
+| `glfwSetWindowShouldClose` | `set_window_should_close/2` | N/A |
+| `glfwGetWindowTitle` | `window_title/1` | UTF-8. `undefined` if GLFW reports none. |
+| `glfwSetWindowTitle` | `set_window_title/2` | UTF-8. |
+| `glfwSetWindowIcon` | `set_window_icon/2` | `[#glfw_image{}]`. `[]` reverts to the default icon. Wayland and macOS emit `feature_unavailable`; the call still returns `ok`. |
+| `glfwGetWindowPos` | `window_position/1` | N/A |
+| `glfwSetWindowPos` | `set_window_position/2` | N/A |
+| `glfwGetWindowSize` | `window_size/1` | N/A |
+| `glfwSetWindowSizeLimits` | `set_window_size_limits/3` | Each limit is `{Width, Height}` or `dont_care`. A component may also be `dont_care`. |
+| `glfwSetWindowAspectRatio` | `set_window_aspect_ratio/2` | `{Numerator, Denominator}` or `dont_care`. A component may also be `dont_care`. |
+| `glfwSetWindowSize` | `set_window_size/2` | N/A |
+| `glfwGetFramebufferSize` | `framebuffer_size/1` | Public. The native callback also stays installed so Wayland can resize the EGL window handle. |
+| `glfwGetWindowFrameSize` | `window_frame_size/1` | N/A |
+| `glfwGetWindowContentScale` | `window_content_scale/1` | N/A |
+| `glfwGetWindowOpacity` | `window_opacity/1` | N/A |
+| `glfwSetWindowOpacity` | `set_window_opacity/2` | N/A |
+| `glfwIconifyWindow` | `iconify_window/1` | N/A |
+| `glfwRestoreWindow` | `restore_window/1` | N/A |
+| `glfwMaximizeWindow` | `maximize_window/1` | N/A |
+| `glfwShowWindow` | `show_window/1` | N/A |
+| `glfwHideWindow` | `hide_window/1` | N/A |
+| `glfwFocusWindow` | `focus_window/1` | N/A |
+| `glfwRequestWindowAttention` | `request_window_attention/1` | N/A |
+| `glfwGetWindowMonitor` | `window_monitor/1` | `undefined` may mean no monitor or an error. Use `get_error/0`. |
+| `glfwSetWindowMonitor` | `set_window_monitor/7` | Fullscreen-at-create is not a `create_window/3` argument. Use this after creation. |
+| `glfwGetWindowAttrib` | `window_attrib/2` | N/A |
+| `glfwSetWindowAttrib` | `set_window_attrib/3` | N/A |
 | `glfwSetWindowUserPointer` | N/A | N/A |
 | `glfwGetWindowUserPointer` | N/A | N/A |
-| `glfwSetWindowPosCallback` | `window_position_handler` and `set_window_position_handler` | The event is `#glfw_window_position{}`. |
-| `glfwSetWindowSizeCallback` | `window_size_handler` and `set_window_size_handler` | The event is `#glfw_window_size{}`. |
-| `glfwSetWindowCloseCallback` | `window_close_handler` and `set_window_close_handler` | The event is `#glfw_window_close{}`. |
-| `glfwSetWindowRefreshCallback` | `window_refresh_handler` and `set_window_refresh_handler` | The event is `#glfw_window_refresh{}`. |
-| `glfwSetWindowFocusCallback` | `window_focus_handler` and `set_window_focus_handler` | The event is `#glfw_window_focus{}`. |
-| `glfwSetWindowIconifyCallback` | `window_iconify_handler` and `set_window_iconify_handler` | The event is `#glfw_window_iconify{}`. |
-| `glfwSetWindowMaximizeCallback` | `window_maximize_handler` and `set_window_maximize_handler` | The event is `#glfw_window_maximize{}`. |
-| `glfwSetFramebufferSizeCallback` | `framebuffer_size_handler` and `set_framebuffer_size_handler` | The event is `#glfw_framebuffer_size{}`. The native callback stays installed so Wayland can resize the EGL window handle. |
-| `glfwSetWindowContentScaleCallback` | `window_content_scale_handler` and `set_window_content_scale_handler` | `#glfw_window_content_scale{}` |
-| `glfwPollEvents` | `poll_events` | It causes handlers to be sent events. |
-| `glfwWaitEvents` | N/A | Not idiomatic, conflict thread-safety of the binding. Easy to reproduce a similar behavior. |
-| `glfwWaitEventsTimeout` | N/A | Not idiomatic, conflict thread-safety of the binding. Easy to reproduce a similar behavior. |
-| `glfwPostEmptyEvent` | `post_empty_event` | N/A |
-| `glfwSwapBuffers` | N/A | Use `egl:egl:make_current/4` instead. XXX: Consider implementing this as dirty NIF ? |
+| `glfwSetWindowPosCallback` | `window_position_handler/1` and `set_window_position_handler/2` | `#glfw_window_position{}`. |
+| `glfwSetWindowSizeCallback` | `window_size_handler/1` and `set_window_size_handler/2` | `#glfw_window_size{}`. |
+| `glfwSetWindowCloseCallback` | `window_close_handler/1` and `set_window_close_handler/2` | `#glfw_window_close{}`. |
+| `glfwSetWindowRefreshCallback` | `window_refresh_handler/1` and `set_window_refresh_handler/2` | `#glfw_window_refresh{}`. |
+| `glfwSetWindowFocusCallback` | `window_focus_handler/1` and `set_window_focus_handler/2` | `#glfw_window_focus{}`. |
+| `glfwSetWindowIconifyCallback` | `window_iconify_handler/1` and `set_window_iconify_handler/2` | `#glfw_window_iconify{}`. |
+| `glfwSetWindowMaximizeCallback` | `window_maximize_handler/1` and `set_window_maximize_handler/2` | `#glfw_window_maximize{}`. |
+| `glfwSetFramebufferSizeCallback` | `framebuffer_size_handler/1` and `set_framebuffer_size_handler/2` | `#glfw_framebuffer_size{}`. The native callback stays installed for Wayland EGL resize even when no handler is registered. |
+| `glfwSetWindowContentScaleCallback` | `window_content_scale_handler/1` and `set_window_content_scale_handler/2` | `#glfw_window_content_scale{}`. |
+| `glfwPollEvents` | `poll_events/0` | Sends handler messages. See [thread safety](thread-safety.md). |
+| `glfwWaitEvents` | N/A | Would block the executor thread. Use `poll_events/0` and a BEAM `receive`. |
+| `glfwWaitEventsTimeout` | N/A | Same. |
+| `glfwPostEmptyEvent` | `post_empty_event/0` | N/A |
 
-XXX: Implementation of the window related handler must be checked.
-
-**Monitor**
+## Monitor
 
 | GLFW | Binding | Notes |
-|----- | ------- | ----- |
-| `glfwGetMonitors` | `monitors` | We can't distinguish between no monitor or error. Therefore a `[]` return value might mean error. Use `get_error/0` to distinguish. |
-| `glfwGetPrimaryMonitor` | `primary_monitor` | Same. We can't distinguish between no monitor or error. Therefore a `undefined` return value might mean error. |
-| `glfwGetMonitorPos` | `monitor_position` | N/A |
-| `glfwGetMonitorWorkarea` | `monitor_work_area` | N/A |
-| `glfwGetMonitorPhysicalSize` | `monitor_physical_size` | N/A |
-| `glfwGetMonitorContentScale` | `monitor_content_scale` | N/A |
-| `glfwGetMonitorName` | `monitor_name` | N/A |
+| --- | --- | --- |
+| `glfwGetMonitors` | `monitors/0` | `[]` may mean no monitors or an error. Use `get_error/0`. Handles intern by native pointer. |
+| `glfwGetPrimaryMonitor` | `primary_monitor/0` | `undefined` may mean no monitor or an error. The same native monitor is the same Erlang term as in `monitors/0`. |
+| `glfwGetMonitorPos` | `monitor_position/1` | N/A |
+| `glfwGetMonitorWorkarea` | `monitor_work_area/1` | N/A |
+| `glfwGetMonitorPhysicalSize` | `monitor_physical_size/1` | N/A |
+| `glfwGetMonitorContentScale` | `monitor_content_scale/1` | N/A |
+| `glfwGetMonitorName` | `monitor_name/1` | N/A |
 | `glfwSetMonitorUserPointer` | N/A | N/A |
 | `glfwGetMonitorUserPointer` | N/A | N/A |
-| `glfwSetMonitorCallback` | `monitor_handler` and `set_monitor_handler` | The event is `#glfw_monitor{}`. XXX: To be tested |
-| `glfwGetVideoModes` | `video_modes` | N/A |
-| `glfwGetVideoMode` | `video_mode` | N/A |
-| `glfwSetGamma` | `set_gamma` | N/A |
-| `glfwGetGammaRamp` | `gamma_ramp` | XXX: Verify implementation |
-| `glfwSetGammaRamp` | `set_gamma_ramp` | XXX: Verify implementation |
+| `glfwSetMonitorCallback` | `monitor_handler/0` and `set_monitor_handler/1` | `#glfw_monitor{}`. |
+| `glfwGetVideoModes` | `video_modes/1` | N/A |
+| `glfwGetVideoMode` | `video_mode/1` | N/A |
+| `glfwSetGamma` | `set_gamma/2` | Implemented and dangerous. It can change OS display calibration. Not used by default tests or demos. |
+| `glfwGetGammaRamp` | `gamma_ramp/1` | N/A |
+| `glfwSetGammaRamp` | `set_gamma_ramp/2` | Same warning as `set_gamma/2`. On Wayland, gamma is often a privileged protocol and may emit `feature_unavailable`. |
 
-**Input**
-
-| GLFW                          | Binding                                                     | Notes                     |
-|------------------------------ | ----------------------------------------------------------- | ------------------------- |
-| `glfwGetInputMode`         *   | `input_mode`                                                | N/A                       |
-| `glfwSetInputMode`         *   | `set_input_mode`                                            | N/A                       |
-| `glfwRawMouseMotionSupported`* | `raw_mouse_motion_supported`                                | N/A                       |
-| `glfwGetKeyName`           *   | `key_name`                                                  | N/A                       |
-| `glfwGetKeyScancode`       *   | `key_scancode`                                              | N/A                       |
-| `glfwGetKey`               *   | `key`                                                       | N/A                       |
-| `glfwGetMouseButton`       *   | `mouse_button`                                              | N/A                       |
-| `glfwGetCursorPos`         *   | `cursor_position`                                           | N/A                       |
-| `glfwSetCursorPos`         *   | `set_cursor_position`                                       | N/A                       |
-| `glfwCreateCursor`         *   | `create_cursor`                                             | N/A                       |
-| `glfwCreateStandardCursor` *   | `create_standard_cursor`                                    | N/A                       |
-| `glfwDestroyCursor`       *    | `destroy_cursor`                                            | N/A                       |
-| `glfwSetCursor`          *     | `set_cursor`                                                | N/A                       |
-| `glfwSetKeyCallback`      *    | `key_handler` and `set_key_handler` | The event is `#glfw_key{}`. |
-| `glfwSetCharCallback`     *    | `char_handler` and `set_char_handler` | The event is `#glfw_char{}`. |
-| `glfwSetCharModsCallback` *    | `char_mods_handler` and `set_char_mods_handler` | The event is `#glfw_char_mods{}`. |
-| `glfwSetMouseButtonCallback`*  | `mouse_button_handler` and `set_mouse_button_handler` | The event is `#glfw_mouse_button{}`. |
-| `glfwSetCursorPosCallback`  *  | `cursor_position_handler` and `set_cursor_position_handler` | The event is `#glfw_cursor_position{}`. |
-| `glfwSetCursorEnterCallback`*  | `cursor_enter_handler` and `set_cursor_enter_handler` | The event is `#glfw_cursor_enter{}`. |
-| `glfwSetScrollCallback` *      | `scroll_handler` and `set_scroll_handler` | The event is `#glfw_scroll{}`. |
-| `glfwSetDropCallback` *        | `drop_handler` and `set_drop_handler` | The event is `#glfw_drop{}`. |
-
-XXX: Implementaiton of the window related handler must be checked.
-
-**Input (Joystick/Gamepad)**
+## Input
 
 | GLFW | Binding | Notes |
-|----- | ------- | ----- |
-| `glfwJoystickPresent` | `joystick_present` | N/A |
-| `glfwGetJoystickAxes` | `joystick_axes` | N/A |
-| `glfwGetJoystickButtons` | `joystick_buttons` | N/A |
-| `glfwGetJoystickHats` | `joystick_hats` | `[joystick_hat()]` atoms such as `hat_up` and `hat_right_up`. |
-| `glfwGetJoystickName` | `joystick_name` | N/A |
-| `glfwGetJoystickGUID` | `joystick_guid` | N/A |
+| --- | --- | --- |
+| `glfwGetInputMode` | `input_mode/2` | N/A |
+| `glfwSetInputMode` | `set_input_mode/3` | N/A |
+| `glfwRawMouseMotionSupported` | `raw_mouse_motion_supported/0` | N/A |
+| `glfwGetKeyName` | `key_name/1` | `{key, key()} \| {scancode, scancode()}`. |
+| `glfwGetKeyScancode` | `key_scancode/1` | N/A |
+| `glfwGetKey` | `key/2` | Not renamed to `window_key/2`. |
+| `glfwGetMouseButton` | `mouse_button/2` | N/A |
+| `glfwGetCursorPos` | `cursor_position/1` | N/A |
+| `glfwSetCursorPos` | `set_cursor_position/2` | N/A |
+| `glfwCreateCursor` | `create_cursor/2` | `#glfw_image{}` and a hotspot `{X, Y}`. Pixels are an RGBA binary. |
+| `glfwCreateStandardCursor` | `create_standard_cursor/1` | Some shapes emit `cursor_unavailable` on some platforms. |
+| `glfwDestroyCursor` | `destroy_cursor/1` | Poisons the cursor resource. |
+| `glfwSetCursor` | `set_cursor/2` | `default` restores the regular cursor. |
+| `glfwSetKeyCallback` | `key_handler/1` and `set_key_handler/2` | `#glfw_key{}`. `mods` is an integer. |
+| `glfwSetCharCallback` | `char_handler/1` and `set_char_handler/2` | `#glfw_char{}`. |
+| `glfwSetCharModsCallback` | `char_mods_handler/1` and `set_char_mods_handler/2` | `#glfw_char_mods{}`. `mods` is an integer. |
+| `glfwSetMouseButtonCallback` | `mouse_button_handler/1` and `set_mouse_button_handler/2` | `#glfw_mouse_button{}`. `mods` is an integer. |
+| `glfwSetCursorPosCallback` | `cursor_position_handler/1` and `set_cursor_position_handler/2` | `#glfw_cursor_position{}`. |
+| `glfwSetCursorEnterCallback` | `cursor_enter_handler/1` and `set_cursor_enter_handler/2` | `#glfw_cursor_enter{}`. |
+| `glfwSetScrollCallback` | `scroll_handler/1` and `set_scroll_handler/2` | `#glfw_scroll{}`. |
+| `glfwSetDropCallback` | `drop_handler/1` and `set_drop_handler/2` | `#glfw_drop{}`. `paths` is `[string()]`. |
+
+Modifier bits in `#glfw_key{}`, `#glfw_char_mods{}`, and `#glfw_mouse_button{}` are integers. Lists of atoms are a later mapping change, not part of this surface.
+
+## Joystick and gamepad
+
+| GLFW | Binding | Notes |
+| --- | --- | --- |
+| `glfwJoystickPresent` | `joystick_present/1` | N/A |
+| `glfwGetJoystickAxes` | `joystick_axes/1` | `not_present \| [float()]`. |
+| `glfwGetJoystickButtons` | `joystick_buttons/1` | `not_present \| [press \| release]`. |
+| `glfwGetJoystickHats` | `joystick_hats/1` | `not_present \| [joystick_hat()]`. Atoms such as `hat_up` and `hat_right_up`, not integers or bit lists. |
+| `glfwGetJoystickName` | `joystick_name/1` | N/A |
+| `glfwGetJoystickGUID` | `joystick_guid/1` | N/A |
 | `glfwSetJoystickUserPointer` | N/A | N/A |
 | `glfwGetJoystickUserPointer` | N/A | N/A |
-| `glfwJoystickIsGamepad` | `joystick_is_gamepad` | N/A |
-| `glfwSetJoystickCallback` | `joystick_handler` and `set_joystick_handler` | The event is `#glfw_joystick{}`. |
-| `glfwUpdateGamepadMappings` | `update_gamepad_mappings` | XXX: Verify implementation. |
-| `glfwGetGamepadName` | `gamepad_name` | N/A                                   |
-| `glfwGetGamepadState` | `gamepad_state` | N/A |
+| `glfwJoystickIsGamepad` | `joystick_is_gamepad/1` | N/A |
+| `glfwSetJoystickCallback` | `joystick_handler/0` and `set_joystick_handler/1` | `#glfw_joystick{}`. |
+| `glfwUpdateGamepadMappings` | `update_gamepad_mappings/1` | N/A |
+| `glfwGetGamepadName` | `gamepad_name/1` | `{ok, string()} \| error`. |
+| `glfwGetGamepadState` | `gamepad_state/1` | N/A |
 
-**Input (others)**
+## Clipboard and time
 
 | GLFW | Binding | Notes |
-|----- | ------- | ----- |
-| `glfwGetTime` | N/A | N/A |
-| `glfwSetTime` | N/A | N/A |
-| `glfwGetTimerValue` | N/A | N/A |
-| `glfwGetTimerFrequency` | N/A | N/A |
-| `glfwSetClipboardString` | `set_clipboard_string` | XXX: must allocated array dyn |
-| `glfwGetClipboardString` | `clipboard_string` | N/A |
+| --- | --- | --- |
+| `glfwGetTime` | N/A | The BEAM already has monotonic time. |
+| `glfwSetTime` | N/A | Same. |
+| `glfwGetTimerValue` | N/A | Same. |
+| `glfwGetTimerFrequency` | N/A | Same. |
+| `glfwSetClipboardString` | `set_clipboard_string/2` | UTF-8. The string is allocated from the Erlang term. The window may be `undefined`. |
+| `glfwGetClipboardString` | `clipboard_string/1` | The window may be `undefined`. |
 
-**Vulkan-related functions**
+## EGL window handle
 
-All those functions are not implemented as not application.
+| GLFW | Binding | Notes |
+| --- | --- | --- |
+| *(none)* | `window_egl_handle/1` | The only public native-handle bridge. See [contextless windows](contextless-windows.md). |
+
+## Vulkan
+
+Vulkan is out of scope. These functions are not implemented:
 
 - `glfwVulkanSupported`
 - `glfwGetRequiredInstanceExtensions`
@@ -246,73 +191,10 @@ All those functions are not implemented as not application.
 - `glfwGetPhysicalDevicePresentationSupport`
 - `glfwCreateWindowSurface`
 
-Also note that the init hint is not blabla XXX
+The `GLFW_X11_XCB_VULKAN_SURFACE` init hint is not implemented.
 
-**Native functions**
+## Native accessors
 
-Native accessors are not public. `window_egl_handle/1` uses
-`glfwGetWin32Window`, `glfwGetCocoaWindow`, `glfwGetX11Window`, and
-`glfwGetWaylandWindow` internally, and on Wayland creates a `wl_egl_window`
-owned by the window resource.
+Native accessors are not public. `window_egl_handle/1` uses `glfwGetWin32Window`, `glfwGetCocoaWindow`, `glfwGetX11Window`, and `glfwGetWaylandWindow` internally, and on Wayland creates a `wl_egl_window` owned by the window resource.
 
-> Perhaps some of them will be implemented if needs for platform-specific
-bindings arise later.
-
-- `glfwGetWin32Adapter`
-- `glfwGetWin32Monitor`
-- `glfwGetWin32Window`
-- `glfwGetWGLContext`
-- `glfwGetCocoaMonitor`
-- `glfwGetCocoaWindow`
-- `glfwGetCocoaView`
-- `glfwGetNSGLContext`
-- `glfwGetX11Display`
-- `glfwGetX11Adapter`
-- `glfwGetX11Monitor`
-- `glfwGetX11Window`
-- `glfwSetX11SelectionString`
-- `glfwGetX11SelectionString`
-- `glfwGetGLXContext`
-- `glfwGetGLXWindow`
-- `glfwGetWaylandDisplay`
-- `glfwGetWaylandMonitor`
-- `glfwGetWaylandWindow`
-- `glfwGetEGLDisplay`
-- `glfwGetEGLContext`
-- `glfwGetEGLSurface`
-- `glfwGetOSMesaColorBuffer`
-- `glfwGetOSMesaDepthBuffer`
-- `glfwGetOSMesaContext`
-
-----
-
-change mods to bitfield ? XXX
-
-- All Vulkan-related parts are not exposed (and automatically disabled by
-default).
-  - The `GLFW_X11_XCB_VULKAN_SURFACE` init hint is not implemented.
-
-- `glfwGetFramebufferSize` is `framebuffer_size/1`. The handler is public.
-  The native callback is also kept internally for Wayland EGL handle resize.
-
-- Timer stuff not implemented (see input part)
-
-- window_size_limits and window_aspect_ratio  accepts 'dont_care' for convenience
-(xxx:document slightly different interface).
-
-- check if key_name should restrict to "printable character" and perhaps implement a funciton to check if it is.
-
-
-- double-check init hints implementation - especially about the "default" value
- (should we support them ?)
-
-- primary monitor/0 and monitors/0 function will return different handles. for
-instnace calling primary_monitor/0 multiple times should really always return
-the same handle.
-
-- check window title and utf8 thing
-
-- implement window monitor and set_window_monitor functions
-
-- implementation of key/2 function: consider renaming to window_key/2  ? also
-many keys are not allowed, perhaps rewrite definition in order to distinguish "printable"keys, "modifier keys", etc.
+`glfwGetEGLDisplay`, `glfwGetEGLContext`, `glfwGetEGLSurface`, OSMesa accessors, and the other `glfw3native` symbols stay unpublished. A later platform binding can ask for a specific accessor if it has a concrete need.
