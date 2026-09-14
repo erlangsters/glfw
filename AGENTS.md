@@ -48,7 +48,7 @@ family-workspace `GLFW-PLAN.md`.
   native accessors as public functions.
 - Force `GLFW_CLIENT_API = GLFW_NO_API` at window creation. That is the
   contextless invariant, not a temporary hint workaround. Do not add
-  `client_api` or context-version window hints.
+  `client_api` or context-version window hints. String window hints are UTF-8.
 - The binding contract is GLFW 3.4. Compiling against 3.3 is best-effort and
   not a first-release requirement.
 - When adding or changing NIF-backed functionality, update the Erlang API,
@@ -75,14 +75,7 @@ patch.
 
 | Item | Slice | Rationale |
 | --- | --- | --- |
-| `window_title/1` | 5 | Getter exists upstream and is mapped; the NIF is commented out. |
-| `set_window_icon/2` | 5 | NIF currently returns `42`. Either implement it from `#glfw_image{}` or mark it deferred and stop advertising it. Prefer implement: the type and test already exist. |
-| Unpack `joystick_hats/1` | 5 | Public type is already `joystick_hat()`. The NIF returns integers. |
-| Clipboard setter buffer | 5 | `char string[1024]` cannot stand. Allocate from the Erlang string length. |
-| UTF-8 vs Latin-1 per hint | 5 | String window hints should be UTF-8. Confirm each hint against the GLFW spec rather than guessing. |
-| `GLFW_NO_API` invariant | 5 | Keep forcing `GLFW_CLIENT_API = GLFW_NO_API` after user hints. Document it as the contextless rule, not as "window hints are unfinished". |
 | `dont_care` on size limits and aspect ratio | 6 | Already implemented. Document the slightly wider interface in `docs/api-mapping.md`. |
-| `monitor_set_handler/1` name | 5 | Mapping rule and every other setter use `set_*_handler`. The monitor setter is the odd one out. Rename to `set_monitor_handler/1` before first release. |
 | Mods as atom lists | 6 or 7 | `#glfw_key{}.mods` and friends are integers. Graphics-stack bitfields are lists of atoms. Align, but not as a drive-by in an unrelated slice. |
 
 ## Deferred
@@ -124,7 +117,6 @@ Intentionally outside the first public surface.
 
 Not design questions. Fix them in the slice that owns the family.
 
-- `set_window_icon/2` returns integer `42`. The window test asserts that.
 - Wayland `window_egl_handle/1` returns a `wl_egl_window`. EGL
   `create_window_surface/4` then fails with `bad_alloc` when the display
   came from `eglGetDisplay(EGL_DEFAULT_DISPLAY)`. That is an `egl-1.5`
