@@ -32,24 +32,7 @@ to work flawlessly on Linux, macOs and Windows.
 > you to contextless windows.
 
 Written by the Erlangsters [community](https://about.erlangsters.org/) and
-released under the MIT [license](/https://opensource.org/license/mit).
-
-XXX: Implement child windows.
-
-XXX: Verify/clarify  how glfwTerminate() could corrupt the BEAM by invalidating
-     pointer to exisitng resource (cursor, window, etc).
-
-XXX: What happens if monitor resource sent in the monitor callback, then later
-     another retrieve with monitors/0. Should they be shared ?
-
-XXX: Verify it builds on earlier version of GLFW (version 3.3 on debian 12 for instance).
-
-XXX: Should time-related functions be implemented
-
-- glfwGetTimerFrequency
-- glfwGetTimerValue
-- glfwGetTime
-- glfwSetTime
+released under the MIT [license](https://opensource.org/license/mit).
 
 It's for GLFW version 3.4, however it will compile fine with previous version.
 Just make sure not to  use features if linking against earlier version. Use the

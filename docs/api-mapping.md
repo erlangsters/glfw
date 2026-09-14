@@ -3,26 +3,8 @@
 It's binding of an existing library and therefore knowledge of GLFW itself is
 expected.
 
-XXX: Talk about pointer lifetime.
- 100% of your existing GLFW knowledge is
+100% of your existing GLFW knowledge is
 transferable with a few notes.
-
-XXX: Implement child windows.
-
-XXX: Verify/clarify  how glfwTerminate() could corrupt the BEAM by invalidating
-     pointer to exisitng resource (cursor, window, etc).
-
-XXX: What happens if monitor resource sent in the monitor callback, then later
-     another retrieve with monitors/0. Should they be shared ?
-
-XXX: Verify it builds on earlier version of GLFW (version 3.3 on debian 12 for instance).
-
-XXX: Should time-related functions be implemented
-
-- glfwGetTimerFrequency
-- glfwGetTimerValue
-- glfwGetTime
-- glfwSetTime
 
 
 ## Idiomatic API
