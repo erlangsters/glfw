@@ -87,7 +87,7 @@
     key :: glfw:key(),
     scancode :: glfw:scancode(),
     action :: press | release | repeat,
-    mods :: integer()
+    mods :: [glfw:mod()]
 }).
 
 -record(glfw_char, {
@@ -98,14 +98,14 @@
 -record(glfw_char_mods, {
     window :: glfw:window(),
     codepoint :: erlang:char(),
-    mods :: integer()
+    mods :: [glfw:mod()]
 }).
 
 -record(glfw_mouse_button, {
     window :: glfw:window(),
     button :: glfw:mouse_button(),
     action :: press | release,
-    mods :: integer()
+    mods :: [glfw:mod()]
 }).
 
 -record(glfw_cursor_position, {

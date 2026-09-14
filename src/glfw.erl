@@ -87,6 +87,7 @@ document every aspect of it.
 
 -export_type([key/0]).
 -export_type([scancode/0]).
+-export_type([mod/0]).
 
 -export_type([mouse_button/0]).
 
@@ -936,6 +937,7 @@ To be written.
 
 -doc "Keyboard key tokens.".
 -type key() ::
+    key_unknown |
     key_space |
     key_apostrophe |
     key_comma |
@@ -999,6 +1001,15 @@ To be written.
 .
 -doc "To be written.".
 -type scancode() :: integer().
+
+-doc """
+Modifier keys reported on key, character-with-modifiers, and mouse-button
+events.
+
+`caps_lock` and `num_lock` only appear when the `lock_key_mods` input mode
+is enabled.
+""".
+-type mod() :: shift | control | alt | super | caps_lock | num_lock.
 
 -doc "Mouse button IDs.".
 -type mouse_button() ::
