@@ -2106,11 +2106,9 @@ vary depending on driver settings and defaults.
 """.
 -doc(#{
     parameters => #{
-        "With" => "The desired width, in screen coordinates, of the window. This must be greater than zero.",
+        "Width" => "The desired width, in screen coordinates, of the window. This must be greater than zero.",
         "Height" => "The desired height, in screen coordinates, of the window. This must be greater than zero.",
-        "Title" => "The initial, UTF-8 encoded window title.",
-        "Monitor" => "The monitor to use for full screen mode, or NULL for windowed mode.",
-        "Share" => "The window whose context to share resources with, or NULL to not share resources."
+        "Title" => "The initial, UTF-8 encoded window title."
     },
     return => "The handle of the created window, or NULL if an error occurred.",
     see_also => {glfw, destroy_window, 1}
@@ -2259,10 +2257,8 @@ selected images will be rescaled as needed. Good sizes include 16x16, 32x32 and
 """.
 -doc(#{
     parameters => #{
-        % XXX
         "Window" => "The window whose icon to set.",
-        "Count" => "The number of images in the specified array, or zero to revert to the default window icon.",
-        "Images" => "The images to create the icon from. This is ignored if count is zero."
+        "Images" => "The images to create the icon from, or `[]` to revert to the default window icon."
     },
     since => "3.2"
 }).
@@ -2332,7 +2328,7 @@ and should not override these limits.
         "Window" => "The window to move.",
         "Position" => "The coordinate of the upper-left corner of the content area."
     },
-    see_also => {glfw, window_position, 0}
+    see_also => {glfw, window_position, 1}
 }).
 -spec set_window_position(window(), {X :: integer(), Y :: integer()}) -> ok.
 set_window_position(_Window, _Position) ->
@@ -2419,8 +2415,8 @@ should not override these limits.
         "Size" => "The desired width and height, in screen coordinates, of the window content area."
     },
     see_also => [
-        {glfw, window_size, 0},
-        {glfw, set_window_monitor, 4}
+        {glfw, window_size, 1},
+        {glfw, set_window_monitor, 7}
     ]
 }).
 -spec set_window_size(window(), {Width :: integer(), Height :: integer()}) -> ok.
@@ -2579,8 +2575,7 @@ be on.
     },
     return => "The x- and y-axis content scale of the specified window.",
     see_also => [
-        % XXX
-        {glfw, set_window_content_scale_callback, 1},
+        {glfw, set_window_content_scale_handler, 2},
         {glfw, monitor_content_scale, 1}
     ],
     since => "3.3"
@@ -2646,7 +2641,7 @@ transparency. The results of doing this are undefined.
         "Window" => "The window to set the opacity for.",
         "Opacity" => "The desired opacity of the specified window."
     },
-    see_also => {glfw, window_opacity, 0},
+    see_also => {glfw, window_opacity, 1},
     since => "3.3"
 }).
 -spec set_window_opacity(window(), float()) -> ok.
@@ -3205,13 +3200,6 @@ Event processing is not required for joystick input to work.
 > - GLFW_NOT_INITIALIZED
 > - GLFW_PLATFORM_ERROR
 """.
--doc(#{
-    see_also => [
-        % XXX: Do they actually exist ?
-        {glfw, wait_events, 0},
-        {glfw, wait_events_timeout, 1}
-    ]
-}).
 -spec poll_events() -> ok.
 poll_events() ->
     erlang:nif_error(nif_library_not_loaded).
@@ -3228,11 +3216,7 @@ glfwWaitEvents or glfwWaitEventsTimeout to return.
 > - GLFW_PLATFORM_ERROR
 """.
 -doc(#{
-    see_also => [
-        % XXX: Do they actually exist ?
-        {glfw, wait_events, 0},
-        {glfw, wait_events_timeout, 1}
-    ]
+    see_also => {glfw, poll_events, 0}
 }).
 -spec post_empty_event() -> ok.
 post_empty_event() ->
@@ -3646,7 +3630,7 @@ language and should be localized along with other user interface text.
     return => "The UTF-8 encoded, layout-specific name of the key, or NULL.",
     see_also => [
         {glfw, key_scancode, 1},
-        {glfw, key, 1}
+        {glfw, key, 2}
     ],
     since => "3.2"
 }).
@@ -3684,8 +3668,8 @@ error.
     },
     return => "The platform-specific scancode for the key, or -1 if the key is not supported on the current platform or an error occurred.",
     see_also => [
-        {glfw, key_name, 2},
-        {glfw, key, 1}
+        {glfw, key_name, 1},
+        {glfw, key, 2}
     ],
     since => "3.3"
 }).
@@ -3735,8 +3719,8 @@ Do not use this function to implement text input.
     },
     return => "One of GLFW_PRESS or GLFW_RELEASE.",
     see_also => [
-        {glfw, get_key_name, 1},
-        {glfw, get_key_scancode, 1}
+        {glfw, key_name, 1},
+        {glfw, key_scancode, 1}
     ],
     since => "1.0"
 }).
