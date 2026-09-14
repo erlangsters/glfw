@@ -49,8 +49,12 @@
 typedef ErlNifResourceType* (*get_egl_window_resource_type_fn)(ErlNifEnv*);
 get_egl_window_resource_type_fn get_egl_window_resource_type = NULL;
 
+typedef ErlNifResourceType* (*get_egl_native_display_resource_type_fn)(ErlNifEnv*);
+get_egl_native_display_resource_type_fn get_egl_native_display_resource_type = NULL;
+
 static void* egl_nif_lib_handle = NULL;
 static ErlNifResourceType* egl_window_resource_type;
+static ErlNifResourceType* egl_native_display_resource_type;
 
 static CommandExecutor command_executor;
 static int beam_glfw_initialized = 0;
@@ -58,6 +62,7 @@ static int beam_glfw_initialized = 0;
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_undefined;
+static ERL_NIF_TERM atom_default_display;
 static ERL_NIF_TERM atom_true;
 static ERL_NIF_TERM atom_false;
 
@@ -685,6 +690,12 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         FreeLibrary(egl_nif_lib_handle);
         return -1;
     }
+    get_egl_native_display_resource_type = (get_egl_native_display_resource_type_fn)GetProcAddress(egl_nif_lib_handle, "get_egl_native_display_resource_type");
+    if (!get_egl_native_display_resource_type) {
+        printf("failed to load symbol get_egl_native_display_resource_type: %s\n", GetLastError());
+        FreeLibrary(egl_nif_lib_handle);
+        return -1;
+    }
 #else
     egl_nif_lib_handle = dlopen(beam_egl_nif_path, RTLD_NOW | RTLD_GLOBAL);
     if (!egl_nif_lib_handle) {
@@ -698,12 +709,20 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
         dlclose(egl_nif_lib_handle);
         return -1;
     }
+    get_egl_native_display_resource_type = dlsym(egl_nif_lib_handle, "get_egl_native_display_resource_type");
+    if (!get_egl_native_display_resource_type) {
+        fprintf(stderr, "failed to load symbol get_egl_native_display_resource_type: %s\n", dlerror());
+        dlclose(egl_nif_lib_handle);
+        return -1;
+    }
 #endif
     egl_window_resource_type = get_egl_window_resource_type(env);
+    egl_native_display_resource_type = get_egl_native_display_resource_type(env);
 
     atom_ok = enif_make_atom(env, "ok");
     atom_error = enif_make_atom(env, "error");
     atom_undefined = enif_make_atom(env, "undefined");
+    atom_default_display = enif_make_atom(env, "default_display");
     atom_true = enif_make_atom(env, "true");
     atom_false = enif_make_atom(env, "false");
 
@@ -4294,6 +4313,75 @@ static ERL_NIF_TERM nif_window_egl_handle(ErlNifEnv* env, int argc, const ERL_NI
     return execute_command(glfw_window_egl_handle, env, argc, argv);
 }
 
+static ERL_NIF_TERM beam_wrap_native_display(ErlNifEnv* env, void* native_display)
+{
+    if (native_display == NULL || egl_native_display_resource_type == NULL) {
+        return atom_error;
+    }
+
+    void* resource = enif_alloc_resource(egl_native_display_resource_type, sizeof(void*));
+    if (resource == NULL) {
+        return enif_make_atom(env, "allocation_failed");
+    }
+    *((void**)resource) = native_display;
+
+    ERL_NIF_TERM term = enif_make_resource(env, resource);
+    enif_release_resource(resource);
+    return term;
+}
+
+static ERL_NIF_TERM glfw_display_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    (void)argc;
+    (void)argv;
+
+    if (!beam_glfw_initialized) {
+        return atom_error;
+    }
+
+#if defined(_WIN32) || defined(__APPLE__)
+    return atom_default_display;
+#else
+#if defined(BEAM_GLFW_HAS_GET_PLATFORM)
+    switch (glfwGetPlatform()) {
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    case GLFW_PLATFORM_WAYLAND:
+        return beam_wrap_native_display(env, (void*)glfwGetWaylandDisplay());
+#endif
+#if defined(BEAM_GLFW_HAS_NATIVE_X11)
+    case GLFW_PLATFORM_X11:
+        return beam_wrap_native_display(env, (void*)glfwGetX11Display());
+#endif
+    default:
+        return atom_error;
+    }
+#else
+#if defined(BEAM_GLFW_HAS_NATIVE_WAYLAND)
+    {
+        struct wl_display* wayland_display = glfwGetWaylandDisplay();
+        if (wayland_display != NULL) {
+            return beam_wrap_native_display(env, (void*)wayland_display);
+        }
+    }
+#endif
+#if defined(BEAM_GLFW_HAS_NATIVE_X11)
+    {
+        Display* x11_display = glfwGetX11Display();
+        if (x11_display != NULL) {
+            return beam_wrap_native_display(env, (void*)x11_display);
+        }
+    }
+#endif
+    return atom_error;
+#endif
+#endif
+}
+
+static ERL_NIF_TERM nif_display_egl_handle(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return execute_command(glfw_display_egl_handle, env, argc, argv);
+}
+
 static ErlNifFunc nif_functions[] = {
     {"init_hint_raw", 2, nif_init_hint, 0},
     {"init", 0, nif_init_, 0},
@@ -4435,7 +4523,8 @@ static ErlNifFunc nif_functions[] = {
     {"clipboard_string", 1, nif_clipboard_string, 0},
     {"set_clipboard_string", 2, nif_set_clipboard_string, 0},
 
-    {"window_egl_handle", 1, nif_window_egl_handle, 0}
+    {"window_egl_handle", 1, nif_window_egl_handle, 0},
+    {"display_egl_handle", 0, nif_display_egl_handle, 0}
 };
 
 ERL_NIF_INIT(
