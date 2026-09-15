@@ -54,6 +54,7 @@ jobs:
       - name: Compile the binding
         run: |
           vcpkg install
+          export VCPKG_ROOT="${VCPKG_ROOT:-/usr/local/share/vcpkg}"
           export ANGLE_INCLUDE_DIR="${{ steps.angle.outputs.angle-location }}/include"
           export ANGLE_LIB_DIR="${{ steps.angle.outputs.angle-location }}/lib"
           rebar3 compile
@@ -79,6 +80,9 @@ jobs:
       - name: Compile the binding
         run: |
           vcpkg install
+          if (-not $env:VCPKG_ROOT) {
+            $env:VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+          }
           $angleLocation = "${{ steps.angle.outputs.angle-location }}"
           $env:ANGLE_INCLUDE_DIR = "$angleLocation\include"
           $env:ANGLE_LIB_DIR = "$angleLocation\lib"
