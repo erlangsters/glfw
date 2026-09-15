@@ -1642,7 +1642,7 @@ static ERL_NIF_TERM glfw_create_window(ErlNifEnv* env, int argc, const ERL_NIF_T
         return enif_make_badarg(env);
     }
 
-    // XXX: This will be removed after window hints are implemented.
+    // Contextless windows: OpenGL context creation belongs to EGL.
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(width, height, title, NULL, NULL);
     free(title);

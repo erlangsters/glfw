@@ -51,8 +51,8 @@ receive
 end.
 ```
 
-For more example code, the demo tests and test suites in the repository are
-good place, to find example. xxx
+For more example code, the test demos and test suites in the repository are
+a good place to start.
 
 If you're confused about the API and how a GLFW feature translates in this
 binding, consult the [API mapping](docs/api-mapping.md) document, which
@@ -676,6 +676,7 @@ document every aspect of it.
 -define(GLFW_FEATURE_UNIMPLEMENTED, 16#0001000D).
 -define(GLFW_PLATFORM_UNAVAILABLE,  16#0001000E).
 
+-doc "Window-system platforms GLFW can select at initialization.".
 -type platform() :: win32 | cocoa | wayland | x11 | null.
 
 -doc "The valid values of the `joystick_hat_buttons` init hint.".
@@ -735,6 +736,7 @@ The valid values for each init hint.
     init_hint_way_libdecor()
 .
 
+-doc "GLFW error codes returned by `get_error/0` and `#glfw_error{}`.".
 -type error_code() ::
     not_initialized |
     no_current_context |
@@ -751,8 +753,10 @@ The valid values for each init hint.
     feature_unimplemented |
     platform_unavailable
 .
+-doc "UTF-8 error description, or `undefined` when GLFW reports none.".
 -type error_description() :: undefined | string().
 
+-doc "An interned connected monitor. Later calls raise `badarg` after `terminate/0`.".
 -type monitor() :: reference().
 
 -type window_hint_resizable() :: boolean().
@@ -782,9 +786,34 @@ The valid values for each init hint.
 -doc """
 The available window hints.
 
-| Hint                    | Note                               | Values                               |
-|-------------------------|------------------------------------|--------------------------------------|
-| `foobar`                | To be written.      | `window_hint_foobar_value()`         |
+There is no `client_api` hint. `create_window/3` always forces
+`GLFW_CLIENT_API = GLFW_NO_API`. String hints are UTF-8.
+
+| Hint | Note | Values |
+| ---- | ---- | ------ |
+| `resizable` | Whether the window is resizable. | `boolean()` |
+| `visible` | Whether the window is created visible. | `boolean()` |
+| `decorated` | Whether the window has decorations. | `boolean()` |
+| `focused` | Whether the window is given input focus on creation. | `boolean()` |
+| `auto_iconify` | Whether fullscreen windows iconify on focus loss. | `boolean()` |
+| `floating` | Whether the window is floating. | `boolean()` |
+| `maximized` | Whether the window is created maximized. | `boolean()` |
+| `center_cursor` | Whether the cursor is centered on fullscreen creation. | `boolean()` |
+| `transparent_framebuffer` | Whether the framebuffer is transparent. | `boolean()` |
+| `focus_on_show` | Whether showing the window gives it input focus. | `boolean()` |
+| `scale_to_monitor` | Whether the window content is scaled to the monitor. | `boolean()` |
+| `scale_framebuffer` | Whether the framebuffer is scaled. | `boolean()` |
+| `mouse_passthrough` | Whether mouse events pass through the window. | `boolean()` |
+| `position_x` | Initial x position, or `any_position`. | `any_position \| integer()` |
+| `position_y` | Initial y position, or `any_position`. | `any_position \| integer()` |
+| `refresh_rate` | Fullscreen refresh rate, or `dont_care`. | `dont_care \| integer()` |
+| `win32_keyboard_menu` | Win32-specific. | `boolean()` |
+| `win32_showdefault` | Win32-specific. | `boolean()` |
+| `cocoa_frame_name` | macOS frame autosave name. | `string()` |
+| `cocoa_graphics_switching` | macOS-specific. | `boolean()` |
+| `wayland_app_id` | Wayland app id. | `string()` |
+| `x11_instance_name` | X11 `WM_CLASS` instance. | `string()` |
+| `x11_class_name` | X11 `WM_CLASS` class. | `string()` |
 """.
 -type window_hint_type() ::
     resizable |
@@ -811,6 +840,7 @@ The available window hints.
     x11_instance_name |
     x11_class_name
 .
+-doc "The valid values for each window hint.".
 -type window_hint_value() ::
     window_hint_resizable() |
     window_hint_visible() |
@@ -851,9 +881,7 @@ The available window hints.
 -type window_attrib_mouse_passthrough() :: boolean().
 -type window_attrib_doublebuffer() :: boolean().
 
--doc """
-To be written.
-""".
+-doc "Window attributes that can be queried or, when GLFW allows it, set.".
 -type window_attrib() ::
     iconified |
     maximized |
@@ -869,9 +897,7 @@ To be written.
     doublebuffer
 .
 
--doc """
-To be written.
-""".
+-doc "The value of a window attribute. Every current attribute is a `boolean()`.".
 -type window_attrib_value() ::
     window_attrib_focused() |
     window_attrib_iconified() |
@@ -887,19 +913,33 @@ To be written.
     window_attrib_mouse_passthrough() |
     window_attrib_doublebuffer()
 .
+-doc "A window resource. Later calls raise `badarg` after destroy or `terminate/0`.".
 -type window() :: reference().
+-doc "A cursor resource. Later calls raise `badarg` after destroy or `terminate/0`.".
 -type cursor() :: reference().
 
+-doc """
+Minimum or maximum window content size.
+
+`dont_care` disables that bound, either for the whole pair or for one
+component.
+""".
 -type size_limits() :: {
     Width :: integer() | dont_care,
     Height :: integer() | dont_care
 } | dont_care.
+-doc """
+Required window aspect ratio.
+
+`dont_care` disables the constraint, either for the whole pair or for one
+component.
+""".
 -type aspect_ratio() :: {
     Numerator :: integer() | dont_care,
     Denominator :: integer() | dont_care
 } | dont_care.
 
--doc "To be written.".
+-doc "Input modes that can be queried or set on a window.".
 -type input_mode() ::
     cursor |
     sticky_keys |
@@ -914,7 +954,7 @@ To be written.
 -type lock_key_mods() :: boolean().
 -type raw_mouse_motion() :: boolean().
 
--doc "To be written.".
+-doc "The value of an input mode. Cursor modes are atoms; the others are booleans.".
 -type input_mode_value() ::
     cursor_mode() |
     sticky_keys() |
@@ -1001,7 +1041,7 @@ To be written.
     key_right_super |
     key_menu
 .
--doc "To be written.".
+-doc "Platform-specific keyboard scancode.".
 -type scancode() :: integer().
 
 -doc """
@@ -1352,9 +1392,10 @@ version_string() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return and clear the last error.
 
-To be written.
+It returns `no_error` when no error has occurred since the last call, or
+`{error, Code, Description}` with the error code and UTF-8 description.
 """.
 -spec get_error() ->
     {error, Code :: error_code(), Description :: error_description()} |
@@ -1403,18 +1444,20 @@ get_error_raw() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Error handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_error{}`
+events, or `undefined`.
 """.
 -spec error_handler() -> undefined | pid().
 error_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the error handler.
 
-To be written.
+It registers a process that receives `#glfw_error{}` events. Pass
+`undefined` to stop receiving those events.
 """.
 -spec set_error_handler(undefined | pid()) -> ok.
 set_error_handler(_Handler) ->
@@ -1686,18 +1729,20 @@ monitor_name(_Monitor) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Monitor handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_monitor{}`
+events, or `undefined`.
 """.
 -spec monitor_handler() -> undefined | pid().
 monitor_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the monitor handler.
 
-To be written.
+It registers a process that receives `#glfw_monitor{}` events when a monitor
+is connected or disconnected. Pass `undefined` to stop receiving those events.
 """.
 -spec set_monitor_handler(undefined | pid()) -> ok.
 set_monitor_handler(_Handler) ->
@@ -1862,18 +1907,20 @@ set_gamma_ramp(_Monitor, _Ramp) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Reset window hints to their defaults.
 
-To be written.
+It restores every window hint to its default value. Hints are not reset
+automatically after `create_window/3`.
 """.
 -spec default_window_hints() -> ok.
 default_window_hints() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set a window hint.
 
-To be written.
+It sets a hint for the next `create_window/3`. String hints are UTF-8. There
+is no `client_api` hint; window creation always forces `GLFW_NO_API`.
 """.
 -spec window_hint(window_hint_type(), window_hint_value()) -> ok.
 window_hint(Hint, Value) when is_list(Value) ->
@@ -2072,11 +2119,9 @@ vary depending on driver settings and defaults.
 """.
 -doc(#{
     parameters => #{
-        "With" => "The desired width, in screen coordinates, of the window. This must be greater than zero.",
+        "Width" => "The desired width, in screen coordinates, of the window. This must be greater than zero.",
         "Height" => "The desired height, in screen coordinates, of the window. This must be greater than zero.",
-        "Title" => "The initial, UTF-8 encoded window title.",
-        "Monitor" => "The monitor to use for full screen mode, or NULL for windowed mode.",
-        "Share" => "The window whose context to share resources with, or NULL to not share resources."
+        "Title" => "The initial, UTF-8 encoded window title."
     },
     return => "The handle of the created window, or NULL if an error occurred.",
     see_also => {glfw, destroy_window, 1}
@@ -2225,10 +2270,8 @@ selected images will be rescaled as needed. Good sizes include 16x16, 32x32 and
 """.
 -doc(#{
     parameters => #{
-        % XXX
         "Window" => "The window whose icon to set.",
-        "Count" => "The number of images in the specified array, or zero to revert to the default window icon.",
-        "Images" => "The images to create the icon from. This is ignored if count is zero."
+        "Images" => "The images to create the icon from, or `[]` to revert to the default window icon."
     },
     since => "3.2"
 }).
@@ -2298,7 +2341,7 @@ and should not override these limits.
         "Window" => "The window to move.",
         "Position" => "The coordinate of the upper-left corner of the content area."
     },
-    see_also => {glfw, window_position, 0}
+    see_also => {glfw, window_position, 1}
 }).
 -spec set_window_position(window(), {X :: integer(), Y :: integer()}) -> ok.
 set_window_position(_Window, _Position) ->
@@ -2385,8 +2428,8 @@ should not override these limits.
         "Size" => "The desired width and height, in screen coordinates, of the window content area."
     },
     see_also => [
-        {glfw, window_size, 0},
-        {glfw, set_window_monitor, 4}
+        {glfw, window_size, 1},
+        {glfw, set_window_monitor, 7}
     ]
 }).
 -spec set_window_size(window(), {Width :: integer(), Height :: integer()}) -> ok.
@@ -2545,8 +2588,7 @@ be on.
     },
     return => "The x- and y-axis content scale of the specified window.",
     see_also => [
-        % XXX
-        {glfw, set_window_content_scale_callback, 1},
+        {glfw, set_window_content_scale_handler, 2},
         {glfw, monitor_content_scale, 1}
     ],
     since => "3.3"
@@ -2612,7 +2654,7 @@ transparency. The results of doing this are undefined.
         "Window" => "The window to set the opacity for.",
         "Opacity" => "The desired opacity of the specified window."
     },
-    see_also => {glfw, window_opacity, 0},
+    see_also => {glfw, window_opacity, 1},
     since => "3.3"
 }).
 -spec set_window_opacity(window(), float()) -> ok.
@@ -2834,18 +2876,22 @@ request_window_attention(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the window's monitor.
 
-To be written.
+It returns the monitor the window is fullscreen on, or `undefined` when the
+window is windowed. `undefined` may also mean an error; use `get_error/0`.
 """.
 -spec window_monitor(window()) -> undefined | monitor().
 window_monitor(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window's monitor.
 
-To be written.
+It places the window fullscreen on `Monitor` with the given position, size,
+and refresh rate, or windowed when `Monitor` is `undefined`. `dont_care`
+leaves the refresh rate unspecified. Fullscreen-at-create is not a
+`create_window/3` argument; call this after creation.
 """.
 -spec set_window_monitor(
     window(),
@@ -2869,9 +2915,9 @@ set_window_monitor_raw(_Window, _Monitor, _X, _Y, _Width, _Height, _RefreshRate)
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return a window attribute.
 
-To be written.
+It returns the current value of the specified window attribute.
 """.
 -spec window_attrib(window(), window_attrib()) -> ok.
 window_attrib(Window, Attrib) ->
@@ -2907,9 +2953,10 @@ window_attrib_raw(_Window, _Attrib) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set a window attribute.
 
-To be written.
+It changes an attribute GLFW allows to be set after creation. Attributes
+that cannot be set still go through this call and may produce a GLFW error.
 """.
 -spec set_window_attrib(window(), window_attrib(), window_attrib_value()) -> ok.
 set_window_attrib(Window, Attrib, Value) ->
@@ -2953,144 +3000,166 @@ set_window_attrib_raw(_Window, _Attrib, _Value) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window position handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_position{}` events for the window, or `undefined`.
 """.
 -spec window_position_handler(window()) -> undefined | pid().
 window_position_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window position handler.
 
-To be written.
+It registers a process that receives `#glfw_window_position{}` events when
+the window is moved. Pass `undefined` to stop receiving those events.
 """.
 -spec set_window_position_handler(window(), undefined | pid()) -> ok.
 set_window_position_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window size handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_size{}` events for the window, or `undefined`.
 """.
 -spec window_size_handler(window()) -> undefined | pid().
 window_size_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window size handler.
 
-To be written.
+It registers a process that receives `#glfw_window_size{}` events when the
+window is resized. Pass `undefined` to stop receiving those events.
 """.
 -spec set_window_size_handler(window(), undefined | pid()) -> ok.
 set_window_size_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window close handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_close{}` events for the window, or `undefined`.
 """.
 -spec window_close_handler(window()) -> undefined | pid().
 window_close_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window close handler.
 
-To be written.
+It registers a process that receives `#glfw_window_close{}` events when the
+user attempts to close the window. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_close_handler(window(), undefined | pid()) -> ok.
 set_window_close_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window refresh handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_refresh{}` events for the window, or `undefined`.
 """.
 -spec window_refresh_handler(window()) -> undefined | pid().
 window_refresh_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window refresh handler.
 
-To be written.
+It registers a process that receives `#glfw_window_refresh{}` events when the
+window contents need to be redrawn. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_refresh_handler(window(), undefined | pid()) -> ok.
 set_window_refresh_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window focus handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_focus{}` events for the window, or `undefined`.
 """.
 -spec window_focus_handler(window()) -> undefined | pid().
 window_focus_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window focus handler.
 
-To be written.
+It registers a process that receives `#glfw_window_focus{}` events when the
+window gains or loses input focus. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_focus_handler(window(), undefined | pid()) -> ok.
 set_window_focus_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window iconify handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_iconify{}` events for the window, or `undefined`.
 """.
 -spec window_iconify_handler(window()) -> undefined | pid().
 window_iconify_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window iconify handler.
 
-To be written.
+It registers a process that receives `#glfw_window_iconify{}` events when the
+window is iconified or restored. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_iconify_handler(window(), undefined | pid()) -> ok.
 set_window_iconify_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window maximize handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_maximize{}` events for the window, or `undefined`.
 """.
 -spec window_maximize_handler(window()) -> undefined | pid().
 window_maximize_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window maximize handler.
 
-To be written.
+It registers a process that receives `#glfw_window_maximize{}` events when
+the window is maximized or restored. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_window_maximize_handler(window(), undefined | pid()) -> ok.
 set_window_maximize_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Window content scale handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_window_content_scale{}` events for the window, or `undefined`.
 """.
 -spec window_content_scale_handler(window()) -> undefined | pid().
 window_content_scale_handler(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the window content scale handler.
 
-To be written.
+It registers a process that receives `#glfw_window_content_scale{}` events
+when the window content scale changes. Pass `undefined` to stop receiving
+those events.
 """.
 -spec set_window_content_scale_handler(window(), undefined | pid()) -> ok.
 set_window_content_scale_handler(_Window, _Handler) ->
@@ -3144,13 +3213,6 @@ Event processing is not required for joystick input to work.
 > - GLFW_NOT_INITIALIZED
 > - GLFW_PLATFORM_ERROR
 """.
--doc(#{
-    see_also => [
-        % XXX: Do they actually exist ?
-        {glfw, wait_events, 0},
-        {glfw, wait_events_timeout, 1}
-    ]
-}).
 -spec poll_events() -> ok.
 poll_events() ->
     erlang:nif_error(nif_library_not_loaded).
@@ -3167,11 +3229,7 @@ glfwWaitEvents or glfwWaitEventsTimeout to return.
 > - GLFW_PLATFORM_ERROR
 """.
 -doc(#{
-    see_also => [
-        % XXX: Do they actually exist ?
-        {glfw, wait_events, 0},
-        {glfw, wait_events_timeout, 1}
-    ]
+    see_also => {glfw, poll_events, 0}
 }).
 -spec post_empty_event() -> ok.
 post_empty_event() ->
@@ -3585,7 +3643,7 @@ language and should be localized along with other user interface text.
     return => "The UTF-8 encoded, layout-specific name of the key, or NULL.",
     see_also => [
         {glfw, key_scancode, 1},
-        {glfw, key, 1}
+        {glfw, key, 2}
     ],
     since => "3.2"
 }).
@@ -3623,8 +3681,8 @@ error.
     },
     return => "The platform-specific scancode for the key, or -1 if the key is not supported on the current platform or an error occurred.",
     see_also => [
-        {glfw, key_name, 2},
-        {glfw, key, 1}
+        {glfw, key_name, 1},
+        {glfw, key, 2}
     ],
     since => "3.3"
 }).
@@ -3674,8 +3732,8 @@ Do not use this function to implement text input.
     },
     return => "One of GLFW_PRESS or GLFW_RELEASE.",
     see_also => [
-        {glfw, get_key_name, 1},
-        {glfw, get_key_scancode, 1}
+        {glfw, key_name, 1},
+        {glfw, key_scancode, 1}
     ],
     since => "1.0"
 }).
@@ -3779,144 +3837,176 @@ set_cursor_position_raw(_Window, _X, _Y) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Key handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_key{}` events
+for the window, or `undefined`.
 """.
 -spec key_handler(window()) -> undefined | pid().
 key_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the key handler.
 
-To be written.
+It registers a process that receives `#glfw_key{}` events when a key is
+pressed, released, or repeated. Pass `undefined` to stop receiving those
+events.
+
+```erlang
+glfw:set_key_handler(Window, self()),
+receive
+    #glfw_key{window = Window, key = Key, action = press} ->
+        Key
+end.
+```
+
+The `mods` field is `[mod()]`. `key` is a `key()` atom, not a position.
 """.
 -spec set_key_handler(window(), undefined | pid()) -> ok.
 set_key_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Character handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_char{}` events
+for the window, or `undefined`.
 """.
 -spec char_handler(window()) -> undefined | pid().
 char_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the character handler.
 
-To be written.
+It registers a process that receives `#glfw_char{}` events when a Unicode
+character is typed. Pass `undefined` to stop receiving those events.
 """.
 -spec set_char_handler(window(), undefined | pid()) -> ok.
 set_char_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Character-with-modifiers handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_char_mods{}`
+events for the window, or `undefined`.
 """.
 -spec char_mods_handler(window()) -> undefined | pid().
 char_mods_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the character-with-modifiers handler.
 
-To be written.
+It registers a process that receives `#glfw_char_mods{}` events when a
+Unicode character is typed. The `mods` field is `[mod()]`. Pass `undefined`
+to stop receiving those events.
 """.
 -spec set_char_mods_handler(window(), undefined | pid()) -> ok.
 set_char_mods_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Mouse button handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_mouse_button{}` events for the window, or `undefined`.
 """.
 -spec mouse_button_handler(window()) -> undefined | pid().
 mouse_button_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the mouse button handler.
 
-To be written.
+It registers a process that receives `#glfw_mouse_button{}` events when a
+mouse button is pressed or released. The `mods` field is `[mod()]`. Pass
+`undefined` to stop receiving those events.
 """.
 -spec set_mouse_button_handler(window(), undefined | pid()) -> ok.
 set_mouse_button_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Cursor position handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_cursor_position{}` events for the window, or `undefined`.
 """.
 -spec cursor_position_handler(window()) -> undefined | pid().
 cursor_position_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the cursor position handler.
 
-To be written.
+It registers a process that receives `#glfw_cursor_position{}` events when
+the cursor moves. Pass `undefined` to stop receiving those events.
 """.
 -spec set_cursor_position_handler(window(), undefined | pid()) -> ok.
 set_cursor_position_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Cursor enter handler.
 
-To be written.
+It returns the process currently registered to receive
+`#glfw_cursor_enter{}` events for the window, or `undefined`.
 """.
 -spec cursor_enter_handler(window()) -> undefined | pid().
 cursor_enter_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the cursor enter handler.
 
-To be written.
+It registers a process that receives `#glfw_cursor_enter{}` events when the
+cursor enters or leaves the window. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_cursor_enter_handler(window(), undefined | pid()) -> ok.
 set_cursor_enter_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Scroll handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_scroll{}`
+events for the window, or `undefined`.
 """.
 -spec scroll_handler(window()) -> undefined | pid().
 scroll_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the scroll handler.
 
-To be written.
+It registers a process that receives `#glfw_scroll{}` events when the
+scroll wheel or trackpad is used. Pass `undefined` to stop receiving those
+events.
 """.
 -spec set_scroll_handler(window(), undefined | pid()) -> ok.
 set_scroll_handler(_Window, _Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Drop handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_drop{}` events
+for the window, or `undefined`.
 """.
 -spec drop_handler(window()) -> undefined | pid().
 drop_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the drop handler.
 
-To be written.
+It registers a process that receives `#glfw_drop{}` events when paths are
+dropped onto the window. `paths` is `[string()]`. Pass `undefined` to stop
+receiving those events.
 """.
 -spec set_drop_handler(window(), undefined | pid()) -> ok.
 set_drop_handler(_Window, _Handler) ->
@@ -3944,9 +4034,10 @@ joystick_present_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return joystick axes.
 
-To be written.
+It returns the axis values of the specified joystick, or `not_present` when
+that joystick is not connected.
 """.
 -spec joystick_axes(joystick()) -> not_present | [float()].
 joystick_axes(Joystick) ->
@@ -3957,9 +4048,10 @@ joystick_axes_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return joystick buttons.
 
-To be written.
+It returns the button states of the specified joystick, or `not_present`
+when that joystick is not connected.
 """.
 -spec joystick_buttons(joystick()) -> not_present | [release | press].
 joystick_buttons(Joystick) ->
@@ -3970,9 +4062,10 @@ joystick_buttons_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return joystick hats.
 
-To be written.
+It returns hat states as `joystick_hat()` atoms such as `hat_up` and
+`hat_right_up`, or `not_present` when that joystick is not connected.
 """.
 -spec joystick_hats(joystick()) -> not_present | [joystick_hat()].
 joystick_hats(Joystick) ->
@@ -4006,9 +4099,10 @@ from_raw_hat(?GLFW_HAT_LEFT_DOWN) ->
     hat_left_down.
 
 -doc """
-To be written.
+Return the joystick name.
 
-To be written.
+It returns the UTF-8 name of the specified joystick, or `not_present` when
+that joystick is not connected.
 """.
 -spec joystick_name(joystick()) -> not_present | binary().
 joystick_name(Joystick) ->
@@ -4019,9 +4113,10 @@ joystick_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the joystick GUID.
 
-To be written.
+It returns the SDL-compatible GUID of the specified joystick, or
+`not_present` when that joystick is not connected.
 """.
 -spec joystick_guid(joystick()) -> not_present | binary().
 joystick_guid(Joystick) ->
@@ -4032,27 +4127,31 @@ joystick_guid_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Joystick handler.
 
-To be written.
+It returns the process currently registered to receive `#glfw_joystick{}`
+events, or `undefined`.
 """.
 -spec joystick_handler() -> undefined | pid().
 joystick_handler() ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the joystick handler.
 
-To be written.
+It registers a process that receives `#glfw_joystick{}` events when a
+joystick is connected or disconnected. Pass `undefined` to stop receiving
+those events.
 """.
 -spec set_joystick_handler(undefined | pid()) -> ok.
 set_joystick_handler(_Handler) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return whether the joystick has a gamepad mapping.
 
-To be written.
+It returns `true` when the specified joystick is present and has a gamepad
+mapping.
 """.
 -spec joystick_is_gamepad(joystick()) -> boolean().
 joystick_is_gamepad(Joystick) ->
@@ -4063,18 +4162,21 @@ joystick_is_gamepad_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Update gamepad mappings.
 
-To be written.
+It parses the specified ASCII mapping string (or a gamecontrollerdb-style
+block) and updates the internal gamepad mappings. It returns `false` if
+parsing fails.
 """.
 -spec update_gamepad_mappings(string()) -> boolean().
 update_gamepad_mappings(_String) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the gamepad name.
 
-To be written.
+It returns `{ok, Name}` when the joystick is present and has a gamepad
+mapping, otherwise `error`. Use `get_error/0` to distinguish failure reasons.
 """.
 -spec gamepad_name(joystick()) -> {ok, string()} | error.
 gamepad_name(Joystick) ->
@@ -4085,9 +4187,11 @@ gamepad_name_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the gamepad state.
 
-To be written.
+It returns `{ok, Axes, Buttons}` when the joystick is present and has a
+gamepad mapping, otherwise `error`. Axes are a map of `gamepad_axe()` to
+floats; buttons are a map of `gamepad_button()` to `press` or `release`.
 """.
 -spec gamepad_state(joystick()) ->
     {ok, #{gamepad_axe() => float()}, #{gamepad_button() => press | release}} |
@@ -4101,18 +4205,19 @@ gamepad_state_raw(_Joystick) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Return the clipboard string.
 
-To be written.
+It returns `{ok, String}` with the UTF-8 clipboard contents, or `error`. The
+window may be `undefined`.
 """.
 -spec clipboard_string(undefined | window()) -> {ok, string()} | error.
 clipboard_string(_Window) ->
     erlang:nif_error(nif_library_not_loaded).
 
 -doc """
-To be written.
+Set the clipboard string.
 
-To be written.
+It copies the UTF-8 string to the clipboard. The window may be `undefined`.
 """.
 -spec set_clipboard_string(undefined | window(), string()) -> ok.
 set_clipboard_string(_Window, _String) ->
