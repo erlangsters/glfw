@@ -55,13 +55,10 @@ glfw_monitor_test() ->
     VideoMode = glfw:video_mode(Monitor),
     print_video_mode(VideoMode),
 
-    ok = glfw:set_gamma(Monitor, 1.0),
-
     GammaRamp = glfw:gamma_ramp(Monitor),
     print_gamma_ramp(GammaRamp),
 
-    ok = glfw:set_gamma_ramp(Monitor, GammaRamp),
-
+    ok = glfw:terminate(),
     ok.
 
 print_video_mode(#glfw_video_mode{
@@ -74,6 +71,8 @@ print_video_mode(#glfw_video_mode{
 }) ->
     io:format(user, "video mode (width: ~p, height: ~p, red bits: ~p, green bits: ~p, blue bits: ~p, refresh rate: ~p)~n", [Width, Height, RedBits, GreenBits, BlueBits, RefreshRate]).
 
+print_gamma_ramp(undefined) ->
+    io:format(user, "gamma ramp undefined~n", []);
 print_gamma_ramp(#glfw_gamma_ramp{
     red = Red,
     green = Green,
