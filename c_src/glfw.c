@@ -680,19 +680,19 @@ static int nif_module_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM arg)
 #if defined(_WIN32)
     HINSTANCE egl_nif_lib_handle = LoadLibrary(beam_egl_nif_path);
     if (!egl_nif_lib_handle) {
-        printf("failed to load beam-egl.dll: %s\n", GetLastError());
+        fprintf(stderr, "failed to load beam-egl.dll: %lu\n", GetLastError());
         return -1;
     }
 
     get_egl_window_resource_type = (get_egl_window_resource_type_fn)GetProcAddress(egl_nif_lib_handle, "get_egl_window_resource_type");
     if (!get_egl_window_resource_type) {
-        printf("failed to load symbol get_egl_window_resource_type: %s\n", GetLastError());
+        fprintf(stderr, "failed to load symbol get_egl_window_resource_type: %lu\n", GetLastError());
         FreeLibrary(egl_nif_lib_handle);
         return -1;
     }
     get_egl_native_display_resource_type = (get_egl_native_display_resource_type_fn)GetProcAddress(egl_nif_lib_handle, "get_egl_native_display_resource_type");
     if (!get_egl_native_display_resource_type) {
-        printf("failed to load symbol get_egl_native_display_resource_type: %s\n", GetLastError());
+        fprintf(stderr, "failed to load symbol get_egl_native_display_resource_type: %lu\n", GetLastError());
         FreeLibrary(egl_nif_lib_handle);
         return -1;
     }
