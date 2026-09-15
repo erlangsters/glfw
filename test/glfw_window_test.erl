@@ -163,33 +163,40 @@ probe_egl_window_surface(Handle, EglPlatform, NativeDisplay) ->
         _ ->
             case egl:initialize(Display) of
                 {ok, _} ->
-                    _ = egl:bind_api(opengl_api),
-                    case egl:choose_config(Display, [
-                        {surface_type, [window_bit]},
-                        {renderable_type, [opengl_bit]}
-                    ]) of
-                        {ok, [Config | _]} ->
-                            case egl:create_window_surface(Display, Config, Handle, []) of
-                                {ok, Surface} ->
-                                    ok = egl:destroy_surface(Display, Surface),
-                                    ok;
-                                Other ->
-                                    io:format(
-                                        user,
-                                        "egl create_window_surface ~p error ~p~n",
-                                        [Other, egl:get_error()]
-                                    ),
-                                    require_wayland_or_x11_surface(EglPlatform)
-                            end;
-                        Other ->
-                            io:format(user, "egl choose_config ~p~n", [Other]),
-                            require_wayland_or_x11_surface(EglPlatform)
+                    try
+                        probe_initialized_egl_window_surface(Handle, Display, EglPlatform)
+                    after
+                        _ = egl:terminate(Display)
                     end;
                 Other ->
                     io:format(user, "egl initialize ~p error ~p~n",
                         [Other, egl:get_error()]),
                     require_wayland_or_x11_surface(EglPlatform)
             end
+    end.
+
+probe_initialized_egl_window_surface(Handle, Display, EglPlatform) ->
+    _ = egl:bind_api(opengl_api),
+    case egl:choose_config(Display, [
+        {surface_type, [window_bit]},
+        {renderable_type, [opengl_bit]}
+    ]) of
+        {ok, [Config | _]} ->
+            case egl:create_window_surface(Display, Config, Handle, []) of
+                {ok, Surface} ->
+                    ok = egl:destroy_surface(Display, Surface),
+                    ok;
+                Other ->
+                    io:format(
+                        user,
+                        "egl create_window_surface ~p error ~p~n",
+                        [Other, egl:get_error()]
+                    ),
+                    require_wayland_or_x11_surface(EglPlatform)
+            end;
+        Other ->
+            io:format(user, "egl choose_config ~p~n", [Other]),
+            require_wayland_or_x11_surface(EglPlatform)
     end.
 
 require_wayland_or_x11_surface(wayland) ->
