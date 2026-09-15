@@ -69,3 +69,9 @@ WindowHandle = glfw:window_egl_handle(Window),
 
 `egl:get_display(default_display)` still exists for pbuffer and ANGLE. On
 Wayland it does not compose with GLFW window surfaces.
+
+On Wayland that native display is GLFW's `wl_display`. Tear EGL down first:
+unbind the context, destroy the surface and context, then `egl:terminate/1`.
+Only then destroy the window and call `glfw:terminate/0`. `glfw:terminate/0`
+closes the Wayland connection; a live EGL display on that connection will
+crash.
